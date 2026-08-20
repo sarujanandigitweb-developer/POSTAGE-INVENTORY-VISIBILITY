@@ -1,6 +1,6 @@
 # Dashboard Validation Results
 
-File under test: `dashboard/ceiling-rose-inventory-visibility.html` (151,495 bytes)
+File under test: `dashboard/ceiling-rose-inventory-visibility.html` (150,788 bytes)
 Date: 2026-08-20 · Runtime: Node v22.22.2
 
 ## How it was tested
@@ -136,6 +136,15 @@ stock value, SKU, source-of-truth decision, extraction query or column structure
 
 Full detail, including the required feature/result/validation table and measured header contrast
 ratios (all ≥ 8:1, AA), is in `evidence/13-ui-enhancements-validation.md`.
+
+## Revision — 2026-08-20, layout & default-mode pass
+
+Export CSV moved into the top header beside the colour-mode toggle; table height raised from a
+flat `70vh` to `calc(100vh - 236px)` with a `400px` floor; default colour mode fixed to **Light**
+(the `prefers-color-scheme` block was removed so a dark-system machine no longer opens dark or
+flashes). **43/43 tests pass**, including full regression of search, filters, reset, the
+23-column table and the 332-SKU dataset. Embedded data re-verified byte-identical by SHA-256.
+Detail in `evidence/13-ui-enhancements-validation.md`.
 
 ## Known limitation (not a defect)
 

@@ -1,6 +1,6 @@
 # Evidence 13 — UI Enhancements Validation
 
-Date: 2026-08-20 · File: `dashboard/ceiling-rose-inventory-visibility.html` (151,495 bytes)
+Date: 2026-08-20 · File: `dashboard/ceiling-rose-inventory-visibility.html` (150,788 bytes)
 Runtime: Node v22.22.2 · Method: the inline `<script>` was extracted from the built file and
 executed **unmodified** against a DOM stub, so the shipped code was exercised, not a copy.
 
@@ -18,7 +18,7 @@ executed **unmodified** against a DOM stub, so the shipped code was exercised, n
 | Dataset | 332 SKUs unchanged | **PASS** — 332 rows, 219 CRSF / 113 CRFF |
 | MCP data | No values changed | **PASS** — SHA-256 of embedded JSON identical to the original extraction |
 
-**42 of 42 automated tests passed. 0 failed.**
+**43 of 43 automated tests passed. 0 failed.**
 
 ## 1. Header background
 
@@ -128,3 +128,56 @@ presentation only.
 | `<style>` blocks | 1 (inline) |
 | `<script>` blocks | 1 (inline) |
 | Opens directly from disk, no server | YES |
+
+
+---
+
+# Revision — layout & default-mode pass
+
+Three further UI changes, applied and re-validated. **43/43 tests pass.**
+
+| Change | Detail | Validation |
+|---|---|---|
+| Export CSV moved to the top header | Now sits beside the colour-mode toggle inside `<header>`, in a `.hdr-actions` group; removed from the filter bar | **PASS** — `id="csv"` present inside `<header>`, absent from `.controls` |
+| Table height increased | `.scroll` cap changed from a flat `max-height:70vh` to `max-height:calc(100vh - 236px); min-height:400px` | **PASS** — new rule present, `70vh` cap gone |
+| Default colour mode = Light | `let mode = 'light'` as the base; a saved choice still overrides it | **PASS** — clean profile resolves to `data-theme="light"` |
+
+## Default-mode implementation
+
+Previously the mode was seeded from `prefers-color-scheme`, so a machine set to dark opened the
+dashboard in dark. That is now removed: the base is always Light, and the whole
+`@media (prefers-color-scheme: dark)` block was deleted from the stylesheet rather than left in
+place, so a dark-system machine cannot flash dark before the script runs. Dark is reachable only
+by an explicit click, and that choice still persists in `localStorage`.
+
+| Check | Result |
+|---|---|
+| `let mode = 'light'` present | PASS |
+| `matchMedia` / `prefers-color-scheme` occurrences | 0 — PASS |
+| `:root[data-theme="dark"]` block retained | PASS |
+| Token audit after removing the media block: 27 used / 27 light / 27 dark | PASS |
+| No colour token undefined in light | PASS |
+
+## Table height
+
+`calc(100vh - 236px)` accounts for the header (~90px), filter bar (~74px), status line (~36px)
+and page margins (~36px), so the table fills the window without introducing a second page-level
+scrollbar. On a 900px-tall window this yields ~664px of table versus 630px before, and it keeps
+growing on larger displays where the old flat `70vh` left space unused. `min-height:400px`
+prevents collapse on short windows. Horizontal scrolling is unaffected.
+
+## Header contrast after the move
+
+The Export CSV button uses the same `.hbtn` treatment as the toggle — `#eaf1fb` on `#15243d`,
+**13.67:1**, PASS AA.
+
+## Regression + data integrity
+
+All 19 preserved-functionality tests, 7 toggle tests and 16 CSV tests re-ran green:
+332 SKUs, 23 columns on every row, CRSF 219 / CRFF 113, filters (Unit 18 47, Schmutter 128,
+negative 84, zero 23), reset 332, and CSV exporting 332 / 113 / 1 / 47 rows under the matching
+filter states.
+
+Embedded `DATA` re-hashed after the rebuild: `3fb73cc4f4f6886209f561cdc8cbe9f3…` —
+**identical** to the original MCP extraction. No inventory value, SKU, extraction query,
+source-of-truth decision or column structure changed.
