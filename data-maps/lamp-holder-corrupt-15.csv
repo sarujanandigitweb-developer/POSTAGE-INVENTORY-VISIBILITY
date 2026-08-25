@@ -1,0 +1,16 @@
+sheet_row,sku_id_as_written,problem_class,exact_source_problem,image_id_in_sheet,product_that_image_actually_belongs_to,repairable_from_database
+40,LHC1E27WH-IDE,"unknown ""-IDE"" suffix","No product with this SKU. No product anywhere in inventory.products ends in -IDE (0 rows catalogue-wide). Base SKU LHC1E27WH exists separately and is already its own sheet row, and the two rows differ in image and other columns, so this is not a duplicate of the base.",10597,WCFRHE+RPR44WH (wall cage combo),NO
+42,LHC1E27WH3PK-IDE,"unknown ""-IDE"" suffix + pack","Same -IDE problem, on a pack SKU. Base LHC1E27WH3PK exists but is itself a pack (see the 5 pack rows).",10598,WCRTBR+RPR44WH,NO
+44,LHC1E27WH5PK-IDE,"unknown ""-IDE"" suffix + pack","Same -IDE problem, on a pack SKU.",10599,WCBKHE+RPR44WH,NO
+46,LHC1E27WHAPK-IDE,"unknown ""-IDE"" suffix + pack","Same -IDE problem, on a pack SKU.",10600,CRSF100CO2PK+WSSS70CO2PK+LSTF40CO2PK,NO
+61,LHCE27- Lamp Holder,malformed SKU cell,The SKU_ID cell holds a SKU joined to a product-name fragment: 'LHCE27- Lamp Holder'. Neither the full string nor the leading token LHCE27 exists in inventory.products (LIKE 'LHCE27%' returns 0 rows).,7710,CRSF2003BC+PHSH1PBRYB3PK+WCDCBC3PK,NO
+97,LHNSE27- Fully Earthed Pendant Holder,malformed SKU cell,SKU_ID holds 'LHNSE27- Fully Earthed Pendant Holder'. Neither the full string nor LHNSE27 exists in inventory.products.,7813,PLBXBM+PCBI500TP+PCBITB+PCPTPH+LSDO210RR,NO
+100,LHNSE27BY-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27BY exists separately as its own sheet row; the two rows differ.,7821,PLBXBM+PCBI500TP+PCBITB+PCPTPH+LSLT360BT,NO
+102,LHNSE27CH-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27CH exists separately.,7817,PLBXBM+PCBI100TP+PCBITB+PCPTPH+LSLT360BT,NO
+104,LHNSE27CO-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27CO exists separately.,7819,PLBXBM+PCBI300TP+PCBITB+PCPTPH+LSLT360BT,NO
+107,LHNSE27GB-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27GB exists separately.,7820,PLBXBM+PCBI400TP+PCBITB+PCPTPH+LSLT360BT,NO
+109,LHNSE27RO-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27RO exists separately.,7818,PLBXBM+PCBI200TP+PCBITB+PCPTPH+LSLT360BT,NO
+111,LHNSE27SN-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27SN exists separately.,7814,PLBXBM+PCBI600TP+PCBITB+PCPTPH+LSDO210RR,NO
+113,LHNSE27WH-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27WH exists separately.,7815,PLBXBM+PCBI50TP+PCBITB+PCPTPH+LSLT360BT,NO
+115,LHNSE27YB-IDE,"unknown ""-IDE"" suffix",No such product. Base LHNSE27YB exists separately.,7816,PLBXBM+PCBI75TP+PCBITB+PCPTPH+LSLT360BT,NO
+169,LHSHE27BY-IDE,"unknown ""-IDE"" suffix",No such product. Base LHSHE27BY exists separately.,11202,CTBOP2L+CTBOP3L+CTBOP8L,NO

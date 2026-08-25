@@ -1,0 +1,248 @@
+sheet_row,sku_id,mount_type_raw,socket_type,shade_support,product_name,db_status,decision
+3,LHAHE27AM,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+4,LHAHE27BM,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+5,LHAHE27CH,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+6,LHAHE27CO,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+7,LHAHE27GB,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+8,LHAHE27GD,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+9,LHAHE27RO,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+10,LHBBE27BA,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+11,LHBBE27BN,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+12,LHBBE27BY,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+13,LHBBE27CH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+14,LHBBE27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+15,LHBBE27FG,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+16,LHBBE27GB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+17,LHBBE27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+18,LHBBE27SN,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+19,LHBBE27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+20,LHBGE27BM,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+21,LHBHE27BA,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+22,LHBHE27BY,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+23,LHBHE27CH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+24,LHBHE27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+25,LHBHE27GB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+26,LHBHE27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+27,LHBHE27SN,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+28,LHBHE27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+29,LHBLE27BN,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+30,LHBLE27CH,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+31,LHBLE27CO,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+32,LHBLE27GB,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+33,LHBLE27RO,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+34,LHBLE27SN,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+35,LHBLE27YB,Flange Mount,E27,TRUE,,resolves 1:1,INCLUDE
+36,LHBPE27BM,Surface Mount,E27,TRUE,,resolves 1:1,INCLUDE
+37,LHBRE14BM,Pendant / Shade Mount,E14,TRUE,,resolves 1:1,INCLUDE
+38,LHBRE27BM,Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+39,LHC1E27WH,Surface Mount,E27,FALSE,,resolves 1:1,INCLUDE
+40,LHC1E27WH-IDE,Surface Mount,E27,FALSE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+41,LHC1E27WH3PK,Surface Mount,E27,FALSE,,resolves (pack/combo),"EXCLUDE — pack/combo, no stock rows, placeholder description"
+42,LHC1E27WH3PK-IDE,Surface Mount,E27,FALSE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+43,LHC1E27WH5PK,Surface Mount,E27,FALSE,,resolves (pack/combo),"EXCLUDE — pack/combo, no stock rows, placeholder description"
+44,LHC1E27WH5PK-IDE,Surface Mount,E27,FALSE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+45,LHC1E27WHAPK,Surface Mount,E27,FALSE,,resolves (pack/combo),"EXCLUDE — pack/combo, no stock rows, placeholder description"
+46,LHC1E27WHAPK-IDE,Surface Mount,E27,FALSE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+47,LHC2E27WH,,E27,FALSE,,resolves 1:1,INCLUDE
+48,LHC3E27WH,,E27,FALSE,,resolves 1:1,INCLUDE
+49,LHC4E27WH,,E27,FALSE,,resolves 1:1,INCLUDE
+50,LHC5E27WH,,E27,FALSE,,resolves 1:1,INCLUDE
+51,LHC6E27WH,,E27,FALSE,,resolves 1:1,INCLUDE
+52,LHC6E27WH5PK,,E27,FALSE,,resolves (pack/combo),"EXCLUDE — pack/combo, no stock rows, placeholder description"
+53,LHC6E27WHAPK,,E27,FALSE,,resolves (pack/combo),"EXCLUDE — pack/combo, no stock rows, placeholder description"
+54,LHCBE27BY,,E27,TRUE,,resolves 1:1,INCLUDE
+55,LHCCE27BL,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+56,LHCCE27BM,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+57,LHCCE27GR,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+58,LHCCE27RE,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+59,LHCCE27WH,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+60,LHCCE27YE,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+61,LHCE27- Lamp Holder,,E27,FALSE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+62,LHCHE27BY,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+63,LHCHE27CH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+64,LHCHE27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+65,LHCHE27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+66,LHCHE27SN,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+67,LHCHE27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+68,LHCNE27BY,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+69,LHCNE27CH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+70,LHCNE27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+71,LHCNE27GB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+72,LHCNE27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+73,LHCNE27SN,Surface / Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+74,LHCTOCO,Surface / Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+75,LHCTOFG,Surface / Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+76,LHCTOYB,Surface / Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+77,LHDHE27BN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+78,LHDHE27CO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+79,LHDHE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+80,LHEDE27GD,Ceiling Mount / Pendant Base,B22,TRUE,,resolves 1:1,INCLUDE
+81,LHHTE27BM,Ceiling /Table Lamp,E27,TRUE,,resolves 1:1,INCLUDE
+82,LHLFE275BM,Ceiling /Table Lamp,E27,TRUE,,resolves 1:1,INCLUDE
+83,LHLFE27BM,Ceiling /Table Lamp,E27,TRUE,,resolves 1:1,INCLUDE
+84,LHLTE27BL,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+85,LHLTE27BM,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+86,LHLTE27GG,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+87,LHLTE27GR,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+88,LHLTE27WH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+89,LHLTE27YE,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+90,LHLWB22WH,Pendant,B22,TRUE,,resolves 1:1,INCLUDE
+91,LHMTE27FG,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+92,LHNHE27BY,Cable / Pendant Mount,E27,FALSE,,resolves 1:1,INCLUDE
+93,LHNHE27CH,,E27,FALSE,,resolves 1:1,INCLUDE
+94,LHNHE27CO,,E27,FALSE,,resolves 1:1,INCLUDE
+95,LHNHE27GB,,E27,FALSE,,resolves 1:1,INCLUDE
+96,LHNHE27YB,,E27,FALSE,,resolves 1:1,INCLUDE
+97,LHNSE27- Fully Earthed Pendant Holder,,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+98,LHNSE27BM,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+99,LHNSE27BY,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+100,LHNSE27BY-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+101,LHNSE27CH,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+102,LHNSE27CH-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+103,LHNSE27CO,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+104,LHNSE27CO-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+105,LHNSE27FG,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+106,LHNSE27GB,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+107,LHNSE27GB-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+108,LHNSE27RO,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+109,LHNSE27RO-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+110,LHNSE27SN,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+111,LHNSE27SN-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+112,LHNSE27WH,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+113,LHNSE27WH-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+114,LHNSE27YB,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+115,LHNSE27YB-IDE,Ceiling,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+116,LHPHE27GB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+117,LHPHE27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+118,LHPHE27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+119,LHPOE27BM,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+120,LHPOE27CH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+121,LHPOE27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+122,LHPOE27FG,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+123,LHPOE27SN,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+124,LHPOE27WH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+125,LHPOE27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+126,LHPVE27BM,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+127,LHPVE27WH,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+128,LHRBE27BM,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+129,LHRBE27WH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+130,LHRGE27BN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+131,LHRHE27BY,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+132,LHRHE27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+133,LHRHE27GB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+134,LHRHE27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+135,LHRIE14WH,Pendant,E14,TRUE,,resolves 1:1,INCLUDE
+136,LHRIE27BM,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+137,LHRIE27WH,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+138,LHRRE27WH,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+139,LHRTE27BM,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+140,LHRTE27WH,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+141,LHRUE27WH,Pendant /,E27,FALSE,,resolves 1:1,INCLUDE
+142,LHS3E27CH,Pendant /,E27,TRUE,,resolves 1:1,INCLUDE
+143,LHS3E27CO,Pendant /,E27,TRUE,,resolves 1:1,INCLUDE
+144,LHS3E27RO,Pendant /,E27,TRUE,,resolves 1:1,INCLUDE
+145,LHS3E27YB,Pendant /,E27,TRUE,,resolves 1:1,INCLUDE
+146,LHS5E27BY,Pendant /,E27,FALSE,,resolves 1:1,INCLUDE
+147,LHS5E27CH,Pendant /,E27,FALSE,,resolves 1:1,INCLUDE
+148,LHS5E27CO,Pendant /,E27,FALSE,,resolves 1:1,INCLUDE
+149,LHS5E27RO,Pendant /,E27,FALSE,,resolves 1:1,INCLUDE
+150,LHS5E27SN,Pendant /,E27,FALSE,,resolves 1:1,INCLUDE
+151,LHS5E27YB,Pendant /,E27,FALSE,,resolves 1:1,INCLUDE
+152,LHS6E27BY,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+153,LHS6E27CH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+154,LHS6E27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+155,LHS6E27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+156,LHS6E27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+157,LHS9E27BY,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+158,LHS9E27CH,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+159,LHS9E27CO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+160,LHS9E27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+161,LHS9E27SN,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+162,LHS9E27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+163,LHSBE27BM,Pendant / Table,E27,TRUE,,resolves 1:1,INCLUDE
+164,LHSHE27BA,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+165,LHSHE27BC,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+166,LHSHE27BN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+167,LHSHE27BS,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+168,LHSHE27BY,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+169,LHSHE27BY-IDE,Pendant,E27,TRUE,,unresolved in inventory.products,EXCLUDE — no such product; image points at an unrelated combo
+170,LHSHE27CH,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+171,LHSHE27CO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+172,LHSHE27FG,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+173,LHSHE27GB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+174,LHSHE27MB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+175,LHSHE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+176,LHSHE27RR,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+177,LHSHE27SN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+178,LHSHE27WH,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+179,LHSHE27YB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+180,LHSIE27CO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+181,LHSIE27FG,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+182,LHSIE27GB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+183,LHSIE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+184,LHSPE27BY,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+185,LHSPE27CH,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+186,LHSPE27CO,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+187,LHSPE27RO,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+188,LHSPE27SN,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+189,LHSPE27YB,Pendant / Shade Mount,E27,TRUE,,resolves 1:1,INCLUDE
+190,LHSQE27BY,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+191,LHSQE27CO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+192,LHSQE27GB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+193,LHSQE27YB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+194,LHSSE27BY,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+195,LHSSE27CH,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+196,LHSSE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+197,LHSUE27CH,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+198,LHSUE27CO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+199,LHSUE27GB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+200,LHSUE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+201,LHSUE27SN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+202,LHSUE27YB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+203,LHSWE27BA,Table Lamp / Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+204,LHSWE27CH,Table Lamp / Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+205,LHSWE27FG,Table Lamp / Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+206,LHSWE27GB,Table Lamp / Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+207,LHSWE27SN,Table Lamp / Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+208,LHSWE27YB,Table Lamp / Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+209,LHTBE27BN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+210,LHTBE27GB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+211,LHTBE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+212,LHTEE27RO,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+213,LHTEE27YB,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+214,LHTHE27BN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+215,LHTHE27CO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+216,LHTHE27GB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+217,LHTHE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+218,LHTHE27SN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+219,LHTHE27YB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+220,LHTKE27WH,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+221,LHTOE27CO,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+222,LHTOE27FG,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+223,LHTOE27RO,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+224,LHTOE27SN,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+225,LHTOE27WH,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+226,LHTOE27YB,Ceiling,E27,TRUE,,resolves 1:1,INCLUDE
+227,LHTRE27BN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+228,LHTRE27CO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+229,LHTRE27GB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+230,LHTRE27RO,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+231,LHTRE27SN,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+232,LHTRE27YB,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+233,LHTTE27BL,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+234,LHTTE27BM,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+235,LHTTE27GG,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+236,LHTTE27GR,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+237,LHTTE27GY,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+238,LHTTE27OR,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+239,LHTTE27WH,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+240,LHTTE27YE,Ceiling,E27,FALSE,,resolves 1:1,INCLUDE
+241,LHWME27BM,Pendant,E27,FALSE,,resolves 1:1,INCLUDE
+242,LHXCCE27BM,Ceiling / Wall,E27,FALSE,,resolves 1:1,INCLUDE
+243,LHXCCE27RR,Ceiling / Wall,E27,FALSE,,resolves 1:1,INCLUDE
+244,LHXCCE27WH,Ceiling / Wall,E27,FALSE,,resolves 1:1,INCLUDE
+245,LHXDE27WH,,E27,FALSE,,resolves 1:1,INCLUDE
+246,LHXSHE27BM,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+247,LHXSHE27WH,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+248,LHXWPE27PPWH,Pendant,E27,TRUE,,resolves 1:1,INCLUDE
+249,PHXSH1PBRWH,Pendant,E27,TRUE,,resolves,EXCLUDE — already carried by the LOCKED Pendant Lamp Holder section

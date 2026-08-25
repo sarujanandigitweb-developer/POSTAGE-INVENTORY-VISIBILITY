@@ -1,0 +1,62 @@
+col_index,sheet_column,filled,fill_pct,distinct_values,top_value,top_value_count,category_verdict
+0,SKU_ID,247,100.0,247,LHAHE27AM,1,SKU key — not a category
+1,IMG_LINK,247,100.0,247,http://dashboard.digitweblk.com/Producti,1,"NO — 247 distinct values, uncontrolled"
+2,IMG,0,0.0,0,,0,NO — constant or empty
+3,Stock,246,99.6,154,10,20,"NO — 99.6% filled, cannot classify every SKU"
+4,Product Name,0,0.0,0,,0,NO — constant or empty
+5,Finish Name,246,99.6,29,Brass / Gold,49,"NO — 99.6% filled, cannot classify every SKU"
+6,Colour Family,240,97.2,24,White,36,"NO — 97.2% filled, cannot classify every SKU"
+7,Socket Type,247,100.0,3,E27,243,NO — 98.4% one value
+8,Switch Included,247,100.0,2,NO,231,NO — 93.5% one value
+9,Switch Type,247,100.0,4,NO,231,NO — 93.5% one value
+10,Mount Type,232,93.9,14,Pendant,130,"NO — 93.9% filled, cannot classify every SKU"
+11,Shade Support,247,100.0,2,TRUE,134,NOT DECLARED as the business category — owner must confirm
+12,Body Pattern,237,96.0,36,Smooth Cylinder,23,"NO — 96.0% filled, cannot classify every SKU"
+13,Ring Count,237,96.0,4,0,86,"NO — 96.0% filled, cannot classify every SKU"
+14,Shade Rings Qty,237,96.0,4,1,88,"NO — 96.0% filled, cannot classify every SKU"
+15,Lock Nut Qty,237,96.0,3,1,142,"NO — 96.0% filled, cannot classify every SKU"
+16,Cable Grip Included,237,96.0,4,Yes,153,"NO — 96.0% filled, cannot classify every SKU"
+17,Body Material (Primary),237,96.0,9,Metal,188,"NO — 96.0% filled, cannot classify every SKU"
+18,Ring Material,237,96.0,5,Metal,133,"NO — 96.0% filled, cannot classify every SKU"
+19,Insert Material (Secondary),237,96.0,9,Ceramic,187,"NO — 96.0% filled, cannot classify every SKU"
+20,Voltage Range,237,96.0,7,110-240V,115,"NO — 96.0% filled, cannot classify every SKU"
+21,Max Wattage,237,96.0,4,60W,189,"NO — 96.0% filled, cannot classify every SKU"
+22,Terminal Type,237,96.0,6,Screw terminal,131,"NO — 96.0% filled, cannot classify every SKU"
+23,Dimmable,237,96.0,1,Depends on bulb & Switch,237,NO — constant or empty
+24,IP Rating,237,96.0,2,IP20,233,"NO — 96.0% filled, cannot classify every SKU"
+25,Frequency,236,95.5,1,50Hz,236,NO — constant or empty
+26,Class,237,96.0,2,2,135,"NO — 96.0% filled, cannot classify every SKU"
+27,Earth Terminal,237,96.0,5,No,150,"NO — 96.0% filled, cannot classify every SKU"
+28,Parts List,236,95.5,45,Cord Grip / Cable Entry Threaded Nipple ,19,"NO — 95.5% filled, cannot classify every SKU"
+29,Wiring Type,237,96.0,1,Hardwired,237,NO — constant or empty
+30,Install Type,237,96.0,1,Fixture Wiring,237,NO — constant or empty
+31,Req Electrician,236,95.5,1,No,236,NO — constant or empty
+32,Tools Required,237,96.0,1,"Screwdriver, Wire Stripper",237,NO — constant or empty
+33,Assembly Req,237,96.0,1,Low,237,NO — constant or empty
+34,Cap Easy DIY,237,96.0,1,Yes,237,NO — constant or empty
+35,Assembly Complex,237,96.0,1,No,237,NO — constant or empty
+36,Shade Hole Size,236,95.5,3,40mm,180,"NO — 95.5% filled, cannot classify every SKU"
+37,Compatible Shade Type,236,95.5,6,Fabric / glass / metal shades/Hemp shade,108,"NO — 95.5% filled, cannot classify every SKU"
+38,Compatible Shade Size,235,95.1,3,Any lamp shade with 40mmm top opening ca,123,"NO — 95.1% filled, cannot classify every SKU"
+39,Indoor/ Outdoor,236,95.5,2,Indoor,232,"NO — 95.5% filled, cannot classify every SKU"
+40,Height mm,229,92.7,27,90,30,"NO — 92.7% filled, cannot classify every SKU"
+41,Width mm,229,92.7,21,40,72,"NO — 92.7% filled, cannot classify every SKU"
+42,Depth mm,229,92.7,22,40,72,"NO — 92.7% filled, cannot classify every SKU"
+43,Diameter mm,229,92.7,21,40,82,"NO — 92.7% filled, cannot classify every SKU"
+44,Shade Diameter mm,0,0.0,0,,0,NO — constant or empty
+45,Cable Length mm,0,0.0,0,,0,NO — constant or empty
+46,Adjust Arm,0,0.0,0,,0,NO — constant or empty
+47,Weight g,0,0.0,0,,0,NO — constant or empty
+48,CE Cert ID,0,0.0,0,,0,NO — constant or empty
+49,UKCA Cert ID,0,0.0,0,,0,NO — constant or empty
+50,RoHS Cert ID,0,0.0,0,,0,NO — constant or empty
+51,WEEE Reg,0,0.0,0,,0,NO — constant or empty
+52,Safety Warnings,0,0.0,0,,0,NO — constant or empty
+53,Postage Cost,247,100.0,1,2.7,247,NO — constant or empty
+54,Exact Match Keyword,247,100.0,57,E27 Brass / Copper Pendant Lamp Holder,36,"NO — 57 distinct values, uncontrolled"
+55,Phrase Match Keyword,247,100.0,7,E27 pendant lamp holder,160,NOT DECLARED as the business category — owner must confirm
+56,Broad Match Keyword,247,100.0,1,lamp holder,247,NO — constant or empty
+57,Negative Keywords,247,100.0,1,"ceiling rose, lampshade, light shade, bu",247,NO — constant or empty
+58,Max Bid,247,100.0,1,£0.21,247,NO — constant or empty
+59,Min Bid,247,100.0,2,£0.12,237,NO — 96.0% one value
+60,Suggested Search Terms,247,100.0,26,E27 lamp holder,90,"NO — 26 distinct values, uncontrolled"

@@ -1,0 +1,6 @@
+Ceiling Rose lock reference — taken before Lampshade discovery
+file: dashboard/inventory-dashboard.html
+const DATA block chars: 130874
+rows: 332
+sha256: d24b8f0329b1623edc74e3fcca158c70f4637927004ff625f1712981b2596223
+md5: 4f74474c212b4af9d7cd547f4a8bc5f4

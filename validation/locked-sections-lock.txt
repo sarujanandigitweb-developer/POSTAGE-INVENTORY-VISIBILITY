@@ -1,0 +1,15 @@
+Locked-section reference — all six categories live (2026-08-24)
+file: dashboard/inventory-dashboard.html
+
+CEILING ROSE          [LOCKED]  332  d24b8f0329b1623edc74e3fcca158c70f4637927004ff625f1712981b2596223  UNCHANGED
+LAMPSHADE             [LOCKED]  451  7b8aeae0e9deceda2044a86a3e34d6a71af1b43b055d2449f055bcddfbcc346a  UNCHANGED
+PENDANT LAMP HOLDER   [LOCKED]  398  7bbcec5811d5eb218d74a9916db2a90699e99388bdb060f85fbdb72ed0bc7022  UNCHANGED
+WALL ARM              [LOCKED]  180  d954388f9e83094f...
+LED BULBS             [LOCKED]  218  6b7ea54771df5506...
+LAMP HOLDER           [NEW]     226  see sql/lamp-holder_data.json
+
+GAP chips remaining: 0
+
+WHOLE FILE sha256: 9c90e9d24d30da5e541918921e7a7034efe46eda171bfdb8e8f14c1dcf40179e
+
+Verify: node validation/test_lampshade.js  -> expect 248 passed, 0 failed

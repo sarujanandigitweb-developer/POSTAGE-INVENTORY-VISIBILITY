@@ -1,0 +1,11 @@
+column,requirement,allowed_values,filled_by,why_it_is_needed
+SKU_ID,MANDATORY,"exact inventory.products.sku, uppercase, no suffixes, no name fragments",source owner,"the join key; 15 of the current 247 rows fail this today"
+Product_Type,MANDATORY,"one controlled value, e.g. Lighting Accessory",source owner,"Level-0. Present on Ceilingrose_SOT, lampshade_SOT and Pendant Lamp Holder_SOT; absent here"
+Product_Subtype,MANDATORY,"one controlled value, e.g. Lamp Holder",source owner,"Level-0. Present on the other three tabs; absent here"
+Lamp_Holder_Category,MANDATORY (NEW),"a closed list the owner defines; every SKU must carry exactly one",source owner,"the Level-1 business family that drives the dashboard category dropdown. No existing sheet column or database field can supply this"
+Status,MANDATORY (NEW),"Active | EOL | Discontinued",source owner,"lets the dashboard show or hide the 68 EOL rows deliberately instead of silently"
+Item_Kind,MANDATORY (NEW),"Single | Pack | Combo | Bundle",source owner,"separates the 5 pack rows from real single products; today they are indistinguishable except by SKU suffix"
+Mount_Type,OPTIONAL ATTRIBUTE,"a closed single-valued list; no compound values, no blanks",source owner,"usable as an attribute filter only after the 6 compound values and 15 blanks are resolved. NOT the business category unless the owner declares it so"
+Socket_Type,OPTIONAL ATTRIBUTE,E27 | E14 | B22 | GU10 | MR16,source owner,"already 100% filled and clean; useful as a filter once GU10/MR16 products are added"
+Product_Name,SHOULD FIX,free text,source owner,"the column exists but is 100% EMPTY on all 247 rows today"
+IMG_LINK,SHOULD FIX,"a URL for THIS SKU",source owner,"15 rows currently point at images belonging to unrelated combo products"

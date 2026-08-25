@@ -1,0 +1,199 @@
+
+== PHASE 1 — Ceiling Rose regression (must be untouched) ==
+  PASS  DATA has 332 Ceiling Rose SKUs
+  PASS  CRSF count is 219
+  PASS  CRFF count is 113
+  PASS  every CR row still has a type
+  PASS  CR badge markup unchanged (CRSF)
+  PASS  CR badge markup unchanged (CRFF)
+  PASS  default category is Ceiling Rose
+  PASS  initial total shows 332
+  PASS  initial breakdown is CRSF/CRFF
+  PASS  CR images are absolute URLs
+  PASS  CR declares no Level-2 dimension
+  PASS  CR hides the sub-category dropdown
+  PASS  CR hides the attribute dropdown
+  PASS  CR CSV keeps exactly 23 columns
+  PASS  CR CSV exports its type verbatim
+  PASS  CR search still works
+  PASS  CR family filter still works
+
+== PHASE 2 — Lampshade dataset (451, from the SOT population) ==
+  PASS  LS_DATA has 451 SKUs
+  PASS  451 distinct SKUs — no dashboard duplicate
+  PASS  0 bundle SKUs
+  PASS  0 unresolved — every SKU starts LS
+  PASS  LSGLWA140AR appears exactly once (sheet duplicate not carried in)
+  PASS  100% image mapping
+  PASS  image URLs absolute
+  PASS  100% description
+  PASS  100% Level-1 category
+  PASS  100% Level-2 shade_shape
+  PASS  100% fitting type
+
+== PHASE 3 — Level-1 category counts (exact) ==
+  PASS  Metal = 352
+  PASS  Metal display name exact
+  PASS  Glass = 72
+  PASS  Glass display name exact
+  PASS  Fabric = 13
+  PASS  Fabric display name exact
+  PASS  Crystal Glass = 9
+  PASS  Crystal Glass display name exact
+  PASS  Natural Rope = 5
+  PASS  Natural Rope display name exact
+  PASS  Level-1 total = 451
+  PASS  no Unclassified bucket exists
+  PASS  category labels are not renamed
+  PASS  Level-1 is material, NOT fitting_type
+
+== PHASE 4 — Level-2 shade_shape ==
+  PASS  46 distinct shade shapes preserved
+  PASS  source spelling kept — Bell and "Bell shape" both present
+  PASS  source spelling kept — Striped and Stripped both present
+  PASS  source spelling kept — Bowl and Bowel both present
+  PASS  source spelling kept — "Temple- Dome" not merged into "Temple Dome"
+
+== PHASE 5 — N/A recovery (31/31) ==
+  PASS  31 records carry the recovered N/A label
+  PASS  all 31 are Metal
+  PASS  none of the 31 is Unclassified
+  PASS  [VERIFY] kept separate from N/A
+  PASS  the 3 [VERIFY] SKUs are exactly the documented ones
+  PASS  fitting distribution 404/31/9/4/3
+
+== PHASE 6 — Category row & switching ==
+  PASS  six category dropdowns — one per _SOT tab
+  PASS  labels/order match the six sheet tabs
+  PASS  Lampshade lists All + its five materials
+  PASS  switched to Lampshade
+  PASS  total now 451
+  PASS  shown now 451
+  PASS  breakdown lists the five materials
+  PASS  table rendered 451 rows
+  PASS  no row renders the literal "undefined"
+
+== PHASE 7 — Level-2 / attribute dropdowns ==
+  PASS  shade-shape dropdown now visible
+  PASS  fitting dropdown now visible
+  PASS  shade-shape dropdown offers All + 46 shapes
+  PASS  fitting dropdown offers All + 5 classes
+  PASS  shape options carry counts
+  PASS  fitting dropdown includes the recovered N/A label
+
+== PHASE 8 — Lampshade filtering ==
+  PASS  Glass filter shows 72
+  PASS  Crystal Glass filter shows 9
+  PASS  shade-shape filter Cone matches dataset (55)
+  PASS  fitting filter isolates the 31 N/A rows
+  PASS  combined material + shape filter narrows correctly
+
+== PHASE 9 — Lampshade search (SKU, category, shape, description) ==
+  PASS  search by SKU
+  PASS  search by category (glass)
+  PASS  search by shade shape (barn slot)
+  PASS  search by description (hemp)
+  PASS  search by fitting (pendant light)
+
+== PHASE 10 — CSV export ==
+  PASS  Lampshade CSV has 25 columns (23 + shape + fitting)
+  PASS  CSV header ends with the two extra columns
+  PASS  Lampshade CSV has 451 data rows
+  PASS  Lampshade CSV Type column carries the material
+
+== PHASE 11 — switch back to Ceiling Rose ==
+  PASS  total restored to 332
+  PASS  breakdown restored
+  PASS  table back to 332 rows
+  PASS  sub-category dropdown hidden again
+  PASS  attribute dropdown hidden again
+  PASS  CR CSV back to 23 columns
+
+== PHASE 12 — single-file architecture & theme ==
+  PASS  no external scripts
+  PASS  no external stylesheets
+  PASS  no network calls
+  PASS  no separate data file referenced
+  PASS  single <table>
+  PASS  dark/light toggle present
+  PASS  theme button rendered
+  PASS  no WC/cage SKU data embedded
+
+== PHASE 13 — Pendant Lamp Holder (398, sheet population) ==
+  PASS  PH_DATA has 398 SKUs
+  PASS  398 distinct — no dashboard duplicate
+  PASS  PHCGF1BMRBM appears exactly once
+  PASS  duplicate PHBAF1BMRBM present once
+  PASS  duplicate PHCD1PBRBM present once
+  PASS  duplicate PHCD1PBRBW present once
+  PASS  duplicate PHFSH1PBRBM present once
+  PASS  duplicate PHSF1PBR20WH present once
+  PASS  duplicate PHTT1PBR5BM present once
+  PASS  duplicate PHTT1PWR5WH present once
+  PASS  0 bundle SKUs
+  PASS  0 pack SKUs
+  PASS  every SKU starts PH
+  PASS  100% image
+  PASS  images absolute
+  PASS  100% description
+  PASS  Type is the section name, constant
+  PASS  100% Mount Type
+
+-- Mount Type: distinct-SKU counts (NOT the 294/112 row counts) --
+  PASS  Pendant = 291 distinct SKUs
+  PASS  Ceiling Pendant = 107 distinct SKUs
+  PASS  Mount Type total = 398
+  PASS  only the two documented Mount Type values
+
+-- excluded populations must NOT appear --
+  PASS  DB-only single PHCT80BMCBM excluded
+  PASS  DB-only single PHLSDG220BG excluded
+  PASS  DB-only single PHWPPBRBL excluded
+  PASS  DB-only single PHWC1PBRWO excluded
+  PASS  DB-only single PHCD1120PBRBW excluded
+  PASS  DB-only EOL PHBB1BMRBM excluded
+  PASS  DB-only EOL PHMS1BMTBM excluded
+  PASS  DB-only EOL PHTD1BRTYB excluded
+  PASS  pack/combo PHSF1AGTGB2PK excluded
+  PASS  pack/combo PHUH1HETBM2PK excluded
+  PASS  pack/combo PHAH2RBMBMEPK excluded
+  PASS  sheet EOL SKUs ARE kept (not silently removed)
+
+-- PH category declares no Level-1 --
+  PASS  PH fams is empty (sheet declares no category)
+  PASS  PH exposes Mount Type as an attribute
+  PASS  PH declares no sub-category
+  PASS  Pendant Lamp Holder is no longer a GAP
+
+-- PH UI behaviour --
+  PASS  switched to PH
+  PASS  total 398
+  PASS  shown 398
+  PASS  breakdown falls back to Mount Type
+  PASS  table rendered 398 rows
+  PASS  no "undefined" rendered
+  PASS  category dropdown offers only All (no invented families)
+  PASS  Mount Type dropdown visible
+  PASS  sub-category dropdown hidden (PH has none)
+  PASS  Mount Type dropdown offers All + 2
+  PASS  Mount Type filter -> 107
+  PASS  Mount Type filter -> 291
+  PASS  PH search by SKU
+  PASS  PH search by description
+  PASS  PH search by Mount Type
+  PASS  PH search by product type
+  PASS  PH warehouse+stock filter matches dataset
+  PASS  PH CSV has 24 columns (23 + Mount Type)
+  PASS  PH CSV header ends with Mount Type
+  PASS  PH CSV has 398 data rows
+
+== PHASE 14 — locked sections after PH added ==
+  PASS  CR total restored 332
+  PASS  CR breakdown restored
+  PASS  CR CSV still 23 columns
+  PASS  LS total restored 451
+  PASS  LS breakdown restored
+  PASS  LS CSV still 25 columns
+
+ALL PASS — 160 passed, 0 failed
+
