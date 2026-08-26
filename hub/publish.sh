@@ -22,7 +22,10 @@ PAGE_TITLE="Postage Inventory Visibility"
 HTML="$PROJECT/dashboard/inventory-dashboard.html"
 MIN_BYTES=100000          # a healthy dashboard is ~150KB; never publish a stub
 
-redact() { sed -E 's#(postgres(ql)?://[^:/@]+:)[^@]*@#\1***REDACTED***@#g'; }
+# -u keeps this line-buffered. Without it sed holds the output until the pipe closes,
+# so a successful publish shows nothing while the client is still connected — the run on
+# 2026-08-26 looked hung for 15 minutes when the row had committed after about one.
+redact() { sed -u -E 's#(postgres(ql)?://[^:/@]+:)[^@]*@#\1***REDACTED***@#g'; }
 
 # --- pre-publish sanity: never ship a truncated or structurally broken page ---
 if [ ! -r "$HTML" ]; then
@@ -65,7 +68,9 @@ export HUB_DB_URL
 export NODE_PATH="$PG_MODULES"
 
 # --- publish (upsert; re-running the same slug updates it in place) ----------
-if /usr/bin/node "$PROJECT/hub/push_to_hub.js" \
+# The upsert commits well before the client finishes closing; cap the wait so a stuck
+# connection cannot hold the shared credential open indefinitely.
+if timeout --foreground 300 /usr/bin/node "$PROJECT/hub/push_to_hub.js" \
      "$MEMBER_NAME" "$PAGE_SLUG" "$PAGE_TITLE" "$HTML" 2>&1 | redact; then
   STATUS=0
 else

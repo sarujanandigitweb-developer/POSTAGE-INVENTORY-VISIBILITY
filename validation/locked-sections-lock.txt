@@ -1,15 +1,54 @@
-Locked-section reference — all six categories live (2026-08-24)
+Locked-section reference — 2026-08-25
 file: dashboard/inventory-dashboard.html
 
-CEILING ROSE          [LOCKED]  332  d24b8f0329b1623edc74e3fcca158c70f4637927004ff625f1712981b2596223  UNCHANGED
-LAMPSHADE             [LOCKED]  451  7b8aeae0e9deceda2044a86a3e34d6a71af1b43b055d2449f055bcddfbcc346a  UNCHANGED
-PENDANT LAMP HOLDER   [LOCKED]  398  7bbcec5811d5eb218d74a9916db2a90699e99388bdb060f85fbdb72ed0bc7022  UNCHANGED
-WALL ARM              [LOCKED]  180  d954388f9e83094f...
-LED BULBS             [LOCKED]  218  6b7ea54771df5506...
-LAMP HOLDER           [NEW]     226  see sql/lamp-holder_data.json
+CEILING ROSE          [LOCKED]   332  d24b8f0329b1623edc74e3fcca158c70f4637927004ff625f1712981b2596223
+LAMPSHADE (SOT tab)   [LOCKED]   451  7b8aeae0e9deceda2044a86a3e34d6a71af1b43b055d2449f055bcddfbcc346a
+PENDANT LAMP HOLDER   [LOCKED]   398  7bbcec5811d5eb218d74a9916db2a90699e99388bdb060f85fbdb72ed0bc7022
+WALL ARM              [LOCKED]   180  d954388f9e83094f2086aa79ed74c613519574056e75efa4c29e3187bc7f0c55
+BULBS (SOT tab)       [LOCKED]   218  6b7ea54771df5506017201a65d560dede4ebf448d336a10217652ee1190c82ad
+LAMP HOLDER           [LOCKED]   226  71a85c6f84b27666deaf9717cfed783c0246809672749f638f5836c5ef659ac5
+LAMPSHADE EXTRA       [LOCKED]   400  b67337f32bd0891002818667a12ea14059caac25ad0c3d547e2c2791c0490f0b
+LIGHTING              [LOCKED]   562  3c6d946153b7af2eb7bcc18d3374c22fcf226655a3869480b5e2f617374bb7fe
+LAMP SPARES           [LOCKED]  1420  dc7251dbb740cdef3dc712770f7f6c22fcdbf4ad1c45aed749afdc079392bda4
+BULBS EXTRA           [LOCKED]   116  bff11dafa4c90f129691185ab9c1e0e28827f23676a95b90b7167ef63c07a419
+COSMETICS             [LOCKED]   124  edfe597a0b210d7f939a26a71a2f000f1ed966317f8b5a7c903e74f681d8f36e
+CLOTHES               [LOCKED]   177  1b1d4d3c0a52ebcb1884dbb7539a44c938f7235c22eccf3c5ac810a076ff0ab6
+HOME APPLIANCES       [LOCKED]   705  9109f149ebaecb8039011d67115a07c821a79a704a8f4d2bc69b89e4292a936e
+REFURBISHED           [LOCKED]   352  871e7ccd8814d535837532a54821834b40ad56efba38b7396919be959d1c4d09
+STOCK HISTORY         [LOCKED]  5480  a853df2c4291ec8e98a2ebd4990dc613f87d2c70055cf82197fb7e2dca7148e1
+                                      inventory.product_history, free text parsed to
+                                      44,330 movements; 12 most recent per SKU.
+LAST CONTAINER        [LOCKED]  1038  7d8e4b741d55f3d244211659cf6f66d2c77fa99f98e8d37a0c6f109764f335d6
+                                      suppliers.order_items -> orders -> containers,
+                                      status_arrived, latest by o.order_date DESC.
+UK UNIT 5 lookup      [LOCKED]   265  69c6fde521764404f55e0b62c86afb61173defb4631a17407e3ad8b16374579a
+                                      inventory.physical_product_stock warehouse 33.
+                                      Stock only - that warehouse has zero locations.
+                                      NON-ZERO quantities only: the warehouse is ~2 weeks
+                                      old, so a SKU with no row has never been placed
+                                      there and resolves to 0, not Unavailable.
+SHOPIFY PRICE lookup  [LOCKED]  3320  8219ec4fce64bbb3b0d42ce0cbbfc662312428015e824e0852876799830e78e4
+                                      public.listing_data, which_channel=3, wrong_sku=0,
+                                      UK, price>0, ledsone-first. Merged at load, so the
+                                      fourteen datasets above stay byte-identical.
 
-GAP chips remaining: 0
+Lampshade section on screen = 451 + 400 = 851
+Bulbs section on screen     = 218 + 116 = 334
+TOTAL: 5,661 SKUs across 12 sections
 
-WHOLE FILE sha256: 9c90e9d24d30da5e541918921e7a7034efe46eda171bfdb8e8f14c1dcf40179e
+The page now has two top-level views. INVENTORY is everything above and stays fully
+offline - no network call of any kind. POSTAGE INFORMATION is LIVE: it embeds no data
+at all and reads the Google Sheet on view. The only constants for it are the workbook
+id and the tab gid; there is nothing to lock because there is nothing stored.
 
-Verify: node validation/test_lampshade.js  -> expect 248 passed, 0 failed
+The category row keeps its original design — one labelled dropdown per category,
+product types inside it. Only the SIZES changed so twelve fit where eight used to:
+columns are now equal and flexible (flex:1 1 112px, min-width:0) instead of sized
+to their widest option, gap 14px -> 10px/8px, label 12px -> 11px, select padding
+7px -> 5px and 13px -> 12px. All twelve sit on one line at >=1454px and wrap
+below it. Each label also carries its section's population.
+No dataset was touched — all ten pre-existing hashes above are unchanged.
+
+WHOLE FILE sha256: bd7bfa7ad456a0735e8d9875cd570fb36a12afe30d87ba2c5c248c2551e4eb3b
+
+Verify: node validation/test_lampshade.js  -> expect 1109 passed, 0 failed
