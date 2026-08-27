@@ -9,8 +9,8 @@
   --bg:#f4f6f9; --panel:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e2e6ec;
   --head:#eef2f7; --head2:#f7f9fc; --accent:#1f4fd8; --accent-soft:#e8eeff;
   /* postage table header: one hue at two depths, not the sheet's per-carrier rainbow */
-  --thead-bg:#1f4fd8;  --thead-ink:#ffffff;
-  --thead2-bg:#dfe8ff; --thead2-ink:#1a3ea8;
+  --thead-bg:#18386e;  --thead-ink:#ffffff;
+  --thead2-bg:#dce6f5; --thead2-ink:#18386e;
   --grp-in-bg:#eafaf1; --grp-in-ink:#166534;
   --pos:#0f7b3e; --neg:#c02626; --zero:#9aa2ae; --warn:#8a5a00; --warn-bg:#fff4d6;
   --na-bg:#f0f1f4; --na-ink:#8b919b; --sticky:#ffffff;
@@ -24,8 +24,8 @@
 :root[data-theme="dark"]{
   --bg:#0e1116; --panel:#151a21; --ink:#e6e9ee; --muted:#9aa3af; --line:#262d37;
   --head:#1b222c; --head2:#161c24; --accent:#7aa2ff; --accent-soft:#1d2740;
-  --thead-bg:#28406e;  --thead-ink:#eaf1ff;
-  --thead2-bg:#1c2a45; --thead2-ink:#a8c4ff;
+  --thead-bg:#18386e;  --thead-ink:#eaf1ff;
+  --thead2-bg:#1b2b47; --thead2-ink:#a8c4ff;
   --grp-in-bg:#122a1e; --grp-in-ink:#86efac;
   --pos:#4ade80; --neg:#f87171; --zero:#6b7280; --warn:#f3c969; --warn-bg:#3a2f12;
   --na-bg:#20262f; --na-ink:#79818d; --sticky:#151a21;
@@ -215,9 +215,11 @@ input[type=search]:focus,select:focus{outline:2px solid var(--accent);outline-of
    International Prices table gave every column ~30px, and `overflow-wrap:anywhere` then
    broke the headings one character per line. The table now sizes to its content, fills the
    panel when it is narrower, and scrolls horizontally when it is wider. */
-.pgtab{border-collapse:separate;border-spacing:0;font-size:12.5px;width:auto;min-width:100%}
+/* width:auto with NO min-width:100% — the table hugs its content instead of stretching a
+   two-column table across the whole panel. A wide one still scrolls inside .pgscroll. */
+.pgtab{border-collapse:separate;border-spacing:0;font-size:12.5px;width:auto}
 .pgtab th,.pgtab td{padding:8px 12px;vertical-align:top;white-space:normal;
-  min-width:118px;max-width:300px;overflow-wrap:break-word;word-break:normal;
+  min-width:92px;max-width:320px;overflow-wrap:break-word;word-break:normal;
   border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:left}
 .pgtab th:last-child,.pgtab td:last-child{border-right:0}
 .pgtab tbody tr:last-child td{border-bottom:0}
@@ -231,14 +233,21 @@ input[type=search]:focus,select:focus{outline:2px solid var(--accent);outline-of
 .pgtab thead tr.hsub th{background:var(--panel);color:var(--muted);font-weight:600;
   font-size:11.5px;position:static;border-bottom:0}
 .pgtab thead tr.hsub th.gl{background:var(--thead2-bg);color:var(--thead2-ink);
-  border-left:3px solid var(--thead-bg)}
+  text-align:center;border-left:2px solid var(--thead-bg);border-right:2px solid var(--thead-bg)}
+.pgtab thead tr.hsub th{border-bottom:1px solid var(--line)}
 .pgtab thead tr.hmain th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
-  border-right-color:rgba(255,255,255,.20)}
+  border-right-color:rgba(255,255,255,.20);border-bottom:2px solid var(--thead-bg)}
+/* the group block sits above the column row and needs its own closing edge */
+.pgtab thead tr.hsub:last-of-type th{border-bottom:1px solid var(--thead-bg)}
 .pgtab td.num,.pgtab th.num{text-align:right;font-variant-numeric:tabular-nums;
   white-space:nowrap;min-width:92px;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 .pgtab tbody tr:nth-child(even) td{background:var(--head2)}
 .pgtab tbody tr:hover td{background:var(--accent-soft)}
+/* a month's subtotal line, not a purchase */
+.pgtab tbody tr.sum td{background:var(--thead2-bg);color:var(--thead2-ink);font-weight:700;
+  border-top:1px solid var(--thead-bg);border-bottom:1px solid var(--thead-bg)}
+.pgtab tbody tr.sum:hover td{background:var(--thead2-bg)}
 /* On a 43-column table the row label has to stay put, or scrolling right loses which
    country a price belongs to. The backgrounds are repeated because a sticky cell sits
    above the rows it scrolls past and would otherwise be transparent. */
@@ -523,6 +532,24 @@ PH_DATA.forEach(r => { if (r.i) r.i = imgURL(r.i); });
 // (673 rows = 73.3% contamination). Family = the sheet's own Product_Subtype.
 const WA_DATA = [{"s":"WS2HTBMYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wallscones","i":"40795.jpg","a":108,"al":"2-D-05","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"Container 16 2025","un":1},{"s":"WS2LH90BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Two light industrial 90 degree wall scone E14 lamp holder","i":"33340.jpg","a":199,"al":"1-F-14","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LH90CH","f":"DS","t":"Double Wall/Ceiling Spotlight Arm","d":"Two light industrial 90 degree wall scone E14 lamp holder","i":"33345.jpg","a":124,"al":"1-F-14","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LH90RO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Two light industrial 90 degree wall scone E14 lamp holder","i":"33341.jpg","a":137,"al":"1-F-14","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LH90SN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Two light industrial 90 degree wall scone E14 lamp holder","i":"33342.jpg","a":98,"al":"1-F-14","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LH90WH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Two light industrial 90 degree wall scone E14 lamp holder","i":"33344.jpg","a":108,"al":"1-F-14","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LH90YB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Two light industrial 90 degree wall scone E14 lamp holder","i":"33343.jpg","a":132,"al":"1-F-14","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LHBG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"2 Light Wall Sconce Modern Minimalist Lighting","i":"40296.jpg","a":0,"b":115,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LHCH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"2 Light Wall Sconce Modern Minimalist Lighting","i":"33110.jpg","a":52,"al":"1-F-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LHCO","f":"DA","t":"Double Wall/Ceiling Arm / Multi-Lamp Holder","d":"2 Light Wall Sconce Modern Minimalist Lighting","i":"40298.jpg","a":0,"b":48,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LHRO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"2 Light Wall Sconce Modern Minimalist Lighting","i":"33109.jpg","a":39,"al":"1-F-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LHSN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"2 Light Wall Sconce Modern Minimalist Lighting","i":"33108.jpg","a":49,"al":"1-F-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LHWH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"2 Light Wall Sconce Modern Minimalist Lighting","i":"40297.jpg","a":0,"b":53,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WS2LHYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"2 Light Wall Sconce Modern Minimalist Lighting","i":"33107.jpg","a":52,"al":"1-F-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSACY195BG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wallscones","i":"40794.jpg","a":100,"al":"2-D-05","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"un":2},{"s":"WSADFTBM","f":"GN","t":"Flexible Wall Arm / Gooseneck Arm","d":"Adjustable 30cm black  full thin high  light cup wall scone","i":"3824.jpg","a":18,"al":"2-E-12","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSADFTWH","f":"GN","t":"Flexible Wall Arm / Gooseneck Arm","d":"Adjustable 30cm white full thin high  light cup wall scone","i":"3823.jpg","a":83,"al":"2-E-12","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSADHTBM","f":"GN","t":"Flexible Wall Arm / Gooseneck Arm","d":"Adjustable 30cm black  square light cup wall scone","i":"3825.jpg","a":118,"al":"2-E-12","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"p":0.0,"pn":1,"p0":0.0,"p1":0.0},{"s":"WSADHTWH","f":"GN","t":"Flexible Wall Arm / Gooseneck Arm","d":"Adjustable 30cm white square light cup wall scone","i":"3822.jpg","a":98,"al":"2-E-12","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSAFT200BG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"200MM angled cone black gold inner shade","i":"40784.jpg","a":69,"al":"2-D-05","b":0,"c":0,"k":0,"m":-9,"ca":0,"us":0,"un":2},{"s":"WSAHQS150BG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"150MM angled mug black gold inner shade","i":"40785.jpg","a":100,"al":"2-D-05","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"Container 16 2025","un":1},{"s":"WSAT105BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Short Arm Full thin Holder Wall Light-Black","i":"2431.jpg","a":202,"al":"L-A-08-B","b":0,"bl":"1-E-07-B","c":75,"k":0,"m":0,"ca":0,"us":0,"pn":2,"p0":8.89,"p1":9.99},{"s":"WSAT105CH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Short Arm Full thin Holder Wall Light-Chrome","i":"2579.jpg","a":145,"al":"L-A-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":3,"p0":7.1,"p1":9.99},{"s":"WSAT105CO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Short Arm Full thin Holder Wall Light-Copper","i":"2432.jpg","a":128,"al":"L-A-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":3,"p0":7.1,"p1":9.99},{"s":"WSAT105RO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Short Arm Full thin Holder Wall Light-Rose Gold","i":"2434.jpg","a":262,"al":"L-A-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":3,"p0":7.1,"p1":9.99},{"s":"WSAT105SN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Short Arm Full thin Holder Wall Light-Satin Nickel","i":"2435.jpg","a":57,"al":"L-A-08-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":3,"p0":7.1,"p1":9.99},{"s":"WSBA145BM","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Black Adjustable Indoor Wall Sconce","i":"2993.jpg","a":41,"al":"L-B-07-C","b":0,"c":0,"k":0,"m":-2,"ca":0,"us":0},{"s":"WSBWBC","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Industrial Vintage Wall Light with Adjustable Joint, Retro Wall Lamp E27 Edison Rustic Sconces Wire Metal Cage Wall Sconce Fixture for Living Room Dining Room Kitchen","i":"2554.jpg","a":29,"al":"2-B-02","b":0,"c":0,"k":0,"m":-1,"ca":25,"us":13,"uc":"Container 7","un":1,"p":13.73,"pn":1,"p0":13.73,"p1":13.73},{"s":"WSBWBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Industrial Vintage Wall Light with Adjustable Joint, Retro Wall Lamp E27 Edison Rustic Sconces Wire Metal Cage Wall Sconce Fixture for Living Room Dining Room Kitchen","i":"2642.jpg","a":31,"al":"2-B-02","b":0,"c":0,"k":0,"m":1,"ca":17,"us":14,"p":13.49,"pn":1,"p0":13.49,"p1":13.49},{"s":"WSBWBS","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Industrial Vintage Wall Light with Adjustable Joint, Retro Wall Lamp E27 Edison Rustic Sconces Wire Metal Cage Wall Sconce Fixture for Living Room Dining Room Kitchen","i":"2850.jpg","a":73,"al":"2-B-02","b":0,"c":0,"k":0,"m":3,"ca":25,"us":20,"p":13.73,"pn":1,"p0":13.73,"p1":13.73},{"s":"WSBWRR","f":"AC","t":"Adjustable Wall Sconce / Cage Light","d":"Industrial Vintage Wall Light with Adjustable Joint, Retro Wall Lamp E27 Edison Rustic Sconces Wire Metal Cage Wall Sconce Fixture for Living Room Dining Room Kitchen","i":"2555.jpg","a":102,"al":"2-B-02","b":0,"c":0,"k":0,"m":0,"ca":24,"us":20,"p":13.74,"pn":1,"p0":13.74,"p1":13.74},{"s":"WSCH135BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"E27 Industrial Wall Light Sconce Black Swan Neck Mount","i":"837.jpg","a":195,"al":"L-A-08-A","b":0,"c":0,"k":0,"m":220,"ml":"R2-S08-I-J","ca":223,"us":0,"un":2,"gn":2},{"s":"WSCH135BT","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone Light blue","i":"3294.jpg","a":19,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCH135BU","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone Burgandy","i":"3255.jpg","a":44,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCH135GR","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone Green","i":"3257.jpg","a":3,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":10,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCH135GY","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone Grey","i":"3254.jpg","a":95,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":-1,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCH135NB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone Navy blue","i":"3295.jpg","a":123,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCH135OR","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone orange","i":"3253.jpg","a":68,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":-1,"ml":"R2-S08-I-J","ca":-1,"us":0,"uc":"Container 8","un":1},{"s":"WSCH135PI","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone Pink","i":"3260.jpg","a":39,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCH135RE","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone red","i":"3252.jpg","a":80,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0,"uc":"Container 16 2025","un":1},{"s":"WSCH135WH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone White","i":"3258.jpg","a":48,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":-2,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCH135YE","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Curvey wall scone Yellow","i":"3256.jpg","a":60,"al":"3-D-14-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0,"uc":"Container 16 2025","un":1},{"s":"WSCH155YB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"E27 Industrial Wall Light Sconce Blackand yellow Brass Swan Neck Mount","i":"2302.jpg","a":4,"al":"L-A-08-A","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSCN295BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Black color Gooseneck Wall Light ","i":"5079.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0},{"s":"WSCN295WH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"White Color Gooseneck Wall Light ","i":"5078.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0},{"s":"WSCYMUBG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wallscones","i":"40780.jpg","a":99,"al":"2-D-05","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"Container 16 2025","un":1},{"s":"WSCYMUBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wallscones","i":"40779.jpg","a":100,"al":"2-D-05","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"Container 16 2025","un":1},{"s":"WSDM240BC","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wall Sconce Light Fixture Brushed Copper Color Double Light Handle","i":"1864.jpg","a":41,"al":"2-C-07-B","b":0,"c":0,"k":0,"m":10,"ca":0,"us":0,"p":10.49,"pn":1,"p0":10.49,"p1":10.49},{"s":"WSDM240BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wall Light Double Head Handle Black Colour fitting Handle","i":"765.jpg","a":35,"al":"2-C-07-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":-1,"uc":"Container 7","un":1,"p":10.49,"pn":1,"p0":10.49,"p1":10.49},{"s":"WSDM240RR","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wall Light Double Head Handle Rustic Red Colour","i":"759.jpg","a":38,"al":"2-C-07-B","b":0,"c":0,"k":0,"m":-1,"ca":0,"us":0},{"s":"WSFH120BBM","f":"PL","t":"Plug-in Wall Sconce / Adjustable Wall Arm","d":"120mm 3 hole  Black ceiling rose with Black  long wall arm","i":"39542.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":198},{"s":"WSFH120BYB","f":"PL","t":"Plug-in Wall Sconce / Adjustable Wall Arm","d":"120mm 3 hole  Black ceiling rose with yellow brass  long wall arm","i":"39540.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":155},{"s":"WSFS120BBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"120mm Black ceiling rose with Black Long wall arm","i":"39536.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":275},{"s":"WSFS120BYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"120mm  Black ceiling rose with yellow brass  long wall arm","i":"39537.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":273},{"s":"WSFS1BMBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Full set wall scone with black short holder and black ceiling rose ","i":"4690.jpg","a":-17,"al":"1-F-08-D","b":44,"bl":"2-J-03-B","c":200,"k":0,"m":88,"ca":0,"us":-1,"uc":"UK Container 3rd  2026","un":1,"gc":"DE Container 01 2026","gn":1,"p":11.49,"pn":1,"p0":11.49,"p1":11.49},{"s":"WSFS1BMYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Full set wall scone with yellow brass short holder and black ceiling rose","i":"4688.jpg","a":379,"al":"1-F-08-B","b":0,"bl":"2-J-03-B","c":173,"k":0,"m":981,"ca":-18,"us":0,"un":4,"gn":2},{"s":"WSFS1YBYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Full set wall scone with yellow brass short holder and Yellow brass ceiling rose","i":"4686.jpg","a":69,"al":"1-F-08-D","b":75,"bl":"2-J-02-C","c":0,"k":0,"m":185,"ca":0,"us":0,"p":9.79,"pn":1,"p0":9.79,"p1":9.79},{"s":"WSFSBA","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Vintage Retro Indoor Porch Wall Sconce Wall Light Lamp Fixture","i":"3094.jpg","a":0,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":15,"ca":0,"us":0,"uc":"UK Container 5th 2026","un":1,"pn":2,"p0":7.89,"p1":8.39},{"s":"WSFSCH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Vintage Retro Indoor Porch Wall Sconce Wall Light Lamp Fixture","i":"3095.jpg","a":17,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":-2,"ca":0,"us":0,"uc":"UK Container 4th 2026","un":1,"pn":2,"p0":6.58,"p1":8.39},{"s":"WSFSCO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Full thin short Arm Wall Sconce copper","i":"3132.jpg","a":0,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"UK Container 4th 2026","un":1,"p":8.39,"pn":1,"p0":8.39,"p1":8.39},{"s":"WSFSFG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Vintage Retro Indoor Porch Wall Sconce Wall Light Lamp Fixture","i":"3098.jpg","a":63,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":2,"p0":6.59,"p1":8.39},{"s":"WSFSGB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Full thin short Arm Wall Sconce green brass","i":"3133.jpg","a":1,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"p":8.39,"pn":1,"p0":8.39,"p1":8.39},{"s":"WSFSRO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Full thin short Arm Wall Sconce Rose gold","i":"3134.jpg","a":11,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"p":8.39,"pn":1,"p0":8.39,"p1":8.39},{"s":"WSFSS120BBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"120mm Black ceiling rose with Black short wall arm","i":"39550.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":200},{"s":"WSFSS120BYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"120mm Black ceiling rose with yellow brass short wall arm","i":"39551.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":300},{"s":"WSFSS120YYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"120mm yellow brass ceiling rose with yellow brass short wall arm","i":"39552.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":98},{"s":"WSFSSN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Vintage Retro Indoor Porch Wall Sconce Wall Light Lamp Fixture","i":"3096.jpg","a":93,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":2,"p0":7.89,"p1":8.39},{"s":"WSFSWH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Vintage Retro Indoor Porch Wall Sconce Wall Light Lamp Fixture","i":"3097.jpg","a":3,"al":"L-B-16-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":2,"p0":6.59,"p1":8.39},{"s":"WSFTWH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"White Vintage Wall Lights Industrial Wooden and Metal Wall Lamp Wall-Mounted Spotlights Wall Sconce Uplighter Downlighter E27 60W Max Edison Lamp Holder for Bedroom, Living Room, Office, and Kitchen","i":"1454.jpg","a":134,"al":"L-B-03-A","b":130,"bl":"2-J-02-B","c":0,"k":0,"m":0,"ca":0,"us":0,"p":7.46,"pn":1,"p0":7.46,"p1":7.46},{"s":"WSHC100BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"100mm herder curvy swivel wall arm ","i":"36570.jpg","a":8,"al":"1-F-12-B","b":20,"bl":"1-E-02-B","c":0,"k":0,"m":0,"ca":0,"us":0,"p":12.71,"pn":1,"p0":12.71,"p1":12.71},{"s":"WSHC100TBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"100mm herder curvy swivel wall arm with 14mm thick cable","i":"36571.jpg","a":0,"al":"1-F-12-A","b":0,"bl":"1-E-02-B","c":0,"k":0,"m":0,"ca":0,"us":0,"p":12.71,"pn":1,"p0":12.71,"p1":12.71},{"s":"WSHC50BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"50mm herder curvy swivel wall arm ","i":"36572.jpg","a":-3,"b":88,"bl":"1-E-02-B","c":0,"k":0,"m":-1,"ca":0,"us":-1,"p":12.71,"pn":1,"p0":12.71,"p1":12.71},{"s":"WSHFBC","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wall scone Brushed Copper","i":"5065.jpg","a":-19,"b":38,"bl":"2-G-04-A","c":0,"k":0,"m":0,"ca":0,"us":0,"p":9.51,"pn":1,"p0":9.51,"p1":9.51},{"s":"WSHFBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wall scone Black","i":"33467.jpg","a":-8,"b":71,"bl":"1-E-02-B","c":0,"k":0,"m":0,"ca":0,"us":0,"p":9.51,"pn":1,"p0":9.51,"p1":9.51},{"s":"WSHFBS","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wall scone Brushed Silver","i":"33466.jpg","a":-1,"b":50,"bl":"2-G-04-A","c":0,"k":0,"m":0,"ca":0,"us":0,"p":9.51,"pn":1,"p0":9.51,"p1":9.51},{"s":"WSHLBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Vintage Modern Indoor Wall Sconce Wall Light Lamp Fitting Fixture For Bar, Bedroom, Dining Room, Guestroom","i":"1538.jpg","a":98,"al":"3-k-01-A","b":0,"c":0,"k":0,"m":15,"ca":0,"us":0,"pn":3,"p0":8.66,"p1":13.39},{"s":"WSHR135BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"E27 Industrial Wall Light Sconce Swan Neck Mount Black","i":"834.jpg","a":128,"al":"L-A-08-C","b":241,"bl":"1-E-07-B","c":160,"k":0,"m":-1,"ml":"R2-S08-I-J","ca":27,"us":-1,"gc":"DE Container 03","gn":1},{"s":"WSIW70CH","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Chrome white thread E27 Wall Sconce Light Fitting Lighting Bulb Holder","i":"2680.jpg","a":84,"al":"L-A-10-D","b":20,"bl":"1-E-07-B","c":0,"k":0,"m":4,"ml":"R2-S07","ca":0,"us":0},{"s":"WSIW70FG","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"French gold white thread E27 Wall Sconce Light Fitting Lighting Bulb Holder","i":"2682.jpg","a":80,"al":"L-A-10-D","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":13,"ml":"R2-S07","ca":0,"us":0},{"s":"WSIW70RO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Rose gold white thread E27 Wall Sconce Light Fitting Lighting Bulb Holder","i":"2681.jpg","a":127,"al":"L-A-10-D","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":0,"ml":"R2-S07","ca":0,"us":0},{"s":"WSIW70SN","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Satin nickel white thread E27 Wall Sconce Light Fitting Lighting Bulb Holder","i":"2679.jpg","a":400,"al":"3-M-08-C","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":0,"ml":"R2-S07","ca":0,"us":0},{"s":"WSIWCRBC","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Brushed copper wall light with ceilingrose","i":"33101.jpg","a":-9,"al":"2-G","b":57,"bl":"2-J-05-C","c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSIWCRBL","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Blue wall light with ceilingrose","i":"40292.jpg","a":23,"al":"2-G","b":0,"c":20,"k":0,"m":0,"ca":0,"us":0},{"s":"WSIWCRBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Black colour Wall light with ceilingrose ","i":"33099.jpg","a":-22,"al":"2-G","b":62,"bl":"2-J-05-C","c":100,"k":0,"m":0,"ca":0,"us":0,"uc":"Container 10","un":1},{"s":"WSIWCRBS","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Brushed silver wall light with ceilingrose","i":"33100.jpg","a":-4,"al":"2-G","b":28,"bl":"2-J-05-C","c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSIWCRGR","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Green wall light with ceilingrose","i":"40293.jpg","a":14,"al":"2-G","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSIWCRPI","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Pink wall light with ceilingrose","i":"40291.jpg","a":11,"al":"2-G","b":0,"c":15,"k":0,"m":0,"ca":0,"us":0},{"s":"WSIWCRRE","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Red wall light with ceilingrose","i":"40294.jpg","a":31,"al":"2-G","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSIWCRWH","f":"BN","t":"Bulkhead Light / Nautical Wall Sconce","d":"White wall light with ceilingrose","i":"40954.jpg","a":19,"al":"2-C-10","b":0,"c":20,"k":0,"m":0,"ca":0,"us":0},{"s":"WSIWH70BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"70mm x 70mm Black wall arm","i":"41190.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"UK Container 5th 2026","un":1},{"s":"WSIWH70YB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"70mm x 70mm Yellow brass  wall arm","i":"41191.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"UK Container 5th 2026","un":1},{"s":"WSLH200BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Hemp rope wall lamp  with black full teeth holder","i":"2973.jpg","a":73,"al":"3-F","b":0,"bl":"1-C-09","c":0,"k":0,"m":11,"ca":0,"us":0,"pn":2,"p0":14.99,"p1":15.09},{"s":"WSLH90BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Adjustable wall light over 90° E27 Lamp holder","i":"33472.jpg","a":280,"al":"L-B-09-D","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSLH90CO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Adjustable wall light over 90° E27 Lamp holder","i":"33468.jpg","a":99,"al":"L-B-09-D","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSLH90RO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Adjustable wall light over 90° E27 Lamp holder","i":"33469.jpg","a":107,"al":"L-B-09-D","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSLH90SN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Adjustable wall light over 90° E27 Lamp holder","i":"33470.jpg","a":67,"al":"L-B-09-D","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSLH90WH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Adjustable wall light over 90° E27 Lamp holder","i":"33471.jpg","a":207,"al":"L-B-09-D","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSLM150CO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Copper Long Arm Mountain Holder E27 Base","i":"1637.jpg","a":163,"al":"L-B-09-A","b":0,"c":0,"k":0,"m":1,"ca":0,"us":0},{"s":"WSLM150SN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Satin Nickel Long Arm Mountain Holder E27 Base","i":"1636.jpg","a":0,"al":"L-B-09-A","b":0,"c":0,"k":0,"m":3,"ca":0,"us":0},{"s":"WSLM150YB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Yellow Brass Long Arm Mountain Holder E27 Base","i":"1638.jpg","a":0,"al":"L-B-07-A","b":0,"c":0,"k":0,"m":0,"ca":-3,"us":0},{"s":"WSLR200BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Hemp rope wall lamp  with ring holder","i":"3960.jpg","a":-7,"al":"3-F","b":4,"bl":"1-D-0","c":0,"k":0,"m":5,"ca":0,"us":0,"p":15.29,"pn":1,"p0":15.29,"p1":15.29},{"s":"WSLS155BM","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Black Colour Adjustable Light Holder Mount\t","i":"947.jpg","a":298,"al":"1-F-05-D","b":0,"bl":"1-E-05-B","c":194,"k":0,"m":0,"ml":"R2-S08-B-H","ca":88,"us":1,"pn":2,"p0":5.85,"p1":5.86},{"s":"WSLS155CH","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Chrome Colour Adjustable Light Holder Mount\t","i":"948.jpg","a":20,"al":"L-B-07-C","b":0,"bl":"1-E-05-B","c":200,"k":0,"m":64,"ml":"R2-S08-B-H","ca":88,"us":0,"pn":2,"p0":5.85,"p1":7.33},{"s":"WSLS155CO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Long Copper color Short holde handle ","i":"1228.jpg","a":14,"al":"1-F-05-D","b":33,"bl":"1-E-05-B","c":0,"k":0,"m":196,"ml":"R2-S08-B-H","ca":63,"us":-3,"un":2,"gc":"DE Container 01 2026","gn":1,"pn":2,"p0":7.33,"p1":9.29},{"s":"WSLS155FG","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce French Gold Adjustable Light Holder Mount\t","i":"944.jpg","a":150,"al":"L-B-07-C","b":0,"bl":"1-E-05-B","c":0,"k":0,"m":-1,"ml":"R2-S08-B-H","ca":0,"us":0,"pn":2,"p0":5.85,"p1":7.33},{"s":"WSLS155GB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Green Brass Colour Adjustable Light Holder Mount\t","i":"950.jpg","a":141,"al":"L-B-07-B","b":129,"bl":"1-E-05-B","c":0,"k":0,"m":119,"ml":"R2-S08-B-H","ca":0,"us":0,"pn":2,"p0":7.33,"p1":9.29},{"s":"WSLS155RO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Rose Gold Adjustable Light Holder Mount","i":"941.jpg","a":485,"al":"L-B-07-B","b":0,"bl":"1-E-05-B","c":0,"k":0,"m":101,"ml":"R2-S08-B-H","ca":0,"us":0,"pn":2,"p0":7.33,"p1":9.29},{"s":"WSLS155SN","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Satin Nickel Adjustable Light Holder Mount\t","i":"945.jpg","a":182,"al":"L-B-07-C","b":0,"bl":"1-E-05-B","c":0,"k":0,"m":12,"ml":"R2-S08-B-H","ca":100,"us":0,"un":2,"pn":2,"p0":7.33,"p1":9.29},{"s":"WSLS155WH","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce White Colour Adjustable Light Holder Mount\t","i":"949.jpg","a":-20,"al":"L-B-07-B","b":88,"bl":"1-E-05-B","c":0,"k":0,"m":89,"ml":"R2-S08-B-H","ca":0,"us":0,"pn":2,"p0":7.33,"p1":9.29},{"s":"WSLS155YB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Yellow Brass Colour Adjustable Light Holder Mount","i":"1071.jpg","a":62,"al":"1-F-05-D","b":125,"bl":"1-E-05-B","c":400,"k":0,"m":225,"ml":"R2-S08-B-H","ca":21,"us":1,"pn":2,"p0":7.33,"p1":9.29},{"s":"WSLS170CO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Long Copper color Half Thin Holder Length handle","i":"2930.jpg","a":76,"al":"1-F-05-D","b":-3,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSLS170GB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Long Green Brass color Half Thin Holder Legnth handle","i":"2557.jpg","a":134,"al":"L-A-10-B","b":-5,"c":0,"k":0,"m":2,"ml":"R2-S08-B-H","ca":0,"us":0},{"s":"WSLS170RO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Rose Gold Color Adjustable Light Holder Mount","i":"1261.jpg","a":160,"al":"L-A-10-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-B-H","ca":0,"us":0},{"s":"WSLS170SN","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Satin Nickel Colour adjustable Light Holder Handle\t","i":"1061.jpg","a":64,"al":"L-A-10-B","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-B-H","ca":0,"us":0},{"s":"WSLU100BM","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Long arm MGU Wall Sconce","i":"1777.jpg","a":0,"al":"L-A-08-C","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSMLYB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Yellow Indoor Wall Sconce Wall Light Lamp Fitting Fixture For Bar, Bedroom, Dining Room, Guestroom","i":"1546.jpg","a":94,"al":"3-k-01-A","b":0,"c":40,"k":0,"m":0,"ca":0,"us":0,"pn":2,"p0":6.85,"p1":9.79},{"s":"WSNW170BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Swan Neck Wall Light Mount Black Colour","i":"2439.jpg","a":-35,"al":"L-A-08-A","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":76,"ml":"R2-S08-I-J","ca":0,"us":0,"uc":"UK Container 5th 2026","un":1,"pn":3,"p0":5.49,"p1":6.89},{"s":"WSNW170CH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Swan Neck Wall Light Mount Chrome Colour","i":"2430.jpg","a":89,"al":"L-A-08-A","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":99,"ml":"R2-S08-I-J","ca":0,"us":0,"pn":3,"p0":4.79,"p1":5.89},{"s":"WSNW170CO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Swan Neck Wall Light Mount Copper Colour","i":"2438.jpg","a":48,"al":"L-A-08-A","b":230,"bl":"1-E-07-B","c":0,"k":0,"m":98,"ml":"R2-S08-I-J","ca":0,"us":0,"uc":"Container 16 2025","un":1,"gc":"DE Container 01 2026","gn":1,"pn":3,"p0":5.49,"p1":6.89},{"s":"WSNW170FG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Swan Neck Wall Light Mount French Gold Colour","i":"2441.jpg","a":-2,"al":"L-A-08-A","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":1,"ml":"R2-S08-I-J","ca":0,"us":0,"pn":2,"p0":5.49,"p1":6.89},{"s":"WSNW170RO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Swan Neck Wall Light Mount Rose Gold Colour","i":"2440.jpg","a":64,"al":"L-A-08-A","b":78,"bl":"1-E-07-B","c":0,"k":0,"m":83,"ml":"R2-S08-I-J","ca":0,"us":0,"pn":3,"p0":5.49,"p1":6.89},{"s":"WSNW170SN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Swan Neck Wall Light Mount Satin Nickel Colour","i":"2442.jpg","a":53,"al":"L-A-08-A","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":306,"ml":"R2-S08-I-J","ca":0,"us":0,"un":2,"gn":2,"pn":3,"p0":5.49,"p1":6.89},{"s":"WSNW170YB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Swan Neck Wall Light Mount Yellow Brass Colour","i":"2437.jpg","a":403,"al":"L-A-08-A","b":1,"bl":"1-E-07-B","c":0,"k":0,"m":36,"ml":"R2-S08-I-J","ca":0,"us":0,"un":3,"pn":3,"p0":5.49,"p1":6.89},{"s":"WSNWBC","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Wall scone Brushed Copper","i":"5066.jpg","a":13,"al":"2-C-05-A","b":0,"bl":"2-C-06-C","c":0,"k":0,"m":-7,"ca":0,"us":0,"p":7.91,"pn":1,"p0":7.91,"p1":7.91},{"s":"WSNWBM","f":"CR","t":"Wall Sconce / Wall Arm with Ceilingrose","d":"Wall scone Black","i":"33401.jpg","a":0,"al":"2-C-05-A","b":0,"bl":"2-C-06-C","c":0,"k":0,"m":56,"ca":0,"us":0,"gc":"DE Container 01 2026","gn":1,"p":7.91,"pn":1,"p0":7.91,"p1":7.91},{"s":"WSNWBS","f":"CR","t":"Wall Sconce / Wall Arm with Ceilingrose","d":"Wall scone Brushed Silver","i":"33465.jpg","a":-3,"al":"2-C-05-A","b":190,"bl":"2-C-06-C","c":0,"k":0,"m":0,"ca":0,"us":0,"p":7.91,"pn":1,"p0":7.91,"p1":7.91},{"s":"WSOSBDBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Black bird with ON/Off switch pendant set wall  lamp","i":"2864.jpg","a":37,"al":"2-G","b":627,"bl":"2-G-02","c":200,"k":0,"m":0,"ca":0,"us":0,"un":2,"pn":4,"p0":15.39,"p1":17.51},{"s":"WSRH230CO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Copper and Black adjustable Light Holder","i":"938.jpg","a":58,"al":"L-A-04-C","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSRH230YB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Yellow Brass and Black adjustable Light Holder","i":"939.jpg","a":50,"al":"L-A-04-C","b":0,"bl":"1-E-08-B","c":0,"k":0,"m":179,"ca":0,"us":0,"un":2,"gc":"DE Container 01 2026","gn":1},{"s":"WSROBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Black color Swivel Wall Sconce and Light ","i":"5070.jpg","a":57,"b":456,"bl":"1-E-02-B","c":0,"k":0,"m":0,"ca":0},{"s":"WSSCGS","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Black wall scone with gold line","i":"3153.jpg","a":35,"al":"L-A-04-C","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSSFBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Vintage Modern Indoor Wall Sconce Wall Light Lamp Fitting Fixture For Bar, Bedroom, Dining Room, Guestroom","i":"1547.jpg","a":70,"al":"L-B-17","b":0,"c":0,"k":0,"m":-1,"ca":0,"us":0,"pn":2,"p0":13.39,"p1":14.49},{"s":"WSSM40BC","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Wall Sconce Light Fixture Yellow Brass Colour Holder Fitting","i":"1841.jpg","a":2,"al":"L-A-10-A","b":0,"c":0,"k":0,"m":0,"ml":"R2-S07","ca":0,"us":0,"p":5.95,"pn":1,"p0":5.95,"p1":5.95},{"s":"WSSM40BM","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Wall Sconce Light Fixture Black Colour Light Holder Fitting","i":"1366.jpg","a":314,"al":"L-A-10-D","b":0,"c":0,"k":0,"m":-1,"ml":"R2-S07","ca":0,"us":0,"p":5.95,"pn":1,"p0":5.95,"p1":5.95},{"s":"WSSM40BS","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Wall Sconce Light Fixture Brushed Silver Colour Holder Fitting","i":"766.jpg","a":23,"al":"L-A-10-A","b":0,"c":0,"k":0,"m":0,"ml":"R2-S07","ca":0,"us":0,"p":5.95,"pn":1,"p0":5.95,"p1":5.95},{"s":"WSSM40CO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Wall Sconce Light Fixture Copper Colour Light Holder Fitting","i":"1367.jpg","a":0,"al":"L-A-10-C","b":0,"c":0,"k":0,"m":0,"ml":"R2-S07","ca":0,"us":0,"p":5.95,"pn":1,"p0":5.95,"p1":5.95},{"s":"WSSM40RR","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Wall Sconce Light FixtureRustic Red Colour Light Holder Fitting","i":"767.jpg","a":11,"al":"L-A-10-A","b":0,"c":0,"k":0,"m":0,"ml":"R2-S07","ca":0,"us":0,"p":5.95,"pn":1,"p0":5.95,"p1":5.95},{"s":"WSSS70BM","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Black Bulb Holder with adjustable Switch","i":"2553.jpg","a":-43,"al":"L-B-07-D","b":0,"c":123,"k":0,"m":-7,"ml":"R2-S08-B-H","ca":50,"us":0,"gc":"DE Container 03","gn":1,"pn":2,"p0":5.59,"p1":6.29},{"s":"WSSS70BY","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Shiny Black Bulb Holder with adjustable Switch","i":"823.jpg","a":395,"al":"L-B-07-D","b":0,"c":0,"k":0,"m":2,"ml":"R2-S08-B-H","ca":0,"us":0,"pn":2,"p0":5.59,"p1":6.29},{"s":"WSSS70CH","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Adjustable Short Arm Chrome color wall Handle","i":"1401.jpg","a":1041,"al":"L-B-07-D","b":-2,"c":100,"k":0,"m":0,"ml":"R2-S08-B-H","ca":50,"us":0,"pn":2,"p0":4.19,"p1":5.24},{"s":"WSSS70CO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Cooper Bulb Holder with adjustable Switch","i":"819.jpg","a":87,"al":"L-B-07-D","b":0,"c":510,"k":0,"m":6,"ml":"R2-S08-B-H","ca":48,"us":0,"pn":2,"p0":4.95,"p1":6.29},{"s":"WSSS70GB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Green Brass Bulb Holder with adjustable Switch","i":"820.jpg","a":199,"al":"L-B-07-D","b":0,"c":240,"k":0,"m":-1,"ml":"R2-S08-B-H","ca":0,"us":0,"pn":2,"p0":4.95,"p1":6.29},{"s":"WSSS70RO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Adjustable Short Arm Rose gold color wall Handle","i":"1400.jpg","a":304,"al":"L-B-07-D","b":0,"c":140,"k":0,"m":81,"ml":"R2-S08-B-H","ca":50,"us":0,"pn":2,"p0":4.19,"p1":5.59},{"s":"WSSS70SN","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Adjustable Short Arm Satin Nickel color wall Handle","i":"1399.jpg","a":5,"al":"L-B-07-D","b":0,"c":0,"k":0,"m":-5,"ml":"R2-S08-B-H","ca":60,"us":0,"pn":2,"p0":5.59,"p1":6.29},{"s":"WSSS70YB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Yellow Brass Bulb Holder with adjustable Switch","i":"822.jpg","a":147,"al":"L-B-07-D","b":-1,"c":0,"k":0,"m":46,"ml":"R2-S08-B-H","ca":0,"us":-28,"gc":"DE Container 03","gn":1,"pn":2,"p0":4.95,"p1":6.29},{"s":"WSST70BM","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Black Lighting Bulb Holder","i":"775.jpg","a":291,"al":"L-A-08-C","b":0,"bl":"1-E-07-B","c":76,"k":0,"m":71,"ml":"R2-S07","ca":73,"us":0,"un":3,"pn":3,"p0":5.58,"p1":8.39},{"s":"WSST70CH","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Chrome Lighting Bulb Holder","i":"776.jpg","a":51,"al":"L-A-10-C","b":22,"bl":"1-E-07-B","c":0,"k":0,"m":3,"ml":"R2-S07","ca":0,"us":0,"pn":3,"p0":5.58,"p1":8.39},{"s":"WSST70CO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Copper Lighting Bulb Holder","i":"777.jpg","a":86,"al":"L-A-10-C","b":0,"bl":"1-E-07-B","c":0,"k":0,"m":26,"ml":"R2-S07","ca":0,"us":0,"uc":"Container 16 2025","un":1,"pn":3,"p0":5.58,"p1":8.39},{"s":"WSST70FG","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting French Gold Lighting Bulb Holder","i":"778.jpg","a":79,"al":"L-A-10-D","b":0,"c":0,"k":0,"m":27,"ml":"R2-S07","ca":0,"us":0,"uc":"Container 13","un":1,"pn":3,"p0":5.58,"p1":8.39},{"s":"WSST70GB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Green Brass Lighting Bulb Holder","i":"779.jpg","a":-57,"al":"L-A-10-C","b":0,"bl":"1-E-07-B","c":80,"k":0,"m":3,"ml":"R2-S07","ca":0,"us":0,"uc":"Container 13","un":1,"pn":3,"p0":5.58,"p1":8.39},{"s":"WSST70RO","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Rose Gold Lighting Bulb Holder","i":"780.jpg","a":70,"al":"L-A-10-A","b":0,"c":0,"k":0,"m":67,"ml":"R2-S07","ca":0,"us":0,"pn":3,"p0":5.58,"p1":8.39},{"s":"WSST70SN","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Satin Nickel Lighting Bulb Holder\t","i":"1084.jpg","a":423,"al":"L-A-10-D","b":0,"c":0,"k":0,"m":-4,"ml":"R2-S07","ca":0,"us":0,"pn":3,"p0":5.58,"p1":6.99},{"s":"WSST70WH","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting White Lighting Bulb Holder","i":"781.jpg","a":9,"al":"L-A-10-C","b":0,"c":0,"k":0,"m":0,"ml":"R2-S07","ca":0,"us":0,"pn":3,"p0":5.58,"p1":8.39},{"s":"WSST70YB","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"E27 Wall Sconce Light Fitting Yellow Brass Lighting Bulb Holder","i":"1083.jpg","a":644,"al":"L-A-10-A","b":0,"c":0,"k":0,"m":30,"ml":"R2-S07","ca":-4,"us":0,"pn":3,"p0":5.58,"p1":7.99},{"s":"WSTA150BM","f":"AW","t":"Adjustable Wall Arm / Lamp Holder Arm","d":"Black Adjustable Long arm full thin holder Fitting","i":"2992.jpg","a":264,"al":"L-B-07-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSTR135BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"E27 Wall Light Sconce Black Swan Neck Switch Holder Mount","i":"838.jpg","a":93,"al":"1-F-04-B","b":0,"c":0,"k":0,"m":0,"ca":61,"us":0},{"s":"WSUH135FG","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Metal Wall Light U bend E27 Bulb Holder French Gold Colour Arm","i":"1774.jpg","a":58,"al":"L-A-08-A","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSUH135OR","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Metal Wall Light U bend E27 Bulb Holder Arm","i":"1050.jpg","a":5,"al":"L-A-08-A","b":0,"c":0,"k":0,"m":2,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSUQ135CO","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Metal Wall Light U bend E27 Bulb Holder Orange Color Arm","i":"2694.jpg","a":25,"al":"L-A-08-A","b":0,"c":0,"k":0,"m":8,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSUQ135YB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Vintage Industrial Wall Mounted Lights Rustic Sconce","i":"2693.jpg","a":25,"al":"L-A-08-A","b":0,"c":0,"k":0,"m":0,"ml":"R2-S08-I-J","ca":0,"us":0},{"s":"WSUSHE27SN","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"U shape wallscone","i":"40957.jpg","a":0,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSUSHE27YB","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"U shape wallscone","i":"40956.jpg","a":152,"b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSUT135BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Black Metal Wall Light U bend E27 Bulb Thin Holder Arm","i":"1465.jpg","a":122,"al":"L-B-07-B","b":0,"c":99,"k":0,"m":0,"ca":0,"us":0},{"s":"WSWH135BM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Metal Wall Light E27 Bulb Holder Black Colour Sconce Style Curve Arm\t","i":"1077.jpg","a":-19,"al":"L-A-04-B","b":0,"bl":"1-E-07-B","c":104,"k":0,"m":1021,"ca":0,"us":0,"un":5,"gn":2},{"s":"WSWMBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Model Black LED Wall Light Sconce with Wood Arm, Interior Downlight Wall Mounting Fixture Small Metal 15cm Lamp Shade with E27 Lamp Holder, Indoor Decorative Bedroom, Bedside","i":"1535.jpg","a":0,"al":"L-B-17","b":0,"c":0,"k":0,"m":3,"ca":0,"us":0,"pn":5,"p0":6.39,"p1":14.49},{"s":"WSWMWH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Model White LED Wall Light Sconce with Wood Arm, Interior Downlight Wall Mounting Fixture Small Metal 15cm Lamp Shade with E27 Lamp Holder, Indoor Decorative Bedroom, Bedside","i":"1536.jpg","a":83,"al":"L-B-17","b":0,"c":0,"k":0,"m":3,"ca":0,"us":0,"pn":3,"p0":5.43,"p1":8.45},{"s":"WSWMYE","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Model Yellow LED Wall Light Sconce with Wood Arm, Interior Downlight Wall Mounting Fixture Small Metal 15cm Lamp Shade with E27 Lamp Holder, Indoor Decorative Bedroom, Bedside","i":"1537.jpg","a":59,"al":"L-B-17","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"pn":5,"p0":5.85,"p1":14.49},{"s":"WSWR1PFTBM","f":"WB","t":"Wooden Wall Bracket with Pendant Drop","d":"1m PVC round black full thin holder pendant set with round wood","i":"3486.jpg","a":21,"al":"2-C-05-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"un":2},{"s":"WSWR2HTBLBM","f":"WB","t":"Wooden Wall Bracket with Pendant Drop","d":"2m twisted hemp  black bakelite  holder with rotary switch  pendant set with round wood","i":"3487.jpg","a":118,"al":"2-C-05-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSWS1PBLBM","f":"WB","t":"Wooden Wall Bracket with Pendant Drop","d":"1m PVC round black bakelite holder pendant set with square wood","i":"3488.jpg","a":48,"al":"2-C-05-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSWS1PFTBM","f":"WB","t":"Wooden Wall Bracket with Pendant Drop","d":"1m PVC round black full thin holder pendant set with square wood","i":"3485.jpg","a":31,"al":"2-C-05-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0},{"s":"WSWS1PHTBM","f":"WB","t":"Wooden Wall Bracket with Pendant Drop","d":"1m PVC round black half thin holder pendant set with square wood ","i":"3484.jpg","a":0,"al":"2-C-05-B","b":0,"c":0,"k":0,"m":0,"ca":0,"us":0,"uc":"UK Container 5th 2026","un":1},{"s":"WSWTBC","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Bulk Head Cage Wall Ceiling Fitting Mount Light Brushed Copper","i":"5067.jpg","a":-1,"al":"2-C-10","b":36,"bl":"2-J-05-B","c":0,"k":0,"m":-2,"ca":0,"us":0,"p":25.49,"pn":1,"p0":25.49,"p1":25.49},{"s":"WSWTBL","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Metal Bulkhead Security Wall Mount Wall Light Fitting For Bed room, Kitchen ,Living room, Study room","i":"40302.jpg","a":20,"al":"2-C-10","b":0,"c":25,"k":0,"m":0,"ca":0,"us":0,"p":25.49,"pn":1,"p0":25.49,"p1":25.49},{"s":"WSWTBM","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Metal Bulkhead Security Wall Mount Wall Light Fitting For Bed room, Kitchen ,Living room, Study room","i":"1625.jpg","a":90,"al":"2-G","b":0,"bl":"2-J-05-B","c":0,"k":0,"m":0,"ml":"K1-S01-D","ca":0,"us":0,"uc":"Container 10","un":1,"p":25.49,"pn":1,"p0":25.49,"p1":25.49},{"s":"WSWTBS","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Bulk Head Cage Wall Ceiling Fitting Mount Light Brushed Silver","i":"36449.jpg","a":-1,"al":"2-C-10","b":5,"bl":"2-J-05-B","c":0,"k":0,"m":0,"ca":0,"us":0,"p":25.49,"pn":1,"p0":25.49,"p1":25.49},{"s":"WSWTGR","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Metal Bulkhead Security Wall Mount Wall Light Fitting For Bed room, Kitchen ,Living room, Study room","i":"40303.jpg","a":14,"al":"2-C-10","b":0,"c":25,"k":0,"m":0,"ca":0,"us":0,"p":25.49,"pn":1,"p0":25.49,"p1":25.49},{"s":"WSWTPI","f":"BI","t":"Bulkhead Light / Industrial Cage Light","d":"Modern Industrial Metal Bulkhead Security Wall Mount Wall Light Fitting For Bed room, Kitchen ,Living room, Study room","i":"2867.jpg","a":24,"al":"2-C-10","b":0,"bl":"2-J-05-B","c":25,"k":0,"m":0,"ml":"K1-S01-D","ca":0,"us":0,"p":25.49,"pn":1,"p0":25.49,"p1":25.49},{"s":"WSWTRE","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Metal Bulkhead Security Wall Mount Wall Light Fitting For Bed room, Kitchen ,Living room, Study room","i":"40304.jpg","a":17,"al":"2-C-10","b":0,"c":25,"k":0,"m":0,"ca":0,"us":0,"p":25.49,"pn":1,"p0":25.49,"p1":25.49},{"s":"WSWTWH","f":"WA","t":"Wall Arm / Lamp Holder Arm","d":"Modern Industrial Metal Bulkhead Security Wall Mount Wall Light Fitting For Bed room, Kitchen ,Living room, Study room","i":"40955.jpg","a":20,"al":"2-C-10","b":0,"c":25,"k":0,"m":0,"ca":0,"us":0}];
 WA_DATA.forEach(r => { if (r.i) r.i = imgURL(r.i); });
+// The Wall_Arm_SOT tab declares ELEVEN Product_Subtypes, seven of which hold one or two
+// SKUs. Collapsed to four families the team can actually pick from, plus Others for the
+// products that are not arms at all. Nothing is lost: the sheet's own subtype is kept on
+// every row as a `Subtype` attribute, and the collapse happens in memory so the embedded
+// array — and its lock — stay byte-identical.
+//   Wall Arm            <- WA fixed arm, GN gooseneck                       122
+//   Adjustable Wall Arm <- AW adjustable, PL plug-in, AC adjustable sconge   47
+//   Double Arm          <- DA double arm, DS double spotlight arm             2
+//   Wooden Bracket      <- WB wooden wall bracket                             5
+//   Others              <- CR sconce w/ ceilingrose, BN + BI bulkheads        4
+const WA_MERGE = { WA:'WAAR', GN:'WAAR', AW:'WAAD', PL:'WAAD', AC:'WAAD',
+                   DA:'WADB', DS:'WADB', WB:'WAWB',
+                   CR:'WAOT', BN:'WAOT', BI:'WAOT' };
+WA_DATA.forEach(r => {
+  r.ws = r.t;                                  // the sheet's own subtype, kept verbatim
+  const m = WA_MERGE[r.f];
+  if (m) r.f = m;
+});
 
 // ---- Bulbs (LB) SOT dataset -------------------------------------------------
 // Population: the 218 distinct SKUs on the `LED BULBS_SOT` tab (gid 297008248),
@@ -752,6 +779,7 @@ function pgAnalyse(sec){
     // Box Purchase History opens with one. It belongs above the table, not inside it.
     if (u && pgCells(r).length === 1) links.push(u); else body.push(r);
   });
+  let width = body.reduce((w, r) => Math.max(w, r.length), 0);
   // The commonest filled-cell count is what a DATA row looks like in this table.
   const counts = {};
   body.forEach(r => { const n = pgCells(r).length; counts[n] = (counts[n] || 0) + 1; });
@@ -767,6 +795,20 @@ function pgAnalyse(sec){
     head.push(body[i]);
     if (f.length >= modal) break;
   }
+  // A column empty in EVERY row — header and body — is a gap the sheet left behind, not a
+  // field. postage Dimensions carries one between Courrier and Dimension, and rendering it
+  // gave the table a wide blank middle column. Dropping it here keeps the header spans,
+  // the column list and the search indices all consistent downstream.
+  const keep = [];
+  for (let j = 0; j < width; j++){
+    if (body.some(r => String(r[j] === undefined ? '' : r[j]).trim() !== '')) keep.push(j);
+  }
+  if (keep.length && keep.length < width){
+    const squeeze = r => keep.map(j => (r[j] === undefined ? '' : r[j]));
+    for (let i = 0; i < body.length; i++) body[i] = squeeze(body[i]);
+    for (let i = 0; i < head.length; i++) head[i] = squeeze(head[i]);
+    width = keep.length;
+  }
   const rest = body.slice(head.length);
   // Group the remainder under its sub-headings. Each heading opens its own group and
   // NOTHING is nested: in this sheet a heading and a priced-service-with-no-price look
@@ -781,7 +823,7 @@ function pgAnalyse(sec){
     cur.rows.push(r);
   });
   if (!groups.length) groups.push({ title: '', rows: [] });
-  return { links: links, head: head, groups: groups, modal: modal };
+  return { links: links, head: head, groups: groups, modal: modal, width: width };
 }
 
 function pgIsHeader(rows){
@@ -820,20 +862,36 @@ function pgCellHTML(v, tag){
 }
 // Every header level the sheet declares, deepest last, so a multi-level header such as
 // International Prices keeps all five of its rows instead of showing only the first.
+// The sheet MERGES its group headers: "ROYAL Mail (Book From UK) GBP" is one cell spanning
+// four columns. A CSV export cannot carry a merge, so the label lands in the first column
+// of its span and the rest come back empty. Rendering that literally put a four-column
+// heading into one narrow column with blanks beside it.
+//
+// The spans are reconstructed here: a label runs until the next labelled cell on its own
+// row, or to the end. Nothing is hard-coded — the spans are recomputed from whatever the
+// sheet returns, so a column added or moved tomorrow still lines up.
+function pgSpanCells(r, width){
+  const at = [];
+  for (let j = 0; j < width; j++) if (String(r[j] === undefined ? '' : r[j]).trim()) at.push(j);
+  let out = '', pos = 0;
+  at.forEach((j, k) => {
+    if (j > pos) out += '<th colspan="' + (j - pos) + '"></th>';   // gap before this label
+    const end = k + 1 < at.length ? at[k + 1] : width;
+    out += '<th class="gl" colspan="' + (end - j) + '">' +
+           esc(String(r[j]).trim()) + '</th>';
+    pos = end;
+  });
+  if (pos < width) out += '<th colspan="' + (width - pos) + '"></th>';
+  return out;
+}
 function pgHeadHTML(head, width){
   if (!head.length) return '';
   return '<thead>' + head.map((r, i) => {
-    const main = i === head.length - 1;
-    let cells = '';
-    for (let j = 0; j < width; j++){
-      const v = String(r[j] === undefined ? '' : r[j]).trim();
-      // Only a cell that CARRIES a label gets the tint and the left rule; the empty ones
-      // beside it are the rest of that group's span and stay plain.
-      cells += !main && v
-        ? '<th class="gl">' + esc(v) + '</th>'
-        : pgCellHTML(r[j], 'th');
-    }
-    return '<tr class="' + (main ? 'hmain' : 'hsub') + '">' + cells + '</tr>';
+    // The DEEPEST row names the columns one-for-one and must never span: its `Total` at
+    // column 4 is one column, not the four that follow it.
+    if (i === head.length - 1)
+      return '<tr class="hmain">' + pgRowCells(r, width, 'th') + '</tr>';
+    return '<tr class="hsub">' + pgSpanCells(r, width) + '</tr>';
   }).join('') + '</thead>';
 }
 function pgRowCells(r, width, tag){
@@ -846,13 +904,27 @@ function pgMatches(r, q, col){
   const cells = col === null ? r : [r[col]];
   return cells.some(c => String(c === undefined ? '' : c).toLowerCase().indexOf(q) !== -1);
 }
+// A row carrying a value in a "Monthly total" / "Subtotal" column is a summary line, not a
+// purchase — Box Purchase History has one at the end of each month. The column is found by
+// its own header text, so a sheet that renames or moves it still works.
+function pgTotalCol(sec){
+  const a = pgAnalyse(sec);
+  if (!a.head.length) return -1;
+  const main = a.head[a.head.length - 1];
+  for (let j = 0; j < a.width; j++){
+    if (/^\s*(monthly\s*total|sub\s*total)\s*$/i.test(String(main[j] === undefined ? '' : main[j])))
+      return j;
+  }
+  return -1;
+}
 function pgTableHTML(sec){
   if (!sec || !sec.rows.length) return '<div class="pgstate"><b>This table is empty</b>' +
     'The section exists in the sheet but holds no rows.</div>';
   const a = pgAnalyse(sec);
   const q = pg.q.trim().toLowerCase();
   const col = pg.col === '' ? null : Number(pg.col);
-  const width = Math.max(1, sec.rows.reduce((w, r) => Math.max(w, r.length), 0));
+  const width = Math.max(1, a.width || 1);
+  const tc = pgTotalCol(sec);
   // A link that stands alone in the sheet is a pointer to another workbook, not a data
   // row. It sits above the table rather than inside it.
   let html = a.links.length
@@ -868,7 +940,9 @@ function pgTableHTML(sec){
     return (g.title ? '<h4 class="pggrp">' + esc(g.title) + '</h4>' : '') +
       (rows.length
         ? '<div class="pgscroll"><table class="pgtab">' + pgHeadHTML(a.head, width) +
-          '<tbody>' + rows.map(r => '<tr>' + pgRowCells(r, width, 'td') + '</tr>').join('') +
+          '<tbody>' + rows.map(r =>
+            '<tr' + (tc >= 0 && String(r[tc] === undefined ? '' : r[tc]).trim() ? ' class="sum"' : '') +
+            '>' + pgRowCells(r, width, 'td') + '</tr>').join('') +
           '</tbody></table></div>'
         : '');
   }).join('');
@@ -880,19 +954,43 @@ function pgTableHTML(sec){
 
 // Column choices come from the table itself: its header labels when it has them,
 // otherwise plain positions. Nothing is invented.
+// Column choices come from the table itself: the deepest header row names the columns,
+// and the merged group rows above it say which carrier each belongs to. On a 43-column
+// table "Price per kilo" appears four times, so the group prefix is what makes the choice
+// mean anything. Nothing is invented — a column the sheet does not name is offered by
+// position.
+function pgColLabels(sec){
+  const a = pgAnalyse(sec);
+  const width = a.width || 1;
+  const main = a.head.length ? a.head[a.head.length - 1] : null;
+  const groups = a.head.slice(0, -1);
+  // for each group row, which label covers column j
+  const cover = groups.map(r => {
+    const at = [];
+    for (let j = 0; j < width; j++) if (String(r[j] === undefined ? '' : r[j]).trim()) at.push(j);
+    const m = [];
+    at.forEach((j, k) => {
+      const end = k + 1 < at.length ? at[k + 1] : width;
+      for (let c = j; c < end; c++) m[c] = String(r[j]).trim();
+    });
+    return m;
+  });
+  const out = [];
+  for (let j = 0; j < width; j++){
+    const own = main ? String(main[j] === undefined ? '' : main[j]).trim() : '';
+    // the nearest group label above this column, if any
+    let grp = '';
+    for (let g = cover.length - 1; g >= 0; g--) if (cover[g][j]){ grp = cover[g][j]; break; }
+    const name = own || (grp ? grp : 'Column ' + (j + 1));
+    out.push({ i: j, label: (grp && own && grp !== own ? grp + ' \u203a ' + own : name) });
+  }
+  return out;
+}
 function pgColsHTML(sec){
   if (!sec || !sec.rows.length) return '<option value="">All columns</option>';
-  const a = pgAnalyse(sec);
-  const hdr = a.head.length ? a.head[a.head.length - 1] : null;   // the deepest level
-  const width = sec.rows.reduce((w, r) => Math.max(w, r.length), 0);
-  let o = '<option value="">All columns</option>';
-  for (let j = 0; j < width; j++){
-    const lbl = hdr && String(hdr[j] || '').trim()
-      ? String(hdr[j]).trim() : 'Column ' + (j + 1);
-    o += '<option value="' + j + '"' + (String(pg.col) === String(j) ? ' selected' : '') +
-         '>' + esc(lbl) + '</option>';
-  }
-  return o;
+  return '<option value="">All columns</option>' + pgColLabels(sec).map(c =>
+    '<option value="' + c.i + '"' + (String(pg.col) === String(c.i) ? ' selected' : '') +
+    '>' + esc(c.label.replace(/\s+/g, ' ')) + '</option>').join('');
 }
 function pgRender(){
   const secs = $('pgsecs'), body = $('pgbody'), meta = $('pgmeta');
@@ -951,7 +1049,8 @@ function pgRender(){
   body.innerHTML = pgTableHTML(sec);
   const n = pg.secs.reduce((a, s) => a + s.rows.length, 0);
   meta.innerHTML = pg.secs.length + ' tables &middot; ' + n + ' rows &middot; synced ' +
-    esc(pg.at) + ' &middot; <a href="' + PG_EDIT + '" target="_blank" rel="noopener noreferrer">' +
+    esc(pg.at) + ' &middot; auto-refreshes every ' + (PG_REFRESH_MS / 60000) +
+    ' min &middot; <a href="' + PG_EDIT + '" target="_blank" rel="noopener noreferrer">' +
     'open the sheet</a>';
 }
 function pgLoad(force){
@@ -976,6 +1075,17 @@ function pgLoad(force){
       pgRender();
     });
 }
+// Keep the view in step with the sheet without anyone clicking Refresh. The timer only
+// runs while Postage Information is on screen, and only ever re-reads — it cannot write.
+const PG_REFRESH_MS = 10 * 60 * 1000;
+let pgTimer = null;
+function pgAutoRefresh(on){
+  if (typeof setInterval !== 'function') return;
+  if (pgTimer){ clearInterval(pgTimer); pgTimer = null; }
+  if (on) pgTimer = setInterval(function(){
+    if (state.view === 'postage' && !pg.busy) pgLoad(true);
+  }, PG_REFRESH_MS);
+}
 function setView(v){
   state.view = v;
   const inv = v === 'inv';
@@ -985,6 +1095,7 @@ function setView(v){
   $('invwrap').hidden = inv ? false : true;
   $('pgwrap').hidden = inv ? true : false;
   if (!inv) pgLoad(false);
+  pgAutoRefresh(!inv);          // stop polling the moment the reader leaves the view
 }
 
 // ---- UK Unit 5 (warehouse 33) ----------------------------------------------
@@ -1106,18 +1217,13 @@ const CATS = {
     sub:   'Postage &amp; Warehouse Team &middot; Wall Arm &mdash; 180 SKUs from the Wall_Arm_SOT tab',
     ph:    'e.g. WSST70BM, swan neck, gooseneck…',
     file:  'wall-arm-inventory',
-    // Straight from the sheet's Product_Subtype column - 100% filled, 11 values.
-    fams:  [['WA','Wall Arm / Lamp Holder Arm','Wall Arm'],
-            ['AW','Adjustable Wall Arm / Lamp Holder Arm','Adjustable'],
-            ['WB','Wooden Wall Bracket with Pendant Drop','Wooden Bracket'],
-            ['GN','Flexible Wall Arm / Gooseneck Arm','Gooseneck'],
-            ['CR','Wall Sconce / Wall Arm with Ceilingrose','With Ceiling Rose'],
-            ['PL','Plug-in Wall Sconce / Adjustable Wall Arm','Plug-in'],
-            ['DA','Double Wall/Ceiling Arm / Multi-Lamp Holder','Double Arm'],
-            ['DS','Double Wall/Ceiling Spotlight Arm','Double Spotlight'],
-            ['BN','Bulkhead Light / Nautical Wall Sconce','Bulkhead Nautical'],
-            ['BI','Bulkhead Light / Industrial Cage Light','Bulkhead Cage'],
-            ['AC','Adjustable Wall Sconce / Cage Light','Adjustable Cage']]
+    // Four families collapsed from the sheet's eleven Product_Subtypes (see WA_MERGE).
+    // The eleven survive as the Subtype attribute below, so no distinction is destroyed.
+    fams:  [['WAAR','Wall Arm / Lamp Holder Arm','Wall Arm'],
+            ['WAAD','Adjustable Wall Arm','Adjustable'],
+            ['WADB','Double Wall / Ceiling Arm','Double Arm'],
+            ['WAWB','Wooden Wall Bracket','Wooden Bracket']],
+    attr:  { key: 'ws', label: 'Subtype' }
   },
 
   LH: {
@@ -1404,7 +1510,7 @@ function classifySKU(sku){
 // same thing, and "Other" exists for a CR SKU that is neither CRSF nor CRFF.
 CATS.CR.fams = [['CRSF', 'CRSF \u00b7 ' + CR_LABEL.CRSF, 'CRSF'],
                 ['CRFF', 'CRFF \u00b7 ' + CR_LABEL.CRFF, 'CRFF'],
-                ['CROT', 'CR \u00b7 Other',              'Other']];
+                ['CROT', 'Others',                       'Others']];
 
 // Every fetched row is routed through the classifier. A row whose SKU does not
 // classify into the section holding it is recorded rather than silently shown under
@@ -1460,6 +1566,36 @@ Object.keys(CATS).forEach(key => {
     const inc = INCOMING[r.s];                 // incoming stock, if any
     if (inc){ const ix = inc.split(','); r.ic = INC_CONTAINER[ix[0]]; r.is = INC_STAGE[ix[1]]; }
     return true;
+  });
+});
+
+// ---- Others -----------------------------------------------------------------
+// Every section that declares types gets an "Others" family, and any row whose type is
+// NOT one of the declared ones is routed into it. Today most are empty; that is the
+// point. When the extraction next returns an LSOO... lampshade, or a WS... wall arm of a
+// kind the sheet has not listed before, it lands in Others under its own section instead
+// of showing a raw code nothing can filter on, or being silently dropped.
+//
+// The row keeps what the source actually called it in `osub`, so "Others" never means
+// "we lost the name".
+//
+// Pendant Lamp Holder and Lamp Holder declare NO type at all — their sheets have no
+// subtype column — so there is nothing for a SKU to fall outside of, and they are left
+// alone rather than given a lone meaningless "Others".
+const OTHERS_LABEL = 'Others';
+Object.keys(CATS).forEach(key => {
+  const cfg = CATS[key];
+  if (!cfg.fams.length) return;
+  const code = key + 'OT';
+  const known = {};
+  cfg.fams.forEach(f => { known[f[0]] = true; });
+  if (!known[code]){ cfg.fams.push([code, OTHERS_LABEL, OTHERS_LABEL]); known[code] = true; }
+  cfg.data.forEach(r => {
+    if (!known[r.f]){
+      r.osub = r.t;                 // what the source called it, kept
+      r.f  = code;
+      r.sc = OTHERS_LABEL;
+    }
   });
 });
 

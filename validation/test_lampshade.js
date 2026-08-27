@@ -132,6 +132,10 @@ global.fetch = (url) => {
   return SyncP(true, { ok: true, status: 200, text: () => SyncP(true, r.body) });
 };
 global.location = { protocol: 'https:', href: 'https://hub.example/postage' };
+// The auto-refresh timer must never actually fire in the suite; record it instead.
+global.__timers = { set: 0, cleared: 0, ms: null };
+global.setInterval = (fn, ms) => { global.__timers.set++; global.__timers.ms = ms; return 1; };
+global.clearInterval = () => { global.__timers.cleared++; };
 global.localStorage = { getItem: () => null, setItem: () => {} };
 global.Blob = function (parts) { this.parts = parts; };
 global.URL = { createObjectURL: () => 'blob:x', revokeObjectURL: () => {} };
@@ -142,7 +146,8 @@ const runner = new Function('with(this){' + SRC +
   '\n; return {DATA, LS_DATA, CATS, CATEGORIES, state, render, matches, buildCats, buildExtras,' +
   ' applyCat, rowHTML, buildCSV, csvRow, typeCell, downloadCSV, active, extraCols, PH_DATA, WA_DATA, LB_DATA, LH_DATA, classifySKU, UNCLASSIFIED, CLASSIFY, SUB4, SUB4_AMBIGUOUS, SUB_LABEL, LS_EXTRA, paginate, pageCount, goToPage, INCOMING, INC_CONTAINER, INC_STAGE, SPR_DATA, LGT_DATA, LB_EXTRA, LB_SERIES, CSM_DATA, CLO_DATA, HAP_DATA, RFB_DATA, PREFIX_RULES, PREFIX_DEFINED, HIST_COLS, HIST_ACTIONS, STOCK_HISTORY, HIST_TOTAL, HIST_RAW, histBtn, histRowsHTML, renderHist, openHist, closeHist, NA_REASON, SHOPIFY_PRICE, price, WH5_STOCK, CSV_HEADERS, num, container, LAST_CONTAINER,' +
   ' pgParseCSV, pgSplitSections, pgTrim, pgIsHeader, pgTableHTML, pgRender, pgLoad,' +
-  ' setView, pg, PG_URL, PG_SHEET, PG_GID, pgFilter, pgColsHTML, pgAnalyse, pgLabel};}');
+  ' setView, pg, PG_URL, PG_SHEET, PG_GID, pgFilter, pgColsHTML, pgAnalyse, pgLabel,' +
+  ' pgColLabels, pgSpanCells, pgHeadHTML, PG_REFRESH_MS, pgTotalCol, pgTableHTML};}');
 const app = runner.call(global);
 
 // ---- helpers ----------------------------------------------------------------
@@ -291,7 +296,7 @@ ok('every category label shows its section population',
 ok('exactly one category is active', rowNow.filter(c => c.on).length === 1);
 ok('Lampshade lists All + 8 merged types',
    cat('Lampshade').options.map(o => o.label).join('|') ===
-   'Select|All Lampshade|Metal|Glass Shades|Fabric|Crystal Shades|Natural Rope|Wire Cages|Chandeliers|Baton Lighting',
+   'Select|All Lampshade|Metal|Glass Shades|Fabric|Crystal Shades|Natural Rope|Wire Cages|Chandeliers|Baton Lighting|Others',
    cat('Lampshade').options.map(o => o.label).join('|'));
 choose('Lampshade', '*');
 ok('switched to Lampshade', app.state.cat === 'LS');
@@ -532,14 +537,16 @@ ok('LB_EXTRA no SKU already embedded elsewhere',
 });
 ok('LB the two SOT-missed LED bulbs are present',
    ['LDCWA60HE277','LDMT1852E274'].every(s => app.LB_EXTRA.some(r => r.s === s)));
-ok('WA main family = 118', app.WA_DATA.filter(r => r.f === 'WA').length === 118);
+// 118 fixed arms + 4 goosenecks are one family now; the sheet's 11 subtypes survive on `ws`.
+ok('WA main family = 122', app.WA_DATA.filter(r => r.f === 'WAAR').length === 122,
+   app.WA_DATA.filter(r => r.f === 'WAAR').length);
 ok('Wall Arm is no longer a GAP', parseCats().find(c => c.label === 'Wall Arm').gap === false);
 ok('Bulbs is no longer a GAP', parseCats().find(c => c.label === 'Bulbs').gap === false);
 choose('Wall Arm', '*');
 ok('WA total 180', String(els.total.textContent) === '180', els.total.textContent);
 ok('WA rendered 180 rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === 180);
 ok('WA no "undefined"', !els.tb.innerHTML.includes('>undefined<'));
-ok('WA CSV 26 columns', app.buildCSV(app.WA_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 26);
+ok('WA CSV 27 columns (26 base + Subtype)', app.buildCSV(app.WA_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
 ok('WA search works', searchN('swan neck') > 0);
 choose('Bulbs', '*');
 ok('LB total 334', String(els.total.textContent) === '334', els.total.textContent);
@@ -728,9 +735,9 @@ ok('every row carries a classified main category',
 console.log('\n== PHASE 20 — §10/§11 UI, search and CSV unchanged ==');
 ok('twelve categories in the registry', Object.keys(app.CATS).length === 12,
    Object.keys(app.CATS).length);
-ok('Ceiling Rose dropdown exposes Front Fit, Side Fit and Other',
+ok('Ceiling Rose dropdown exposes Front Fit, Side Fit and Others',
    app.CATS.CR.fams.map(f => f[1]).join('|') ===
-   'CRSF \u00b7 Side Fit|CRFF \u00b7 Front Fit|CR \u00b7 Other',
+   'CRSF \u00b7 Side Fit|CRFF \u00b7 Front Fit|Others',
    app.CATS.CR.fams.map(f => f[1]).join('|'));
 ok('CR family codes are the classifier codes',
    app.CATS.CR.fams.map(f => f[0]).join('|') === 'CRSF|CRFF|CROT');
@@ -796,7 +803,7 @@ ok('Lamp Holder contributes no rules — it declares no type',
 
 console.log('\n-- the derived rules reproduce the real types (spot checks from the screenshots) --');
 [['LSGL','Lampshade','Glass Shades'], ['LSFC','Lampshade','Fabric'], ['LSHB','Lampshade','Natural Rope'],
- ['WSSS','Wall Arm','Adjustable Wall Arm / Lamp Holder Arm'],
+ ['WSSS','Wall Arm','Adjustable Wall Arm'],
  ['CRSF','Ceiling Rose','Side Fit'], ['CRFF','Ceiling Rose','Front Fit']].forEach(([p4, main, label]) => {
   const e = app.SUB4[p4];
   ok(p4 + ' -> ' + main + ' / ' + label,
@@ -832,7 +839,12 @@ ok('Lampshade material counts unchanged',
 ok('LED Bulbs series counts unchanged (now carried by the Series attribute)',
    app.LB_DATA.filter(r => r.sr === 'WW-CW Range').length === 51 &&
    app.LB_DATA.filter(r => r.sr === 'A60').length === 22);
-ok('Wall Arm subtype counts unchanged', app.WA_DATA.filter(r => r.f === 'WA').length === 118);
+ok('Wall Arm still totals 180 across its four families and Others',
+   ['WAAR','WAAD','WADB','WAWB','WAOT']
+     .reduce((a, c) => a + app.WA_DATA.filter(r => r.f === c).length, 0) === 180);
+ok('and the sheet\'s eleven subtypes are all still on the rows',
+   new Set(app.WA_DATA.map(r => r.ws)).size === 11,
+   new Set(app.WA_DATA.map(r => r.ws)).size);
 ok('Pendant Lamp Holder mount counts unchanged',
    app.PH_DATA.filter(r => r.f === 'PD').length === 291 &&
    app.PH_DATA.filter(r => r.f === 'CP').length === 107);
@@ -1130,7 +1142,7 @@ ok('29 sub-types present', Object.keys(SPR_EXPECT).length === 29 &&
 })();
 ok('sub-type counts sum to 1420',
    Object.values(SPR_EXPECT).reduce((a,b)=>a+b,0) === 1420);
-ok('the dropdown lists all 29 sub-types', app.CATS.SPR.fams.length === 29);
+ok('the dropdown lists all 29 sub-types plus Others', app.CATS.SPR.fams.length === 30);
 ok('every row carries a family code that exists in the dropdown',
    app.SPR_DATA.every(r => app.CATS.SPR.fams.some(f => f[0] === r.f)));
 
@@ -1346,7 +1358,7 @@ ok('"LED Bulbs" survives as a TYPE inside Bulbs',
    app.CATS.LB.fams.some(f => f[1] === 'LED Bulbs'));
 ok('Bulbs declares exactly the five types the team defined',
    app.CATS.LB.fams.map(f => f[1]).join('|') ===
-   'LED Bulbs|Incandescent Bulbs|LED Panel Light|LED Spot Light|Lamp Bulbs',
+   'LED Bulbs|Incandescent Bulbs|LED Panel Light|LED Spot Light|Lamp Bulbs|Others',
    app.CATS.LB.fams.map(f => f[1]).join('|'));
 ok('every one of the 218 SOT SKUs is still on screen — the replacement lost none',
    (() => { const shown = new Set(app.CATS.LB.data.map(r => r.s));
@@ -1408,7 +1420,7 @@ ok('renders 334 rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === 334);
 ok('no "undefined" rendered', !els.tb.innerHTML.includes('>undefined<'));
 ok('the dropdown lists All + the five types',
    cat('Bulbs').options.map(o => o.label).join('|') ===
-   'Select|All Bulbs|LED Bulbs|Incandescent Bulbs|LED Panel Light|LED Spot Light|Lamp Bulbs',
+   'Select|All Bulbs|LED Bulbs|Incandescent Bulbs|LED Panel Light|LED Spot Light|Lamp Bulbs|Others',
    cat('Bulbs').options.map(o => o.label).join('|'));
 ok('search finds an added Incandescent SKU', searchN('icst64e2760') === 1);
 ok('search finds an added panel light', searchN('llro18w') === 1);
@@ -1442,8 +1454,8 @@ const NEWCATS = [['CSM','Cosmetics',app.CSM_DATA,124,4],
 NEWCATS.forEach(([key,name,data,n,types]) => {
   ok(name + ' has ' + n + ' SKUs', data.length === n, data.length);
   ok(name + ' SKUs are distinct', new Set(data.map(r => r.s)).size === n);
-  ok(name + ' declares ' + types + ' types', app.CATS[key].fams.length === types,
-     app.CATS[key].fams.length);
+  ok(name + ' declares ' + types + ' types plus Others',
+     app.CATS[key].fams.length === types + 1, app.CATS[key].fams.length);
   ok(name + ' 100% image', data.every(r => r.i && r.i.startsWith('https://sin1.contabostorage.com/')));
   ok(name + ' 100% description', data.every(r => r.d));
   ok(name + ' 100% type', data.every(r => r.f && r.t));
@@ -1568,8 +1580,8 @@ NEWCATS.forEach(([key, name, data, n, types]) => {
   ok(name + ': total ' + n, String(els.total.textContent) === String(n), els.total.textContent);
   ok(name + ': renders ' + n + ' rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === n);
   ok(name + ': no "undefined" rendered', !els.tb.innerHTML.includes('>undefined<'));
-  ok(name + ': dropdown lists Select + All + ' + types,
-     cat(name).options.length === types + 2, cat(name).options.length);
+  ok(name + ': dropdown lists Select + All + ' + types + ' + Others',
+     cat(name).options.length === types + 3, cat(name).options.length);
   ok(name + ': exactly its own category is active',
      parseCats().filter(c => c.on).length === 1 &&
      parseCats().find(c => c.on).label === name);
@@ -1588,7 +1600,7 @@ ok('search finds a clock', searchN('clock') > 0);
 choose('Refurbished', '*'); app.state.pageSize = 'all'; app.render();
 ok('Refurbished dropdown shows its single type',
    cat('Refurbished').options.map(o => o.label).join('|') ===
-   'Select|All Refurbished|Refurbished',
+   'Select|All Refurbished|Refurbished|Others',
    cat('Refurbished').options.map(o => o.label).join('|'));
 ok('RFB CSV has 26 columns', app.buildCSV(app.RFB_DATA.slice(0,3)).split('\r\n')[0].split(',').length === 26);
 
@@ -2620,9 +2632,10 @@ console.log('\n== PHASE 45 — wide postage tables stay readable ==');
 // International Prices is 43 columns wide. width:100% squeezed each to ~30px and
 // overflow-wrap:anywhere then broke every heading one character per line.
 ok('the table sizes to its content instead of being squeezed to the panel',
-   /\.pgtab\{[^}]*width:auto;min-width:100%/.test(HTML));
+   /\.pgtab\{[^}]*width:auto\}/.test(HTML) &&
+   !/\.pgtab\{[^}]*min-width:100%/.test(HTML));
 ok('columns cannot collapse below a readable width',
-   /\.pgtab th,\.pgtab td\{[^}]*min-width:118px/.test(HTML));
+   /\.pgtab th,\.pgtab td\{[^}]*min-width:92px/.test(HTML));
 ok('words break at word boundaries, never mid-word',
    /\.pgtab th,\.pgtab td\{[^}]*overflow-wrap:break-word/.test(HTML) &&
    !/\.pgtab th,\.pgtab td\{[^}]*overflow-wrap:anywhere/.test(HTML));
@@ -2644,7 +2657,9 @@ ok('numeric columns stay on one line and are narrower than text ones',
   fire(els.pgsecs, 'click', { target: { dataset: { pg: '1' } } });   // International Prices
   const a = app.pgAnalyse(app.pg.secs[1]);
   const width = app.pg.secs[1].rows.reduce((w, r) => Math.max(w, r.length), 0);
-  ok('International Prices really is 43 columns', width === 43, width);
+  ok('International Prices is 36 used columns — 7 empty ones are dropped',
+     app.pgAnalyse(app.pg.secs[1]).width === 36 && width === 43,
+     app.pgAnalyse(app.pg.secs[1]).width + ' used of ' + width + ' raw');
   ok('every one of them is rendered on each row',
      (els.pgbody.innerHTML.match(/<tr class="hmain">/g) || []).length === 1 &&
      els.pgbody.innerHTML.indexOf('Country') !== -1);
@@ -2656,18 +2671,19 @@ ok('numeric columns stay on one line and are narrower than text ones',
 })();
 
 console.log('\n== PHASE 46 — postage table headers carry colour, one hue not a rainbow ==');
-ok('a header colour pair is defined, and again for dark mode',
-   /--thead-bg:#1f4fd8;\s+--thead-ink:#ffffff/.test(HTML) &&
-   /--thead-bg:#28406e/.test(HTML) &&
-   /--thead2-bg:#dfe8ff/.test(HTML) && /--thead2-bg:#1c2a45/.test(HTML));
+ok('the header colour is the one the team specified, in both themes',
+   /--thead-bg:#18386e;\s+--thead-ink:#ffffff/.test(HTML) &&
+   /--thead-bg:#18386e;\s+--thead-ink:#eaf1ff/.test(HTML) &&
+   /--thead2-bg:#dce6f5/.test(HTML) && /--thead2-bg:#1b2b47/.test(HTML));
 ok('it does not reuse --accent, which is a pale blue in dark mode',
    !/\.pgtab thead th\{background:var\(--accent\)/.test(HTML));
 ok('the column row is a solid band',
    /\.pgtab thead th\{background:var\(--thead-bg\);color:var\(--thead-ink\)/.test(HTML));
 ok('group labels are a light tint of the SAME hue, not separate colours',
    /\.pgtab thead tr\.hsub th\.gl\{background:var\(--thead2-bg\);color:var\(--thead2-ink\)/.test(HTML));
-ok('a group label is ruled at the column it starts on',
-   /\.pgtab thead tr\.hsub th\.gl\{[^}]*border-left:3px solid var\(--thead-bg\)/.test(HTML));
+ok('a merged group label is centred over its span and ruled at both ends',
+   /\.pgtab thead tr\.hsub th\.gl\{[^}]*text-align:center/.test(HTML) &&
+   /border-left:2px solid var\(--thead-bg\);border-right:2px solid var\(--thead-bg\)/.test(HTML));
 ok('the sticky first column repaints for every header level',
    /\.pgtab thead tr\.hmain th:first-child\{background:var\(--thead-bg\)/.test(HTML) &&
    /\.pgtab thead tr\.hsub th\.gl:first-child\{background:var\(--thead2-bg\)/.test(HTML));
@@ -2678,13 +2694,12 @@ ok('the sticky first column repaints for every header level',
   fire(els.pgsecs, 'click', { target: { dataset: { pg: '1' } } });   // 5 header levels
   const html = els.pgbody.innerHTML;
   ok('only the cells that carry a label are tinted',
-     (html.match(/<th class="gl">/g) || []).length > 0);
-  ok('the empty cells beside them stay plain, so a group reads as a span',
-     (html.match(/<th class="gl">/g) || []).length <
-     (html.match(/<tr class="hsub">/g) || []).length * 43);
+     (html.match(/<th class="gl" colspan="\d+">/g) || []).length > 0);
+  ok('each one spans the columns it covers instead of sitting in a single column',
+     /<th class="gl" colspan="([2-9]|\d\d)">/.test(html));
   ok('a real carrier group is one of them',
-     html.indexOf('<th class="gl">ROYAL Mail (Book From UK) GBP</th>') !== -1 ||
-     html.indexOf('<th class="gl">Evri(Book From UK) GBP</th>') !== -1, 'no carrier label tinted');
+     /<th class="gl" colspan="4">ROYAL Mail \(Book From UK\) GBP<\/th>/.test(html),
+     'no spanning carrier label');
   ok('the column row is not tinted as a group label',
      html.indexOf('<tr class="hmain">') !== -1 &&
      html.split('<tr class="hmain">')[1].indexOf('class="gl"') === -1);
@@ -2695,6 +2710,175 @@ ok('the sticky first column repaints for every header level',
   app.setView('inv'); choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
   ok('Inventory unaffected', String(els.total.textContent) === '332');
 })();
+
+console.log('\n== PHASE 47 — merged headers, per-column search, auto-sync ==');
+global.__net.reply = { body: PGCSV };
+app.setView('postage');
+fire(els.pgsecs, 'click', { target: { dataset: { pg: '1' } } });     // International Prices
+
+console.log('-- the sheet merges its group headers; a CSV cannot carry that --');
+(() => {
+  const a = app.pgAnalyse(app.pg.secs[1]);
+  const html = app.pgHeadHTML(a.head, a.width);
+  ok('the group rows span, the column row does not', (() => {
+    const rows = html.split('<tr class=').slice(1);
+    const main = rows[rows.length - 1];
+    return /colspan="1[0-9]"/.test(html) && main.indexOf('colspan') === -1; })());
+  ok('a span runs to the next label, not to the end',
+     /<th class="gl" colspan="4">ROYAL Mail \(Book From UK\) GBP<\/th>/.test(html));
+  ok('the top level spans the whole half it covers',
+     /<th class="gl" colspan="13">\(Small Parcels\) 0-2kg<\/th>/.test(html));
+  ok('gaps before a label are filled so the columns still line up',
+     /<th colspan="1"><\/th><th class="gl" colspan="13">/.test(html));
+  ok('every group row spans exactly the used width — no drift, no overlap', (() => {
+    return a.head.slice(0, -1).every(r => {
+      let total = 0, m, re = /colspan="(\d+)"/g;
+      const rowHTML = app.pgSpanCells(r, a.width);
+      while ((m = re.exec(rowHTML))) total += Number(m[1]);
+      return total === a.width; }); })());
+  ok('and the column row emits one cell per used column', (() => {
+    const main = html.slice(html.lastIndexOf('<tr class="hmain">'));
+    return (main.match(/<th/g) || []).length === a.width; })());
+  // The inventory table's own static markup uses colspan, so the check is scoped to the
+  // postage renderer: its spans must be COMPUTED, never written as literals.
+  ok('nothing about the spans is hard-coded — they come from the fetched rows', (() => {
+    const fn = HTML.slice(HTML.indexOf('function pgSpanCells'),
+                          HTML.indexOf('function pgHeadHTML'));
+    return /colspan="' \+ \(end - j\)/.test(fn) && !/colspan="\d/.test(fn); })());
+})();
+
+console.log('-- the header survives a change of values --');
+(() => {
+  // Same headers, different prices: the structure must be identical.
+  const changed = PGCSV.replace(/\b8\.24\b/g, '9.99').replace(/\b1\.91\b/g, '2.50');
+  const a1 = app.pgAnalyse(app.pgSplitSections(app.pgParseCSV(PGCSV))[1]);
+  const a2 = app.pgAnalyse(app.pgSplitSections(app.pgParseCSV(changed))[1]);
+  ok('changing prices leaves the header block identical',
+     JSON.stringify(a1.head) === JSON.stringify(a2.head));
+  ok('and the column labels identical',
+     JSON.stringify(app.pgColLabels(app.pgSplitSections(app.pgParseCSV(PGCSV))[1])) ===
+     JSON.stringify(app.pgColLabels(app.pgSplitSections(app.pgParseCSV(changed))[1])));
+})();
+
+console.log('-- per-table search knows its own columns --');
+(() => {
+  const cols = app.pgColLabels(app.pg.secs[1]);
+  ok('one entry per used column', cols.length === 36, cols.length);
+  ok('a repeated column name is disambiguated by its carrier',
+     cols[1].label.indexOf('Tracked DDU(MP7)') !== -1 &&
+     cols[1].label.indexOf('Price per') !== -1, cols[1].label);
+  ok('four different "Price per kilo" columns are told apart',
+     new Set(cols.filter(c => /Price per\s+kilo/.test(c.label)).map(c => c.label)).size >= 2);
+  ok('a column the sheet does not name falls back to its position',
+     cols.every(c => c.label.trim().length > 0));
+  ok('the dropdown is rebuilt from those labels',
+     els.pgcol.innerHTML.indexOf('All columns') !== -1 &&
+     (els.pgcol.innerHTML.match(/<option /g) || []).length === 37,
+     (els.pgcol.innerHTML.match(/<option /g) || []).length);
+  // searching one column really restricts to it
+  fire(els.pgcol, 'change', { target: { value: '0' } });      // Country
+  pgq('austria');
+  const f = app.pgFilter(app.pg.secs[1]);
+  ok('a column-restricted search matches only in that column',
+     f.body.length === 1 && String(f.body[0][0]).toLowerCase().indexOf('austria') !== -1,
+     f.body.length + ' rows');
+  fire(els.pgcol, 'change', { target: { value: '4' } });      // a price column
+  ok('the same term in the wrong column returns nothing',
+     app.pgFilter(app.pg.secs[1]).body.length === 0);
+  fire(els.pgclear, 'click');
+  ok('Clear restores every row', app.pgFilter(app.pg.secs[1]).body.length === 38);
+})();
+(() => {  // each section gets its OWN column list
+  fire(els.pgsecs, 'click', { target: { dataset: { pg: '3' } } });   // Contact Details
+  ok('switching table replaces the column list with that table\'s own',
+     els.pgcol.innerHTML.indexOf('Mobile No') !== -1 &&
+     els.pgcol.innerHTML.indexOf('Price per') === -1);
+  pgq('varundev');
+  ok('search works on it', app.pgFilter(app.pg.secs[3]).body.length === 1);
+  fire(els.pgclear, 'click');
+})();
+
+console.log('-- the sheet stays synchronised without anyone clicking --');
+ok('a refresh timer is started when the view opens',
+   global.__timers.set > 0, JSON.stringify(global.__timers));
+ok('it is a ten-minute interval',
+   global.__timers.ms === app.PG_REFRESH_MS && app.PG_REFRESH_MS === 600000,
+   global.__timers.ms);
+ok('it only ever re-reads — the poll calls pgLoad, never a write',
+   /setInterval\(function\(\)\{[\s\S]{0,160}pgLoad\(true\)/.test(HTML));
+ok('it is cleared when the reader leaves the view', (() => {
+  const before = global.__timers.cleared;
+  app.setView('inv');
+  return global.__timers.cleared > before; })());
+ok('the panel tells the reader it refreshes itself', (() => {
+  app.setView('postage');
+  return els.pgmeta.innerHTML.indexOf('auto-refreshes every 10 min') !== -1; })());
+app.setView('inv'); choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
+ok('Inventory unaffected', String(els.total.textContent) === '332');
+
+console.log('\n== PHASE 48 — content-width tables, header edge, month subtotals ==');
+global.__net.reply = { body: PGCSV };
+app.setView('postage');
+
+console.log('-- a column empty everywhere is a gap, not a field --');
+(() => {
+  const w = i => app.pgAnalyse(app.pg.secs[i]).width;
+  const raw = i => app.pg.secs[i].rows.reduce((m, r) => Math.max(m, r.length), 0);
+  ok('postage Dimensions drops its blank middle column', w(2) === 2 && raw(2) === 3,
+     w(2) + ' of ' + raw(2));
+  ok('Contact Details drops two', w(3) === 4 && raw(3) === 6, w(3) + ' of ' + raw(3));
+  ok('International Prices drops seven', w(1) === 36 && raw(1) === 43, w(1) + ' of ' + raw(1));
+  ok('a table with no empty columns is untouched',
+     w(0) === raw(0) && w(4) === raw(4) && w(5) === raw(5));
+  ok('no rendered column is entirely empty', (() => {
+    const a = app.pgAnalyse(app.pg.secs[2]);
+    const all = a.head.concat([].concat.apply([], a.groups.map(g => g.rows)));
+    for (let j = 0; j < a.width; j++)
+      if (!all.some(r => String(r[j] === undefined ? '' : r[j]).trim())) return false;
+    return true; })());
+  fire(els.pgsecs, 'click', { target: { dataset: { pg: '2' } } });
+  ok('Dimensions renders two columns, not three',
+     (els.pgbody.innerHTML.slice(els.pgbody.innerHTML.indexOf('<tr class="hmain">'))
+       .match(/<th/g) || []).length === 2);
+  ok('and the header still names both',
+     els.pgbody.innerHTML.indexOf('Courrier') !== -1 &&
+     els.pgbody.innerHTML.indexOf('Dimension') !== -1);
+})();
+
+console.log('-- the table hugs its content --');
+ok('no min-width:100% stretches a two-column table across the panel',
+   /\.pgtab\{[^}]*width:auto\}/.test(HTML) &&
+   !/\.pgtab\{[^}]*min-width:100%/.test(HTML));
+ok('a column can still not collapse below a readable width',
+   /\.pgtab th,\.pgtab td\{[^}]*min-width:92px/.test(HTML));
+
+console.log('-- the header block has a closing edge --');
+ok('the column row carries a bottom border',
+   /\.pgtab thead tr\.hmain th\{[^}]*border-bottom:2px solid var\(--thead-bg\)/.test(HTML));
+ok('the group block above it closes too',
+   /\.pgtab thead tr\.hsub:last-of-type th\{border-bottom:1px solid var\(--thead-bg\)/.test(HTML));
+
+console.log('-- a month subtotal is not a purchase --');
+(() => {
+  ok('the total column is found by its own header text',
+     app.pgTotalCol(app.pg.secs[5]) === 8, app.pgTotalCol(app.pg.secs[5]));
+  ok('a table without one is left alone', app.pgTotalCol(app.pg.secs[0]) === -1);
+  fire(els.pgsecs, 'click', { target: { dataset: { pg: '5' } } });
+  const html = els.pgbody.innerHTML;
+  ok('every month subtotal row is marked',
+     (html.match(/<tr class="sum">/g) || []).length === 5,
+     (html.match(/<tr class="sum">/g) || []).length);
+  ok('a purchase row is not marked', (() => {
+    const rows = html.split('<tr').slice(1);
+    return rows.some(r => r.indexOf('class="sum"') === -1 && r.indexOf('Single Wall Boxes') !== -1);
+  })());
+  ok('the subtotal is styled distinctly and does not lose it on hover',
+     /\.pgtab tbody tr\.sum td\{background:var\(--thead2-bg\)[^}]*font-weight:700/.test(HTML) &&
+     /\.pgtab tbody tr\.sum:hover td\{background:var\(--thead2-bg\)\}/.test(HTML));
+  ok('a real monthly figure is on screen', html.indexOf('2,942.75') !== -1);
+})();
+app.setView('inv'); choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
+ok('Inventory unaffected', String(els.total.textContent) === '332');
 
 console.log('\n' + (fail ? 'FAILED' : 'ALL PASS') + ' — ' + pass + ' passed, ' + fail + ' failed\n');
 process.exit(fail ? 1 : 0);

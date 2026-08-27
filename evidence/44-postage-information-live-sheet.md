@@ -439,3 +439,143 @@ command timeout; it is not, and the lock file now records the expected runtime a
 the expected count.
 
 All fourteen dataset locks verified byte-identical.
+
+---
+
+# Part 7 — Merged headers, per-column search, auto-sync
+
+**Reported:** the International Prices header was not aligned — a group heading sat in one
+narrow column with blanks beside it; the header colour should be `#18386e`; each table
+needs a search that works on its own columns; and the dashboard must keep using the latest
+sheet data while the headers themselves stay unchanged.
+
+## The alignment fault
+
+The sheet **merges** its group headers: `ROYAL Mail (Book From UK) GBP` is one cell
+spanning four columns. **A CSV export cannot carry a merge** — the label comes back in the
+first column of its span and the rest arrive empty. Rendering that literally put a
+four-column heading into one narrow column and left the three it covers blank.
+
+The spans are now reconstructed from the data: a label runs until the next labelled cell
+on its own row, or to the end.
+
+| Row | Reconstructed spans |
+|---|---|
+| 0 | `(Small Parcels) 0-2kg` **16** · `Tracked (Small Parcels) 2-5kg*` **26** |
+| 2 | `ROYAL Mail` **4** · `Evri` **4** · `DPD` **2** · `DHL(1kg)` **6** · … |
+| 3 | `Tracked DDU(MP7)` **4** · `DDP Courier` 1 · `FX Surcharge` 1 · … |
+| 4 (column row) | **1:1 — never spans** |
+
+That last line matters: the deepest row names the columns one-for-one, and its `Total` at
+column 4 is one column, not the four that follow it. Spanning it would have shifted every
+price under the wrong heading.
+
+Every group row sums to **exactly 43**, and the column row emits **exactly 43** cells —
+both asserted, so a drift or overlap fails the suite rather than quietly misaligning data.
+
+**Nothing is hard-coded.** The spans, the header depth and the column names are recomputed
+from whatever the fetch returns. Changing a price leaves the header block and the column
+labels **byte-identical** — asserted by re-parsing a modified copy of the sheet.
+
+## Header colour
+
+`--thead-bg: #18386e` as specified, with `--thead2-bg: #dce6f5` for the group rows — one
+hue at two depths, defined for both light and dark. A merged label is centred over its
+span and ruled at both ends, which is what replaces the sheet's per-carrier colouring.
+
+## Search, per table and per column
+
+The column list is built from the deepest header row, **prefixed with the merged group
+above it**:
+
+```
+Country
+Tracked DDU(MP7) › Price per Box
+Tracked DDU(MP7) › Price per kilo
+Standard DDU(MP7) › Price per item
+```
+
+On a 43-column table `Price per kilo` appears four times; without the carrier prefix the
+choice is meaningless. A column the sheet does not name falls back to its position.
+Switching table replaces the list with that table's own columns.
+
+Asserted: 44 options for a 43-column table, a search restricted to `Country` matches only
+there, and the same term against a price column returns nothing.
+
+## Staying synchronised
+
+A ten-minute timer re-reads the sheet while Postage Information is on screen, and is
+cleared the moment the reader leaves it. It only ever calls `pgLoad` — it cannot write.
+The panel says so: *auto-refreshes every 10 min*.
+
+## Validation
+
+`node validation/test_lampshade.js` → **ALL PASS — 1,146 passed, 0 failed** (~4 minutes).
+
+Phase 47 asserts the group rows span while the column row does not, that a span runs to
+the next label, that gaps before a label are filled, the 43-column arithmetic on both, that
+changing prices leaves the header and column labels identical, the carrier-prefixed column
+list, column-restricted search in both directions, the timer's interval, that it is cleared
+on leaving, and that it only re-reads.
+
+All fourteen dataset locks verified byte-identical.
+
+---
+
+# Part 8 — Table width, header edge, month subtotals
+
+Three faults reported from the live page.
+
+## 1. Columns the sheet left empty were being rendered
+
+`postage Dimensions` showed a wide blank column between *Courrier* and *Dimension*. A
+column empty in **every** row — header and body — is a gap the sheet left behind, not a
+field. Those are now dropped before anything is measured, so the header spans, the column
+list and the search indices all stay consistent:
+
+| Section | Raw | Used | Dropped |
+|---|---:|---:|---:|
+| Intenational Prices | 43 | **36** | 7 |
+| Contact Details | 6 | **4** | 2 |
+| postage Dimensions | 3 | **2** | 1 |
+| the other three | — | unchanged | 0 |
+
+## 2. The table stretched instead of fitting its content
+
+`.pgtab` carried `min-width:100%`, which pulled a two-column table across the whole panel.
+It is now `width:auto` with no minimum, so a table hugs its content and a wide one still
+scrolls inside `.pgscroll`. The per-column floor dropped 118px to 92px to match.
+
+## 3. The header block had no closing edge
+
+The column row now carries `border-bottom:2px solid var(--thead-bg)`, and the group block
+above it closes with a 1px rule of the same colour, so the header reads as a block rather
+than running into the first data row.
+
+## 4. Month subtotals were indistinguishable from purchases
+
+Box Purchase History ends each month with a summary line — *January … FALSE … 2,942.75* —
+which looked like another box order. The summary column is found **by its own header text**
+(`Monthly total` / `Subtotal`), not by position, so renaming or moving it still works. Any
+row carrying a value there is styled as a subtotal: tinted, bold, ruled above and below,
+and it keeps that styling on hover. Five such rows are marked. A table with no such column
+is left alone — asserted.
+
+## Validation
+
+`node validation/test_lampshade.js` → **ALL PASS — 1,164 passed, 0 failed**.
+
+Phase 48 asserts the per-section dropped-column counts, that no rendered column is
+entirely empty, that Dimensions renders two columns while still naming both, the
+`width:auto` rule with no `min-width:100%`, both header borders, that the total column is
+found by header text, that exactly five subtotal rows are marked while purchase rows are
+not, and that the styling survives hover.
+
+All fourteen dataset locks verified byte-identical.
+
+## A note on the harness
+
+Two background runs were killed by my own `pkill`/`kill` pattern, because the pattern
+string appears inside the killing shell's own command line and it matched itself. Exit
+code 144 each time. Process cleanup by command-line pattern is unsafe here; leave a stray
+run to finish instead.
