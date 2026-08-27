@@ -2655,6 +2655,46 @@ ok('numeric columns stay on one line and are narrower than text ones',
   ok('Inventory unaffected', String(els.total.textContent) === '332');
 })();
 
+console.log('\n== PHASE 46 — postage table headers carry colour, one hue not a rainbow ==');
+ok('a header colour pair is defined, and again for dark mode',
+   /--thead-bg:#1f4fd8;\s+--thead-ink:#ffffff/.test(HTML) &&
+   /--thead-bg:#28406e/.test(HTML) &&
+   /--thead2-bg:#dfe8ff/.test(HTML) && /--thead2-bg:#1c2a45/.test(HTML));
+ok('it does not reuse --accent, which is a pale blue in dark mode',
+   !/\.pgtab thead th\{background:var\(--accent\)/.test(HTML));
+ok('the column row is a solid band',
+   /\.pgtab thead th\{background:var\(--thead-bg\);color:var\(--thead-ink\)/.test(HTML));
+ok('group labels are a light tint of the SAME hue, not separate colours',
+   /\.pgtab thead tr\.hsub th\.gl\{background:var\(--thead2-bg\);color:var\(--thead2-ink\)/.test(HTML));
+ok('a group label is ruled at the column it starts on',
+   /\.pgtab thead tr\.hsub th\.gl\{[^}]*border-left:3px solid var\(--thead-bg\)/.test(HTML));
+ok('the sticky first column repaints for every header level',
+   /\.pgtab thead tr\.hmain th:first-child\{background:var\(--thead-bg\)/.test(HTML) &&
+   /\.pgtab thead tr\.hsub th\.gl:first-child\{background:var\(--thead2-bg\)/.test(HTML));
+
+(() => {
+  global.__net.reply = { body: PGCSV };
+  app.setView('postage');
+  fire(els.pgsecs, 'click', { target: { dataset: { pg: '1' } } });   // 5 header levels
+  const html = els.pgbody.innerHTML;
+  ok('only the cells that carry a label are tinted',
+     (html.match(/<th class="gl">/g) || []).length > 0);
+  ok('the empty cells beside them stay plain, so a group reads as a span',
+     (html.match(/<th class="gl">/g) || []).length <
+     (html.match(/<tr class="hsub">/g) || []).length * 43);
+  ok('a real carrier group is one of them',
+     html.indexOf('<th class="gl">ROYAL Mail (Book From UK) GBP</th>') !== -1 ||
+     html.indexOf('<th class="gl">Evri(Book From UK) GBP</th>') !== -1, 'no carrier label tinted');
+  ok('the column row is not tinted as a group label',
+     html.indexOf('<tr class="hmain">') !== -1 &&
+     html.split('<tr class="hmain">')[1].indexOf('class="gl"') === -1);
+  fire(els.pgsecs, 'click', { target: { dataset: { pg: '3' } } });   // single-level header
+  ok('a one-level header has a column row and no group labels',
+     els.pgbody.innerHTML.indexOf('<tr class="hmain">') !== -1 &&
+     els.pgbody.innerHTML.indexOf('class="gl"') === -1);
+  app.setView('inv'); choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
+  ok('Inventory unaffected', String(els.total.textContent) === '332');
+})();
 
 console.log('\n' + (fail ? 'FAILED' : 'ALL PASS') + ' — ' + pass + ' passed, ' + fail + ' failed\n');
 process.exit(fail ? 1 : 0);

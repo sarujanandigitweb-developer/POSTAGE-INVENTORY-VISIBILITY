@@ -399,3 +399,43 @@ sticks to the top, and that International Prices really is 43 columns with all o
 rendered.
 
 All fourteen dataset locks verified byte-identical.
+
+---
+
+# Part 6 — Header colour, and a note on suite runtime
+
+**Reported:** the sheet colour-codes each carrier group so you can see which columns belong
+to which service; my header was one flat grey, losing that. The instruction was to add
+header colour but **not** to reproduce the sheet's multi-colour scheme.
+
+## What the sheet does, and what was built instead
+
+The sheet gives every group its own hue — red for *(Small Parcels) 0-2kg*, blue for
+*ROYAL Mail*, magenta for *Tracked 2-5kg*, pink for the column row. Useful, but it does not
+survive a theme, does not scale to a seventh carrier, and carries no meaning a reader can
+learn.
+
+The hierarchy is now carried by **one hue at two depths**:
+
+| Level | Treatment |
+|---|---|
+| Column row (deepest) | solid band, `--thead-bg` / `--thead-ink` |
+| Group labels above it | light tint of the same hue, plus a **left rule at the column the group starts on** |
+| Empty cells beside a label | left plain, so the tint reads as that group's span |
+
+The left rule is what replaces the colour-coding: you can still see where *ROYAL Mail* ends
+and *DHL* begins, without a rainbow.
+
+`--accent` was deliberately **not** reused — it is a pale `#7aa2ff` in dark mode, which
+would leave white header text nearly unreadable. A dedicated four-variable pair is defined
+for both themes.
+
+## Suite runtime
+
+`node validation/test_lampshade.js` → **ALL PASS — 1,121 passed, 0 failed**, in **176
+seconds**. It is no longer a sub-minute check: 1,121 assertions over a 4.7 MB file, many
+of them rendering all 5,661 rows. It briefly looked like a hang against a two-minute
+command timeout; it is not, and the lock file now records the expected runtime alongside
+the expected count.
+
+All fourteen dataset locks verified byte-identical.

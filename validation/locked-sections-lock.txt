@@ -49,6 +49,7 @@ to their widest option, gap 14px -> 10px/8px, label 12px -> 11px, select padding
 below it. Each label also carries its section's population.
 No dataset was touched — all ten pre-existing hashes above are unchanged.
 
-WHOLE FILE sha256: bd7bfa7ad456a0735e8d9875cd570fb36a12afe30d87ba2c5c248c2551e4eb3b
+WHOLE FILE sha256: ea81a7961236dba0a44e901b0a60fba46ea7a47cabdfde8d0b65a7b4fcf66f10
 
-Verify: node validation/test_lampshade.js  -> expect 1109 passed, 0 failed
+Verify: node validation/test_lampshade.js  -> expect 1121 passed, 0 failed
+        (takes ~3 minutes: 1,121 assertions over a 4.7 MB file)

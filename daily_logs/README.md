@@ -28,6 +28,8 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | REQ-02-D01 | Five remaining category sections implemented, validated and published | 2026-08-24 |
 | REQ-03 | Make classification self-maintaining and extend the catalogue to twelve sections | 2026-08-25 |
 | REQ-03-D01 | Derived + declared-prefix classifier, six new sections, incoming stock, pagination, schema review | 2026-08-25 |
+| REQ-04 | Stock audit trail, live postage data, and correctness repairs to price and container | 2026-08-26 |
+| REQ-04-D01 | product_history parsed to a movement log, listing_data prices, UK Unit 5, order-date containers, live Google Sheet view | 2026-08-26 |
 
 ## Index
 
@@ -36,3 +38,4 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | 2026-08-20 | Thursday | REQ-01-D01 | [2026-08-20__sarujanan__inv-piv__REQ-01-D01.md](2026-08-20/2026-08-20__sarujanan__inv-piv__REQ-01-D01.md) |
 | 2026-08-24 | Monday | REQ-02-D01 | [2026-08-24__sarujanan__inv-piv__REQ-02-D01.md](2026-08-24/2026-08-24__sarujanan__inv-piv__REQ-02-D01.md) |
 | 2026-08-25 | Tuesday | REQ-03-D01 | [2026-08-25__sarujanan__inv-piv__REQ-03-D01.md](2026-08-25/2026-08-25__sarujanan__inv-piv__REQ-03-D01.md) |
+| 2026-08-26 | Wednesday | REQ-04-D01 | [2026-08-26__sarujanan__inv-piv__REQ-04-D01.md](2026-08-26/2026-08-26__sarujanan__inv-piv__REQ-04-D01.md) |
