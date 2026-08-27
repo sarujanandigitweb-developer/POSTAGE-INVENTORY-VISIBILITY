@@ -144,7 +144,7 @@ global.setTimeout = fn => fn();
 // ---- run the dashboard's own code ------------------------------------------
 const runner = new Function('with(this){' + SRC +
   '\n; return {DATA, LS_DATA, CATS, CATEGORIES, state, render, matches, buildCats, buildExtras,' +
-  ' applyCat, rowHTML, buildCSV, csvRow, typeCell, downloadCSV, active, extraCols, PH_DATA, WA_DATA, LB_DATA, LH_DATA, classifySKU, UNCLASSIFIED, CLASSIFY, SUB4, SUB4_AMBIGUOUS, SUB_LABEL, LS_EXTRA, paginate, pageCount, goToPage, INCOMING, INC_CONTAINER, INC_STAGE, SPR_DATA, LGT_DATA, LB_EXTRA, LB_SERIES, CSM_DATA, CLO_DATA, HAP_DATA, RFB_DATA, PREFIX_RULES, PREFIX_DEFINED, HIST_COLS, HIST_ACTIONS, STOCK_HISTORY, HIST_TOTAL, HIST_RAW, histBtn, histRowsHTML, renderHist, openHist, closeHist, NA_REASON, SHOPIFY_PRICE, price, WH5_STOCK, CSV_HEADERS, num, container, LAST_CONTAINER,' +
+  ' applyCat, rowHTML, buildCSV, csvRow, typeCell, downloadCSV, active, extraCols, PH_DATA, WA_DATA, LB_DATA, LH_DATA, classifySKU, UNCLASSIFIED, CLASSIFY, SUB4, SUB4_AMBIGUOUS, SUB_LABEL, LS_EXTRA, LH_EXTRA, paginate, pageCount, goToPage, INCOMING, INC_CONTAINER, INC_STAGE, SPR_DATA, LGT_DATA, LB_EXTRA, LB_SERIES, CSM_DATA, CLO_DATA, HAP_DATA, RFB_DATA, PREFIX_RULES, PREFIX_DEFINED, HIST_COLS, HIST_ACTIONS, STOCK_HISTORY, HIST_TOTAL, HIST_RAW, histFor, SHOPIFY_COMMENT, stockLevel, stockTotal, locDash, openCm, openImg, closeSmall, renderAlerts, histBtn, histRowsHTML, renderHist, openHist, closeHist, NA_REASON, SHOPIFY_PRICE, price, WH5_STOCK, CSV_HEADERS, num, container, LAST_CONTAINER,' +
   ' pgParseCSV, pgSplitSections, pgTrim, pgIsHeader, pgTableHTML, pgRender, pgLoad,' +
   ' setView, pg, PG_URL, PG_SHEET, PG_GID, pgFilter, pgColsHTML, pgAnalyse, pgLabel,' +
   ' pgColLabels, pgSpanCells, pgHeadHTML, PG_REFRESH_MS, pgTotalCol, pgTableHTML};}');
@@ -206,8 +206,8 @@ ok('CR images are absolute URLs', app.DATA.every(r => !r.i || /^https?:\/\//.tes
 ok('CR declares no Level-2 dimension', !app.CATS.CR.sub2 && !app.CATS.CR.attr);
 ok('CR hides the sub-category dropdown', els.sub2.hidden === true);
 ok('CR hides the attribute dropdown', els.attr.hidden === true);
-ok('CR CSV keeps 26 columns (23 + 2 Incoming + Unit 5)',
-   app.buildCSV(app.DATA.slice(0, 3)).split('\r\n')[0].split(',').length === 26,
+ok('CR CSV keeps 27 columns (23 + 2 Incoming + Unit 5 + Price Comment)',
+   app.buildCSV(app.DATA.slice(0, 3)).split('\r\n')[0].split(',').length === 27,
    app.buildCSV(app.DATA.slice(0, 3)).split('\r\n')[0].split(',').length);
 ok('CR CSV exports its type verbatim',
    app.csvRow(app.DATA.find(r => r.f === 'CRSF'))[1] === 'Side Fitting');
@@ -350,8 +350,8 @@ ok('search by fitting (pendant light)', searchN('pendant light') >= 9);
 
 console.log('\n== PHASE 10 — CSV export ==');
 const lsCsv = app.buildCSV(app.LS_DATA.filter(app.matches)).split('\r\n');
-ok('Lampshade CSV has 28 columns (26 + shape + fitting)',
-   lsCsv[0].split(',').length === 28, lsCsv[0].split(',').length);
+ok('Lampshade CSV has 29 columns (27 + shape + fitting)',
+   lsCsv[0].split(',').length === 29, lsCsv[0].split(',').length);
 ok('CSV header ends with the two extra columns',
    /Shade shape,Fitting type$/.test(lsCsv[0]), lsCsv[0].slice(-40));
 ok('Lampshade CSV has 451 data rows', lsCsv.length === 452, lsCsv.length);
@@ -365,8 +365,8 @@ ok('breakdown restored', els.breakdown.textContent === 'CRSF 219 · CRFF 113', e
 ok('table back to 332 rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === 332);
 ok('sub-category dropdown hidden again', els.sub2.hidden === true);
 ok('attribute dropdown hidden again', els.attr.hidden === true);
-ok('CR CSV back to 26 columns',
-   app.buildCSV(app.DATA.slice(0, 2)).split('\r\n')[0].split(',').length === 26);
+ok('CR CSV back to 27 columns',
+   app.buildCSV(app.DATA.slice(0, 2)).split('\r\n')[0].split(',').length === 27);
 
 console.log('\n== PHASE 12 — single-file architecture & theme ==');
 ok('no external scripts', !/<script[^>]+src=/.test(HTML));
@@ -474,7 +474,7 @@ const phNeg = app.PH_DATA.filter(r => r.a !== undefined && r.a !== null && r.a <
 ok('PH warehouse+stock filter matches dataset', rowsShown() === phNeg, els.shown.textContent + ' vs ' + phNeg);
 app.state.wh = ''; app.state.st = ''; app.render();
 const phCsv = app.buildCSV(app.PH_DATA.filter(app.matches)).split('\r\n');
-ok('PH CSV has 27 columns (26 + Mount Type)', phCsv[0].split(',').length === 27, phCsv[0].split(',').length);
+ok('PH CSV has 28 columns (27 + Mount Type)', phCsv[0].split(',').length === 28, phCsv[0].split(',').length);
 ok('PH CSV header ends with Mount Type', /Mount Type$/.test(phCsv[0]), phCsv[0].slice(-30));
 ok('PH CSV has 398 data rows', phCsv.length === 399, phCsv.length);
 
@@ -482,14 +482,14 @@ console.log('\n== PHASE 14 — locked sections after PH added ==');
 choose('Ceiling Rose', '*');
 ok('CR total restored 332', String(els.total.textContent) === '332', els.total.textContent);
 ok('CR breakdown restored', els.breakdown.textContent === 'CRSF 219 · CRFF 113', els.breakdown.textContent);
-ok('CR CSV still 26 columns', app.buildCSV(app.DATA.slice(0,2)).split('\r\n')[0].split(',').length === 26);
+ok('CR CSV still 27 columns', app.buildCSV(app.DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
 choose('Lampshade', '*');
 ok('LS total restored 851', String(els.total.textContent) === '851', els.total.textContent);
 ok('LS breakdown restored (8 types)',
    els.breakdown.textContent === 'Metal 352 · Glass Shades 82 · Fabric 13 · Crystal Shades 29 · Natural Rope 5 · Wire Cages 253 · Chandeliers 100 · Baton Lighting 17',
    els.breakdown.textContent);
-ok('LS CSV still 28 columns',
-   app.buildCSV(app.LS_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 28);
+ok('LS CSV still 29 columns',
+   app.buildCSV(app.LS_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 29);
 choose('Ceiling Rose', '*');
 
 console.log('\n== PHASE 15 — Wall Arm (180) & Bulbs (334) ==');
@@ -546,20 +546,20 @@ choose('Wall Arm', '*');
 ok('WA total 180', String(els.total.textContent) === '180', els.total.textContent);
 ok('WA rendered 180 rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === 180);
 ok('WA no "undefined"', !els.tb.innerHTML.includes('>undefined<'));
-ok('WA CSV 27 columns (26 base + Subtype)', app.buildCSV(app.WA_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
+ok('WA CSV 28 columns (27 base + Subtype)', app.buildCSV(app.WA_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 28);
 ok('WA search works', searchN('swan neck') > 0);
 choose('Bulbs', '*');
 ok('LB total 334', String(els.total.textContent) === '334', els.total.textContent);
 ok('LB rendered 334 rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === 334);
 ok('LB no "undefined"', !els.tb.innerHTML.includes('>undefined<'));
-// 25 base + the Series attribute column
-ok('LB CSV 27 columns', app.buildCSV(app.LB_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
+// 27 base + the Series attribute column
+ok('LB CSV 28 columns', app.buildCSV(app.LB_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 28);
 ok('LB search works', searchN('filament') > 0);
 choose('Ceiling Rose', '*');
 ok('CR still 332 after WA/LB', String(els.total.textContent) === '332', els.total.textContent);
 ok('CR breakdown still correct', els.breakdown.textContent === 'CRSF 219 · CRFF 113');
 
-console.log('\n== PHASE 16 — Lamp Holder (226, validated sheet population) ==');
+console.log('\n== PHASE 16 — Lamp Holder (226 from the sheet, 191 more by prefix) ==');
 ok('LH_DATA has 226 SKUs', app.LH_DATA.length === 226, app.LH_DATA.length);
 ok('LH 226 distinct', new Set(app.LH_DATA.map(r => r.s)).size === 226);
 ok('LH 100% image', app.LH_DATA.every(r => r.i && r.i.startsWith('https://sin1.contabostorage.com/')));
@@ -591,16 +591,16 @@ ok('Lamp Holder is no longer a GAP',
    parseCats().find(c => c.label === 'Lamp Holder').gap === false);
 console.log('\n-- LH UI --');
 choose('Lamp Holder', '*');
-ok('LH total 226', String(els.total.textContent) === '226', els.total.textContent);
-ok('LH rendered 226 rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === 226);
+ok('LH total 417', String(els.total.textContent) === '417', els.total.textContent);
+ok('LH rendered 417 rows', (els.tb.innerHTML.match(/<tr>/g) || []).length === 417);
 ok('LH no "undefined"', !els.tb.innerHTML.includes('>undefined<'));
 ok('LH category dropdown offers only All',
    cat('Lamp Holder').options.map(o => o.label).join('|') === 'Select|All Lamp Holder',
    cat('Lamp Holder').options.map(o => o.label).join('|'));
 ok('Mount Type dropdown visible', els.attr.hidden === false);
 ok('sub-category dropdown hidden', els.sub2.hidden === true);
-ok('LH CSV has 27 columns (26 + Mount Type)',
-   app.buildCSV(app.LH_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
+ok('LH CSV has 28 columns (27 + Mount Type)',
+   app.buildCSV(app.LH_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 28);
 ok('LH CSV header ends with Mount Type', /Mount Type$/.test(app.buildCSV(app.LH_DATA.slice(0,2)).split('\r\n')[0]));
 ok('LH search by SKU', searchN('lhshe27yb') >= 1);
 ok('LH search by description', searchN('bakelite') > 0);
@@ -611,7 +611,7 @@ console.log('\n== PHASE 17 — all locked sections after Lamp Holder ==');
 choose('Ceiling Rose', '*');
 ok('CR 332 / CRSF 219 · CRFF 113', String(els.total.textContent) === '332' &&
    els.breakdown.textContent === 'CRSF 219 · CRFF 113');
-ok('CR CSV still 26 columns', app.buildCSV(app.DATA.slice(0,2)).split('\r\n')[0].split(',').length === 26);
+ok('CR CSV still 27 columns', app.buildCSV(app.DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
 choose('Lampshade', '*');
 ok('LS 851 restored', String(els.total.textContent) === '851');
 choose('Pendant Lamp Holder', '*');
@@ -748,11 +748,11 @@ ok('no SKU prefix leaked into the category row as a new UI category',
    'Ceiling Rose|Pendant Lamp Holder|Lampshade|Wall Arm|Lamp Holder|Bulbs|Lamp Spares|Lighting|' +
    'Cosmetics|Clothes|Home Appliances|Refurbished');
 choose('Ceiling Rose', '*');
-ok('CR CSV still 26 columns', app.buildCSV(app.DATA.slice(0,3)).split('\r\n')[0].split(',').length === 26);
+ok('CR CSV still 27 columns', app.buildCSV(app.DATA.slice(0,3)).split('\r\n')[0].split(',').length === 27);
 ok('CR CSV Type column unchanged ("Side Fitting")',
    app.csvRow(app.DATA.find(r => r.f === 'CRSF'))[1] === 'Side Fitting');
 choose('Lampshade', '*');
-ok('LS CSV still 28 columns', app.buildCSV(app.LS_DATA.slice(0,3)).split('\r\n')[0].split(',').length === 28);
+ok('LS CSV still 29 columns', app.buildCSV(app.LS_DATA.slice(0,3)).split('\r\n')[0].split(',').length === 29);
 choose('Ceiling Rose', '*');
 ok('CR search still works', searchN('crsf100bm') === 1);
 ok('search by classified main category works', searchN('ceiling rose') === 332);
@@ -964,8 +964,8 @@ els.psize.value = '15'; fire(els.psize, 'change', { target: { value: '15' } });
 fire(els.pnext, 'click'); fire(els.pnext, 'click');
 ok('CSV still exports every matching row, not just the page',
    app.buildCSV(app.DATA.filter(app.matches)).split('\r\n').length === 333);
-ok('CR CSV still 26 columns',
-   app.buildCSV(app.DATA.slice(0,2)).split('\r\n')[0].split(',').length === 26);
+ok('CR CSV still 27 columns',
+   app.buildCSV(app.DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
 ok('breakdown still counts the whole result set',
    els.breakdown.textContent === 'CRSF 219 · CRFF 113', els.breakdown.textContent);
 
@@ -1181,8 +1181,8 @@ ok('sub-type filter Cord Grip -> 39', (() => {
   app.state.fam = 'CG'; app.render(); const n = rowsShown(); app.state.fam = ''; app.render(); return n === 39; })());
 ok('search by description works', searchN('cord grip') > 0);
 ok('search by sub-type works', searchN('transformers') === 205);
-ok('CSV has 26 columns (no per-category extras)',
-   app.buildCSV(app.SPR_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 26);
+ok('CSV has 27 columns (no per-category extras)',
+   app.buildCSV(app.SPR_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
 ok('CSV exports 1420 data rows',
    app.buildCSV(app.SPR_DATA).split('\r\n').length === 1421);
 ok('pagination works on the largest section', (() => {
@@ -1263,8 +1263,8 @@ ok('search finds a chandelier', searchN('chandelier') > 0);
 ok('search finds a wire cage', searchN('cage') > 0);
 ok('added rows have no shade-shape value, and that is fine',
    app.LS_EXTRA.every(r => r.sh === undefined));
-ok('LS CSV still 28 columns',
-   app.buildCSV(app.LS_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 28);
+ok('LS CSV still 29 columns',
+   app.buildCSV(app.LS_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 29);
 choose('Ceiling Rose', '*');
 
 console.log('\n-- duplicate type names merged to one each --');
@@ -1345,7 +1345,7 @@ ok('Plugin Pendant filter -> 176', (() => {
 ok('Table Lamp filter -> 66', (() => {
   app.state.fam='GTP'; app.render(); const n=rowsShown(); app.state.fam=''; app.render(); return n===66; })());
 ok('search by description works', searchN('table lamp') > 0);
-ok('CSV has 26 columns', app.buildCSV(app.LGT_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 26);
+ok('CSV has 27 columns', app.buildCSV(app.LGT_DATA.slice(0,2)).split('\r\n')[0].split(',').length === 27);
 choose('Wall Arm', '*');
 ok('Wall Arm unaffected: still 180', String(els.total.textContent) === '180');
 choose('Ceiling Rose', '*');
@@ -1425,8 +1425,8 @@ ok('the dropdown lists All + the five types',
 ok('search finds an added Incandescent SKU', searchN('icst64e2760') === 1);
 ok('search finds an added panel light', searchN('llro18w') === 1);
 ok('search by type name works', searchN('led panel light') >= 36);
-ok('CSV has 27 columns (26 base + Series)',
-   app.buildCSV(app.CATS.LB.data.slice(0,3)).split('\r\n')[0].split(',').length === 27);
+ok('CSV has 28 columns (27 base + Series)',
+   app.buildCSV(app.CATS.LB.data.slice(0,3)).split('\r\n')[0].split(',').length === 28);
 (() => {
   const hdr = app.buildCSV(app.CATS.LB.data.slice(0,1)).split('\r\n')[0].split(',');
   const col = hdr.indexOf('Series');
@@ -1594,28 +1594,28 @@ ok('Handles type filter -> 31', (() => {
 ok('Group filter Bags -> 90', (() => {
   app.state.attr='Bags'; app.render(); const n=rowsShown(); app.state.attr=''; app.render(); return n===90; })());
 ok('Group dropdown visible for Home Appliances', els.attr.hidden === false);
-ok('HAP CSV has 27 columns (26 base + Group)',
-   app.buildCSV(app.HAP_DATA.slice(0,3)).split('\r\n')[0].split(',').length === 27);
+ok('HAP CSV has 28 columns (27 base + Group)',
+   app.buildCSV(app.HAP_DATA.slice(0,3)).split('\r\n')[0].split(',').length === 28);
 ok('search finds a clock', searchN('clock') > 0);
 choose('Refurbished', '*'); app.state.pageSize = 'all'; app.render();
 ok('Refurbished dropdown shows its single type',
    cat('Refurbished').options.map(o => o.label).join('|') ===
    'Select|All Refurbished|Refurbished|Others',
    cat('Refurbished').options.map(o => o.label).join('|'));
-ok('RFB CSV has 26 columns', app.buildCSV(app.RFB_DATA.slice(0,3)).split('\r\n')[0].split(',').length === 26);
+ok('RFB CSV has 27 columns', app.buildCSV(app.RFB_DATA.slice(0,3)).split('\r\n')[0].split(',').length === 27);
 
 console.log('-- nothing that was already on the page moved --');
 [['Ceiling Rose',332], ['Lampshade',851], ['Pendant Lamp Holder',398], ['Wall Arm',180],
- ['Lamp Holder',226], ['Bulbs',334], ['Lamp Spares',1420], ['Lighting',562]]
+ ['Lamp Holder',417], ['Bulbs',334], ['Lamp Spares',1420], ['Lighting',562]]
  .forEach(([name, n]) => {
   choose(name, '*'); app.state.pageSize = 'all'; app.render();
   ok(name + ' still ' + n, String(els.total.textContent) === String(n), els.total.textContent);
 });
-ok('dashboard total is 5,661 SKUs',
+ok('dashboard total is 5,852 SKUs',
    [app.DATA, app.PH_DATA, app.LS_DATA, app.LS_EXTRA, app.WA_DATA, app.LH_DATA,
-    app.LB_DATA, app.LB_EXTRA, app.SPR_DATA, app.LGT_DATA,
+    app.LH_EXTRA, app.LB_DATA, app.LB_EXTRA, app.SPR_DATA, app.LGT_DATA,
     app.CSM_DATA, app.CLO_DATA, app.HAP_DATA, app.RFB_DATA]
-     .reduce((a,d) => a + d.length, 0) === 5661);
+     .reduce((a,d) => a + d.length, 0) === 5852);
 choose('Ceiling Rose', '*');
 
 console.log('\n== PHASE 34 — Stock History dialog (spec 4.6 popup + 8.2 table) ==');
@@ -1728,14 +1728,14 @@ ok('the no-exception rule is stated',
      !== -1);
 
 console.log('-- real history is loaded from inventory.product_history --');
-ok('5,480 SKUs carry recorded movements',
-   Object.keys(app.STOCK_HISTORY).length === 5480, Object.keys(app.STOCK_HISTORY).length);
-ok('58,542 movements carried in total', MOVES().length === 58542, MOVES().length);
+ok('5,648 SKUs carry recorded movements',
+   Object.keys(app.STOCK_HISTORY).length === 5648, Object.keys(app.STOCK_HISTORY).length);
+ok('59,673 movements carried in total', MOVES().length === 59673, MOVES().length);
 ok('no SKU carries more than the 12 most recent PER REGION',
    Object.values(app.STOCK_HISTORY).every(d =>
      Object.values(d).every(v => v.length <= 12)));
-ok('1,385 SKU/region pairs are truncated and say so',
-   Object.keys(app.HIST_TOTAL).length === 1385, Object.keys(app.HIST_TOTAL).length);
+ok('1,402 SKU/region pairs are truncated and say so',
+   Object.keys(app.HIST_TOTAL).length === 1402, Object.keys(app.HIST_TOTAL).length);
 ok('a truncated entry records a true total above 12',
    Object.keys(app.HIST_TOTAL).every(s =>
      Object.values(app.HIST_TOTAL[s]).every(n => n > 12)));
@@ -1834,8 +1834,8 @@ ok('Reset closes the dialog', (() => {
   return app.state.hist === '' && els.hmodal.hidden === true; })());
 app.state.pageSize = 'all'; app.render();
 ok('Ceiling Rose still 332', String(els.total.textContent) === '332', els.total.textContent);
-ok('CR CSV still 26 columns — History is a control, not a CSV column',
-   app.buildCSV(app.DATA.slice(0,3)).split('\r\n')[0].split(',').length === 26);
+ok('CR CSV still 27 columns — History is a control, not a CSV column',
+   app.buildCSV(app.DATA.slice(0,3)).split('\r\n')[0].split(',').length === 27);
 choose('Bulbs', '*'); app.state.pageSize = 'all'; app.render();
 ok('Bulbs still 334', String(els.total.textContent) === '334');
 ok('History buttons render for every section',
@@ -1845,9 +1845,9 @@ choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
 
 console.log('\n== PHASE 35 — Shopify price from public.listing_data ==');
 const ALLROWS = [].concat(...Object.keys(app.CATS).map(k => app.CATS[k].data));
-ok('every dashboard row is covered by the price pass', ALLROWS.length === 5661, ALLROWS.length);
-ok('the lookup holds 3,320 priced SKUs',
-   Object.keys(app.SHOPIFY_PRICE).length === 3320, Object.keys(app.SHOPIFY_PRICE).length);
+ok('every dashboard row is covered by the price pass', ALLROWS.length === 5852, ALLROWS.length);
+ok('the lookup holds 3,435 priced SKUs',
+   Object.keys(app.SHOPIFY_PRICE).length === 3435, Object.keys(app.SHOPIFY_PRICE).length);
 (() => {
   let exact = 0, range = 0, none = 0;
   ALLROWS.forEach(r => {
@@ -1855,10 +1855,10 @@ ok('the lookup holds 3,320 priced SKUs',
     else if (r.pn && r.pn > 1) range++;
     else none++;
   });
-  ok('3,302 rows now show one exact price (was 1,222)', exact === 3302, exact);
+  ok('3,417 rows now show one exact price (was 1,222)', exact === 3417, exact);
   ok('only 18 rows remain an unresolvable range (was 2,100)', range === 18, range);
-  ok('2,341 rows have no UK Shopify listing', none === 2341, none);
-  ok('the three buckets account for every row', exact + range + none === 5661);
+  ok('2,417 rows have no UK Shopify listing', none === 2417, none);
+  ok('the three buckets account for every row', exact + range + none === 5852);
 })();
 
 console.log('-- the lookup is the single source of truth for price --');
@@ -1892,8 +1892,12 @@ console.log('-- worked examples --');
 ok('CRFF100BY resolves from a range to one price of 5.99', (() => {
   const r = app.DATA.find(x => x.s === 'CRFF100BY');
   return r.p === 5.99 && r.pn === 1; })());
+// the price now carries a colour badge, so this asserts what it MEANS - the value is
+// shown and it is not the Unavailable chip - rather than the exact old markup.
 ok('it renders as a plain price, not an Unavailable range',
-   app.price(5.99, 1, 5.99, 5.99) === '£5.99', app.price(5.99, 1, 5.99, 5.99));
+   app.price(5.99, 1, 5.99, 5.99).indexOf('£5.99') !== -1 &&
+   app.price(5.99, 1, 5.99, 5.99).indexOf('class="na"') === -1,
+   app.price(5.99, 1, 5.99, 5.99));
 // the only three SKUs that lose a price they used to show: all listed at price = 0
 [['LSFC220GD'], ['PHMU1PBRFG'], ['WSADHTBM']].forEach(([s]) => {
   const r = ALLROWS.find(x => x.s === s);
@@ -1908,7 +1912,7 @@ ok('a range says the stores disagree, not that a rule is missing',
    app.price(null, 3, 1.5, 4.0).indexOf('different prices') !== -1);
 
 console.log('-- coverage by section is what was measured --');
-[['CR',332,302],['LH',226,220],['LB',334,276],['SPR',1420,983],['HAP',705,472],
+[['CR',332,302],['LH',417,335],['LB',334,276],['SPR',1420,983],['HAP',705,472],
  ['CLO',177,111],['LGT',562,316],['WA',180,85],['LS',851,359],['PH',398,148],
  ['CSM',124,36],['RFB',352,12]].forEach(([key, total, priced]) => {
   const d = app.CATS[key].data;
@@ -1923,7 +1927,7 @@ console.log('-- nothing else moved --');
 choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
 ok('Ceiling Rose still 332', String(els.total.textContent) === '332');
 ok('CR CSV still 26 columns',
-   app.buildCSV(app.DATA.slice(0,3)).split('\r\n')[0].split(',').length === 26);
+   app.buildCSV(app.DATA.slice(0,3)).split('\r\n')[0].split(',').length === 27);
 ok('the CSV price column carries the resolved price', (() => {
   const r = app.DATA.find(x => x.s === 'CRFF100BY');
   return app.csvRow(r).indexOf('5.99') !== -1; })());
@@ -1932,8 +1936,8 @@ ok('no row renders "undefined" after the price merge',
 
 console.log('\n== PHASE 36 — UK Unit 5 (warehouse 33), stock only ==');
 const ROWS36 = [].concat(...Object.keys(app.CATS).map(k => app.CATS[k].data));
-ok('only the 265 non-zero quantities are stored',
-   Object.keys(app.WH5_STOCK).length === 265, Object.keys(app.WH5_STOCK).length);
+ok('only the 286 non-zero quantities are stored',
+   Object.keys(app.WH5_STOCK).length === 286, Object.keys(app.WH5_STOCK).length);
 ok('every stored quantity is a positive number',
    Object.keys(app.WH5_STOCK).every(k => typeof app.WH5_STOCK[k] === 'number' &&
                                           app.WH5_STOCK[k] > 0));
@@ -1944,12 +1948,12 @@ console.log('-- absent means ZERO, not unknown: this warehouse is two weeks old 
 ok('every row carries a Unit 5 number — none renders Unavailable',
    ROWS36.every(r => typeof r.u5 === 'number'),
    ROWS36.filter(r => typeof r.u5 !== 'number').length + ' rows without a number');
-ok('all 5,661 rows show a Unit 5 quantity',
-   ROWS36.filter(r => r.u5 !== undefined).length === 5661,
+ok('all 5,852 rows show a Unit 5 quantity',
+   ROWS36.filter(r => r.u5 !== undefined).length === 5852,
    ROWS36.filter(r => r.u5 !== undefined).length);
-ok('265 rows show stock, 5,396 show 0',
-   ROWS36.filter(r => r.u5 > 0).length === 265 &&
-   ROWS36.filter(r => r.u5 === 0).length === 5661 - 265,
+ok('286 rows show stock, 5,566 show 0',
+   ROWS36.filter(r => r.u5 > 0).length === 286 &&
+   ROWS36.filter(r => r.u5 === 0).length === 5852 - 286,
    ROWS36.filter(r => r.u5 > 0).length + ' with stock');
 ok('a stocked SKU carries its real quantity',
    ROWS36.every(r => r.u5 === (app.WH5_STOCK[r.s] || 0)));
@@ -1964,14 +1968,14 @@ ok('the word Unavailable never appears in a Unit 5 cell', (() => {
   return app.num(r.u5).indexOf('Unavailable') === -1; })());
 
 console.log('-- the column is in the UK group, stock only, no location --');
-ok('the UK header group now spans 11 columns', HTML.indexOf('class="grp-uk" colspan="11"') !== -1);
+ok('the UK header group now spans 12 columns', HTML.indexOf('class="grp-uk" colspan="12"') !== -1);
 ok('Unit 5 is declared as a warehouse header', HTML.indexOf('<th>Unit 5</th>') !== -1);
 ok('Unit 5 has NO Location column',
    HTML.indexOf('Unit 5 Location') === -1 && app.CSV_HEADERS.indexOf('UK Unit 5 Location') === -1);
 ok('the CSV carries UK Unit 5 Stock', app.CSV_HEADERS.indexOf('UK Unit 5 Stock') !== -1);
 ok('it sits immediately after Unit 18, so no existing column shifted',
    app.CSV_HEADERS.indexOf('UK Unit 5 Stock') === app.CSV_HEADERS.indexOf('UK Unit 18 Stock') + 1);
-ok('the shared CSV is now 26 columns', app.CSV_HEADERS.length === 26, app.CSV_HEADERS.length);
+ok('the shared CSV is now 27 columns', app.CSV_HEADERS.length === 27, app.CSV_HEADERS.length);
 choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
 ok('the CSV value matches the row', (() => {
   const r = app.DATA.find(x => x.u5 !== undefined);
@@ -2001,8 +2005,8 @@ ok('the file records that warehouse id 5 is Duisburg, a different site',
 console.log('-- nothing else moved --');
 ok('Ceiling Rose still 332', String(els.total.textContent) === '332');
 ok('no row renders "undefined"', !els.tb.innerHTML.includes('>undefined<'));
-ok('Shopify price is unaffected: still 3,302 exact',
-   ROWS36.filter(r => r.p !== null && r.p !== undefined).length === 3302);
+ok('Shopify price is unaffected: still 3,417 exact',
+   ROWS36.filter(r => r.p !== null && r.p !== undefined).length === 3417);
 choose('Bulbs', '*'); app.state.pageSize = 'all'; app.render();
 ok('Bulbs still 334', String(els.total.textContent) === '334');
 choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
@@ -2157,9 +2161,9 @@ choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
 ok('Ceiling Rose still 332', String(els.total.textContent) === '332');
 ok('the Inventory view is visible again',
    els.catbar.hidden === false && els.invwrap.hidden === false && els.pgwrap.hidden === true);
-ok('Shopify price still 3,302 exact',
+ok('Shopify price still 3,417 exact',
    [].concat(...Object.keys(app.CATS).map(k => app.CATS[k].data))
-     .filter(r => r.p !== null && r.p !== undefined).length === 3302);
+     .filter(r => r.p !== null && r.p !== undefined).length === 3417);
 
 console.log('\n== PHASE 38 — hidden actually hides, and postage search/filter ==');
 console.log('-- the CSS blind spot that let both views render at once --');
@@ -2358,9 +2362,9 @@ ok('a region bucket only holds its own movements',
    Object.keys(app.STOCK_HISTORY).every(s =>
      Object.keys(app.STOCK_HISTORY[s]).every(rg =>
        app.STOCK_HISTORY[s][rg].every(m => m.rg === rg))));
-ok('5,439 SKUs have a UK history and 2,558 a German one',
-   Object.values(app.STOCK_HISTORY).filter(d => d.UK && d.UK.length).length === 5439 &&
-   Object.values(app.STOCK_HISTORY).filter(d => d.DE && d.DE.length).length === 2558,
+ok('5,605 SKUs have a UK history and 2,635 a German one',
+   Object.values(app.STOCK_HISTORY).filter(d => d.UK && d.UK.length).length === 5605 &&
+   Object.values(app.STOCK_HISTORY).filter(d => d.DE && d.DE.length).length === 2635,
    Object.values(app.STOCK_HISTORY).filter(d => d.UK && d.UK.length).length + '/' +
    Object.values(app.STOCK_HISTORY).filter(d => d.DE && d.DE.length).length);
 ok('German movements are German locations, never UK units',
@@ -2388,9 +2392,9 @@ console.log('-- the two dialogs really differ --');
 })();
 
 console.log('-- splitting them hides nothing --');
-ok('1,220 SKUs have movements outside UK and German',
+ok('1,240 SKUs have movements outside UK and German',
    Object.values(app.STOCK_HISTORY)
-     .filter(d => Object.keys(d).some(rg => rg !== 'UK' && rg !== 'DE')).length === 1220,
+     .filter(d => Object.keys(d).some(rg => rg !== 'UK' && rg !== 'DE')).length === 1240,
    Object.values(app.STOCK_HISTORY)
      .filter(d => Object.keys(d).some(rg => rg !== 'UK' && rg !== 'DE')).length);
 (() => {
@@ -2485,8 +2489,8 @@ ok('the selected state still tracks the view',
 
 console.log('\n== PHASE 43 — Last Container: latest by order_date, not by name ==');
 const ALLROWS43 = [].concat(...Object.keys(app.CATS).map(k => app.CATS[k].data));
-ok('1,038 SKUs have an arrived container',
-   Object.keys(app.LAST_CONTAINER.c).length === 1038, Object.keys(app.LAST_CONTAINER.c).length);
+ok('1,067 SKUs have an arrived container',
+   Object.keys(app.LAST_CONTAINER.c).length === 1067, Object.keys(app.LAST_CONTAINER.c).length);
 ok('only 21 distinct container names exist, so they are interned',
    app.LAST_CONTAINER.n.length === 21, app.LAST_CONTAINER.n.length);
 ok('every stored entry names a real container and a count',
@@ -2879,6 +2883,359 @@ console.log('-- a month subtotal is not a purchase --');
 })();
 app.setView('inv'); choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
 ok('Inventory unaffected', String(els.total.textContent) === '332');
+
+// ---------------------------------------------------------------------------
+console.log('\n== PHASE 49 — Lamp Holder repopulated from the LH prefix, 226 -> 417 ==');
+console.log('-- the sheet population is untouched --');
+ok('LH_DATA is still the 226 from the sheet', app.LH_DATA.length === 226, app.LH_DATA.length);
+ok('LH_EXTRA holds the 191 the sheet never listed', app.LH_EXTRA.length === 191, app.LH_EXTRA.length);
+ok('the two do not overlap by a single SKU', (() => {
+  const a = new Set(app.LH_DATA.map(r => r.s));
+  return app.LH_EXTRA.every(r => !a.has(r.s));
+})());
+
+console.log('-- every added row is a SINGLE component --');
+ok('no bundles: not one SKU contains "+"', app.LH_EXTRA.every(r => !r.s.includes('+')));
+ok('no packs: not one SKU ends ...PK', app.LH_EXTRA.every(r => !/[0-9A-Z]PK$/.test(r.s)));
+ok('every added SKU starts LH', app.LH_EXTRA.every(r => r.s.startsWith('LH')));
+ok('every added SKU is distinct', new Set(app.LH_EXTRA.map(r => r.s)).size === 191);
+ok('every added row carries a description', app.LH_EXTRA.every(r => r.d));
+ok('190 of the 191 carry an image, and the one without is not faked',
+   app.LH_EXTRA.filter(r => r.i).length === 190 &&
+   app.LH_EXTRA.filter(r => !r.i).every(r => r.i === undefined),
+   app.LH_EXTRA.filter(r => r.i).length);
+
+console.log('-- the section on screen --');
+const LH49 = app.CATS.LH.data;
+ok('Lamp Holder is 417 rows', LH49.length === 417, LH49.length);
+ok('417 distinct SKUs', new Set(LH49.map(r => r.s)).size === 417);
+ok('the classifier dropped none of them',
+   app.UNCLASSIFIED.filter(u => u.section === 'LH').length === 0);
+ok('every row classifies back to Lamp Holder',
+   LH49.every(r => app.classifySKU(r.s).key === 'LH'));
+ok('every row carries Lamp Holder as its main category',
+   LH49.every(r => r.mc === 'Lamp Holder'));
+ok('no added SKU also appears in another section', (() => {
+  const added = new Set(app.LH_EXTRA.map(r => r.s));
+  return Object.keys(app.CATS).filter(k => k !== 'LH')
+    .every(k => app.CATS[k].data.every(r => !added.has(r.s)));
+})());
+
+console.log('-- no category and no type was invented --');
+ok('LH still declares no family, so no type dropdown appears',
+   app.CATS.LH.fams.length === 0, app.CATS.LH.fams.length);
+ok('Mount Type is still only an attribute', app.CATS.LH.attr.label === 'Mount Type');
+ok('the 191 have NO Mount Type — none was guessed from the SKU',
+   app.LH_EXTRA.every(r => !r.mt));
+ok('Type stays the constant section name on every row',
+   LH49.every(r => r.t === 'Lamp Holder'));
+ok('215 of the 417 have a Mount Type, the rest read Unavailable',
+   LH49.filter(r => r.mt).length === 215, LH49.filter(r => r.mt).length);
+
+console.log('-- the holder parts are kept, named, and not reclassified --');
+[['LHPLFTE14BM', 'E14 Full teeth black Lid'], ['LHPLBM', 'Plain aluminum lamp head'],
+ ['LH2HTE27YB', 'lamp spare Part'], ['LHTHT30GD', '16*300mm halt thin rod-gold']]
+ .forEach(([sku, desc]) => {
+  const r = LH49.find(x => x.s === sku);
+  ok(sku + ' is on the Lamp Holder page with its real description',
+     !!r && r.d === desc && r.mc === 'Lamp Holder', r ? r.d : 'missing');
+});
+ok('36 of the 191 are parts rather than holders, and that is the measured figure',
+   app.LH_EXTRA.filter(r => !/holder/i.test(r.d)).length === 36,
+   app.LH_EXTRA.filter(r => !/holder/i.test(r.d)).length);
+
+console.log('-- the four lookups reach the added rows --');
+ok('115 of the 191 have a UK Shopify price, 76 have no listing',
+   app.LH_EXTRA.filter(r => app.SHOPIFY_PRICE[r.s] !== undefined).length === 115,
+   app.LH_EXTRA.filter(r => app.SHOPIFY_PRICE[r.s] !== undefined).length);
+ok('a SKU with no listing shows no price rather than a stale one', (() => {
+  const r = LH49.find(x => x.s === 'LHCTOBM');
+  return r && typeof r.p === 'number' && r.p === 6.65;   // this one IS listed
+})());
+ok('21 of the 191 carry Unit 5 stock and the rest resolve to 0',
+   app.LH_EXTRA.filter(r => app.WH5_STOCK[r.s]).length === 21 &&
+   LH49.every(r => typeof r.u5 === 'number'),
+   app.LH_EXTRA.filter(r => app.WH5_STOCK[r.s]).length);
+ok('LHTTAGU10BM shows its real Unit 5 quantity',
+   LH49.find(r => r.s === 'LHTTAGU10BM').u5 === 242);
+ok('29 of the 191 have a last arrived container',
+   app.LH_EXTRA.filter(r => app.LAST_CONTAINER.c[r.s]).length === 29,
+   app.LH_EXTRA.filter(r => app.LAST_CONTAINER.c[r.s]).length);
+
+console.log('-- stock history for the added rows --');
+ok('168 of the 191 have recorded movements',
+   app.LH_EXTRA.filter(r => app.STOCK_HISTORY[r.s]).length === 168,
+   app.LH_EXTRA.filter(r => app.STOCK_HISTORY[r.s]).length);
+ok('every added movement carries a date and an action',
+   app.LH_EXTRA.filter(r => app.STOCK_HISTORY[r.s]).every(r =>
+     Object.values(app.STOCK_HISTORY[r.s]).every(v =>
+       v.every(m => /^\d{4}-\d{2}-\d{2}$/.test(m.dt) && m.ac))));
+ok('every added movement sits only in its own region bucket',
+   app.LH_EXTRA.filter(r => app.STOCK_HISTORY[r.s]).every(r =>
+     Object.keys(app.STOCK_HISTORY[r.s]).every(rg =>
+       app.STOCK_HISTORY[r.s][rg].every(m => m.rg === rg))));
+ok('the cap is still 12 per region on the added rows',
+   app.LH_EXTRA.filter(r => app.STOCK_HISTORY[r.s]).every(r =>
+     Object.values(app.STOCK_HISTORY[r.s]).every(v => v.length <= 12)));
+ok('negative stock survives the parse on the added rows — the sign is not stripped',
+   (() => {
+     let n = 0;
+     app.LH_EXTRA.forEach(r => { const h = app.STOCK_HISTORY[r.s]; if (!h) return;
+       Object.values(h).forEach(v => v.forEach(m => {
+         if (/^-\d+$/.test(String(m.sb)) || /^-\d+$/.test(String(m.sa))) n++; })); });
+     return n === 48;
+   })(), 'expected 48 negative values');
+ok('Qty is computed only where BOTH sides are numbers',
+   app.LH_EXTRA.filter(r => app.STOCK_HISTORY[r.s]).every(r =>
+     Object.values(app.STOCK_HISTORY[r.s]).every(v => v.every(m => {
+       const n = x => /^-?\d+$/.test(String(x));
+       return (n(m.sb) && n(m.sa)) ? m.qt === Number(m.sa) - Number(m.sb) : m.qt === '';
+     }))));
+ok('an added SKU the source never logged still resolves, rather than throwing',
+   app.LH_EXTRA.filter(r => !app.STOCK_HISTORY[r.s])
+     .every(r => app.histFor(r.s, 'UK').length === 0));
+
+console.log('-- the page renders it --');
+choose('Lamp Holder', '*'); app.state.pageSize = 'all'; app.render();
+ok('the header says 417', String(els.total.textContent) === '417', els.total.textContent);
+ok('417 rows are on screen', (els.tb.innerHTML.match(/<tr>/g) || []).length === 417);
+ok('no cell renders "undefined"', !els.tb.innerHTML.includes('>undefined<'));
+// state.q is compared against a lowercased haystack, so the query must be lowercase -
+// the same convention every other search assertion follows.
+ok('an added SKU is findable by search', searchN('lhttagu10bm') === 1, searchN('lhttagu10bm'));
+ok('a search for a holder PART finds it too', searchN('halt thin rod') >= 6, searchN('halt thin rod'));
+ok('the category dropdown still offers only All',
+   cat('Lamp Holder').options.map(o => o.label).join('|') === 'Select|All Lamp Holder',
+   cat('Lamp Holder').options.map(o => o.label).join('|'));
+ok('the CSV export covers all 417 rows',
+   app.buildCSV(app.CATS.LH.data).trim().split('\r\n').length === 418);
+ok('the sub-title names both sources',
+   app.CATS.LH.sub.indexOf('417 SKUs') !== -1 &&
+   app.CATS.LH.sub.indexOf('LampHolder_SOT') !== -1);
+
+console.log('-- nothing else moved --');
+choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
+ok('Ceiling Rose still 332', String(els.total.textContent) === '332');
+choose('Pendant Lamp Holder', '*'); app.render();
+ok('Pendant Lamp Holder still 398', String(els.total.textContent) === '398');
+choose('Lamp Spares', '*'); app.render();
+ok('Lamp Spares still 1420', String(els.total.textContent) === '1420');
+choose('Ceiling Rose', '*'); app.render();
+
+// ---------------------------------------------------------------------------
+console.log('\n== PHASE 50 — Price Comment: how each Shopify price was found ==');
+const ROWS50 = [].concat(...Object.keys(app.CATS).map(k => app.CATS[k].data));
+const kind50 = t => t === 'Standalone' ? 'standalone'
+  : t === 'Listed, no price' ? 'listed-no-price'
+  : t === 'Not listed' ? 'not-listed'
+  : / Pack — /.test(t) ? 'pack'
+  : /^Combo with |^Multipack — /.test(t) ? 'combo'
+  : /^Variant — /.test(t) ? 'variant' : 'UNKNOWN';
+
+console.log('-- every row carries one, and only the six shapes exist --');
+ok('the lookup covers all 5,852 dashboard SKUs',
+   Object.keys(app.SHOPIFY_COMMENT).length === 5852, Object.keys(app.SHOPIFY_COMMENT).length);
+ok('every row has a comment', ROWS50.every(r => r.cm), ROWS50.filter(r => !r.cm).length + ' without');
+ok('no comment falls outside the six shapes',
+   ROWS50.every(r => kind50(r.cm) !== 'UNKNOWN'),
+   (ROWS50.find(r => kind50(r.cm) === 'UNKNOWN') || {}).cm);
+[['standalone', 3435], ['listed-no-price', 101], ['pack', 202],
+ ['combo', 832], ['variant', 97], ['not-listed', 1185]].forEach(([k, n]) => {
+  ok(k + ' is ' + n, ROWS50.filter(r => kind50(r.cm) === k).length === n,
+     ROWS50.filter(r => kind50(r.cm) === k).length);
+});
+ok('the six account for every row',
+   ROWS50.filter(r => kind50(r.cm) !== 'UNKNOWN').length === 5852);
+
+console.log('-- the comment must agree with the price actually on screen --');
+const priced50 = r => typeof r.p === 'number' || (r.pn && r.pn > 1);
+ok('every row saying Standalone really shows a price',
+   ROWS50.filter(r => r.cm === 'Standalone').every(priced50));
+ok('NO row that shows a price says anything else',
+   ROWS50.filter(priced50).every(r => r.cm === 'Standalone'),
+   (ROWS50.find(r => priced50(r) && r.cm !== 'Standalone') || {}).cm);
+ok('pack, combo, variant and not-listed rows are all blank in the price column',
+   ROWS50.filter(r => ['pack','combo','variant','not-listed'].indexOf(kind50(r.cm)) !== -1)
+     .every(r => !priced50(r)));
+
+console.log('-- pack sizes are named as numbers, never just "pack" --');
+const packs50 = ROWS50.filter(r => kind50(r.cm) === 'pack');
+ok('every pack comment states at least one count',
+   packs50.every(r => /\d+ Pack/.test(r.cm)), (packs50.find(r => !/\d+ Pack/.test(r.cm)) || {}).cm);
+ok('no pack comment says "Pack" without a number in front of it',
+   packs50.every(r => !/(^|[^0-9, ])\s*Pack/.test(r.cm.replace(/\d+(, \d+)*/g, '#'))));
+ok('every pack comment names the listing SKU it came from',
+   packs50.every(r => / — [A-Z0-9]/.test(r.cm)));
+ok('no pack count is three digits — the greedy-digit bug stays fixed',
+   packs50.every(r => !/\d{3,} Pack/.test(r.cm)),
+   (packs50.find(r => /\d{3,} Pack/.test(r.cm)) || {}).cm);
+ok('a known 6-pack reads as 6 Pack',
+   (app.SHOPIFY_COMMENT['LDCWGU103'] || '') === '6 Pack — LDCWGU1036PK',
+   app.SHOPIFY_COMMENT['LDCWGU103']);
+ok('an A-suffix pack is decoded as 10, not left as "A"',
+   Object.keys(app.SHOPIFY_COMMENT).some(s => /10 Pack — \w+APK/.test(app.SHOPIFY_COMMENT[s])));
+ok('ICST64E27 is NOT read as a 403 pack',
+   !/403|603/.test(app.SHOPIFY_COMMENT['ICST64E27'] || ''), app.SHOPIFY_COMMENT['ICST64E27']);
+
+console.log('-- a variant SKU is never described as a combo --');
+ok('every variant comment names a SKU with no +',
+   ROWS50.filter(r => kind50(r.cm) === 'variant')
+     .every(r => r.cm.indexOf('+') === -1), 'a + would mean it is a combo');
+ok('every combo comment describes a real combo',
+   ROWS50.filter(r => kind50(r.cm) === 'combo').length === 832);
+
+console.log('-- the column is on the page and in the export --');
+choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
+ok('the header declares a Price Comment column', HTML.indexOf('>Price Comment</th>') !== -1);
+ok('the UK group grew from 11 columns to 12',
+   HTML.indexOf('<th class="grp-uk" colspan="12">UK</th>') !== -1);
+ok('every rendered row carries a comment cell',
+   (els.tb.innerHTML.match(/<td class="cm">/g) || []).length === 332,
+   (els.tb.innerHTML.match(/<td class="cm">/g) || []).length);
+ok('no comment cell is empty', !/<td class="cm"><\/td>/.test(els.tb.innerHTML));
+ok('a real comment is on screen', els.tb.innerHTML.indexOf('>Standalone<') !== -1);
+ok('the CSV gained one column: 26 -> 27',
+   app.CSV_HEADERS.length === 27 && app.CSV_HEADERS[13] === 'Price Comment',
+   app.CSV_HEADERS.length + ' / ' + app.CSV_HEADERS[13]);
+ok('the CSV row is the same width as its header',
+   app.csvRow(app.CATS.CR.data[0]).length === app.CSV_HEADERS.length);
+ok('the CSV carries the comment text',
+   app.csvRow(app.CATS.CR.data[0])[13] === app.CATS.CR.data[0].cm,
+   app.csvRow(app.CATS.CR.data[0])[13]);
+ok('Ceiling Rose export is now 27 columns',
+   app.buildCSV(app.CATS.CR.data.slice(0,3)).split('\r\n')[0].split(',').length === 27);
+
+console.log('-- nothing else moved --');
+ok('Ceiling Rose still 332', String(els.total.textContent) === '332');
+choose('Lamp Holder', '*'); app.render();
+ok('Lamp Holder still 417', String(els.total.textContent) === '417');
+choose('Ceiling Rose', '*'); app.render();
+
+// ---------------------------------------------------------------------------
+console.log('\n== PHASE 51 — stock alerts, price badge, passport image, dash locations ==');
+const ROWS51 = [].concat(...Object.keys(app.CATS).map(k => app.CATS[k].data));
+
+console.log('-- every id the new controls need exists ABOVE <script> --');
+const ABOVE51 = HTML.slice(0, HTML.indexOf('<script>'));
+['cmmodal','cmx','cmsku','cmtxt','imgmodal','imx','imsku','imimg','alertLow','alertOut']
+  .forEach(id => ok('#' + id + ' is authored above the script',
+                    ABOVE51.indexOf('id="' + id + '"') !== -1));
+
+console.log('-- the three stock buckets partition every row --');
+ok('out of stock (total <= 0) is 1,418',
+   ROWS51.filter(r => app.stockLevel(r) === 'out').length === 1418,
+   ROWS51.filter(r => app.stockLevel(r) === 'out').length);
+ok('low stock (total 1-10) is 662',
+   ROWS51.filter(r => app.stockLevel(r) === 'low').length === 662,
+   ROWS51.filter(r => app.stockLevel(r) === 'low').length);
+ok('the three buckets account for all 5,852 rows',
+   ['out','low','ok'].reduce((t, l) => t + ROWS51.filter(r => app.stockLevel(r) === l).length, 0) === 5852);
+ok('the boundary is inclusive: 10 is low, 11 is not',
+   app.stockLevel({ a: 10 }) === 'low' && app.stockLevel({ a: 11 }) === 'ok');
+ok('zero is out, not low', app.stockLevel({ a: 0 }) === 'out');
+ok('a negative total is out', app.stockLevel({ a: -5 }) === 'out');
+ok('the total spans every warehouse, not just Unit 3',
+   app.stockTotal({ a: 2, b: 3, c: 1, u5: 1, k: 1, m: 1, ca: 1, us: 1 }) === 11 &&
+   app.stockLevel({ a: 2, b: 3, c: 1, u5: 1, k: 1, m: 1, ca: 1, us: 1 }) === 'ok');
+
+console.log('-- clicking an alert filters to exactly the SKUs it counted --');
+(() => {
+  choose('Ceiling Rose', '*'); app.state.pageSize = 'all';
+  const want = app.CATS.CR.data.filter(r => app.stockLevel(r) === 'low').length;
+  app.state.st = 'low'; app.render();
+  ok('the low filter shows the counted rows', rowsShown() === want, rowsShown() + ' vs ' + want);
+  ok('every row it shows really is low',
+     app.CATS.CR.data.filter(app.matches).every(r => app.stockLevel(r) === 'low'));
+  const wantOut = app.CATS.CR.data.filter(r => app.stockLevel(r) === 'out').length;
+  app.state.st = 'out'; app.render();
+  ok('the out filter shows the counted rows', rowsShown() === wantOut, rowsShown() + ' vs ' + wantOut);
+  ok('every row it shows really is out',
+     app.CATS.CR.data.filter(app.matches).every(r => app.stockLevel(r) === 'out'));
+  ok('low and out never overlap',
+     app.CATS.CR.data.filter(r => app.stockLevel(r) === 'low')
+       .every(r => app.stockLevel(r) !== 'out'));
+  app.state.st = ''; app.render();
+})();
+ok('both filters are offered in the stock dropdown too',
+   HTML.indexOf('<option value="low">') !== -1 && HTML.indexOf('<option value="out">') !== -1);
+ok('the alert buttons sit after the Postage Information tab',
+   HTML.indexOf('data-view="postage"') < HTML.indexOf('id="alertOut"'));
+
+console.log('-- the Shopify price badge: ONE light blue badge, no value tiers --');
+ok('every price gets the same badge, whatever the value',
+   [0, 0.89, 6.19, 10, 10.01, 44.99].every(v => app.price(v, 1, v, v) ===
+     '<span class="pb">£' + Number(v).toFixed(2) + '</span>'),
+   app.price(6.19, 1, 6.19, 6.19));
+ok('no value tier survives anywhere in the file',
+   HTML.indexOf('pb-r') === -1 && HTML.indexOf('pb-y') === -1 && HTML.indexOf('pb-ok') === -1);
+ok('a price still shows its value',
+   app.price(6.19, 1, 6.19, 6.19).indexOf('£6.19') !== -1);
+ok('an unpriced row gets no badge at all',
+   app.price(null, null, null, null).indexOf('class="pb"') === -1);
+ok('an unresolvable range still explains itself rather than showing a badge',
+   app.price(null, 3, 1.5, 4.0).indexOf('different prices') !== -1 &&
+   app.price(null, 3, 1.5, 4.0).indexOf('class="pb"') === -1);
+ok('the badge is light blue from the theme tokens, so dark mode follows',
+   /\.pb\{[^}]*background:var\(--accent-soft\);color:var\(--accent\)\}/.test(HTML));
+ok('--accent-soft is defined in BOTH themes',
+   (HTML.match(/--accent-soft:/g) || []).length === 2, (HTML.match(/--accent-soft:/g) || []).length);
+ok('all 3,417 priced rows carry the badge, none excluded',
+   ROWS51.filter(r => typeof r.p === 'number').length === 3417,
+   ROWS51.filter(r => typeof r.p === 'number').length);
+
+console.log('-- Unit 3 / Unit 4 show a dash, every other location keeps its chip --');
+ok('a missing Unit 3 shelf renders a dash, not Unavailable',
+   app.locDash(null).indexOf('>-<') !== -1 && app.locDash(null).indexOf('Unavailable') === -1);
+ok('the dash still carries a reason on hover', /title="[^"]+"/.test(app.locDash(null)));
+ok('a real shelf code is passed through unchanged',
+   app.locDash('1-E-07') === '<span class="loc">1-E-07</span>', app.locDash('1-E-07'));
+ok('the empty string counts as missing', app.locDash('').indexOf('>-<') !== -1);
+ok('Unit 3 and Unit 4 are wired to the dash renderer',
+   /num\(r\.a\) \+ '<\/td><td>' \+ locDash\(r\.al\)/.test(HTML) &&
+   /num\(r\.b\) \+ '<\/td><td>' \+ locDash\(r\.bl\)/.test(HTML));
+ok('Kronen and Schmutter still show the Unavailable chip',
+   /loc\(r\.kl, true\)/.test(HTML) && /loc\(r\.ml\)/.test(HTML));
+(() => {
+  choose('Ceiling Rose', '*'); app.state.pageSize = 'all'; app.render();
+  const h = els.tb.innerHTML;
+  ok('the rendered table contains dashes', h.indexOf('class="dash"') !== -1);
+  ok('no Unavailable chip is left in a Unit 3 or Unit 4 cell',
+     (h.match(/class="dash"/g) || []).length ===
+     app.CATS.CR.data.filter(r => !r.al).length + app.CATS.CR.data.filter(r => !r.bl).length,
+     (h.match(/class="dash"/g) || []).length);
+})();
+
+console.log('-- comment and image open on click --');
+ok('the comment cell is a button, not plain text',
+   /<td class="cm"><button type="button" class="cmb"/.test(HTML));
+ok('the comment button is capped narrow', /\.cmb\{max-width:118px/.test(HTML));
+ok('the thumbnail carries its SKU so the dialog can name it',
+   app.img('x.jpg', 'ABC').indexOf('data-sku="ABC"') !== -1);
+ok('the thumbnail invites a click', /\.thumb\{cursor:zoom-in\}/.test(HTML));
+ok('the passport frame keeps the real 35:45 ratio',
+   /\.ppt\{width:264px;height:340px/.test(HTML) && Math.abs(264 / 340 - 35 / 45) < 0.01);
+ok('the image is contained, never cropped', /\.ppt\{[^}]*object-fit:contain/.test(HTML));
+(() => {
+  choose('Ceiling Rose', '*'); app.render();
+  const sku = app.CATS.CR.data[0].s;
+  app.openCm(sku);
+  ok('opening a comment names the SKU', els.cmsku.textContent === sku, els.cmsku.textContent);
+  ok('opening a comment shows the WHOLE text',
+     els.cmtxt.textContent === app.CATS.CR.data[0].cm, els.cmtxt.textContent);
+  ok('the comment dialog is shown', els.cmmodal.hidden === false);
+  app.closeSmall();
+  ok('and closes again', els.cmmodal.hidden === true && els.imgmodal.hidden === true);
+  app.openImg(sku, 'https://example.test/x.jpg');
+  ok('opening an image names the SKU', els.imsku.textContent === sku);
+  ok('the image dialog is shown', els.imgmodal.hidden === false);
+  app.closeSmall();
+  ok('and closes again', els.imgmodal.hidden === true);
+})();
+
+console.log('-- nothing else moved --');
+choose('Ceiling Rose', '*'); app.state.st = ''; app.state.pageSize = 'all'; app.render();
+ok('Ceiling Rose still 332', String(els.total.textContent) === '332');
+ok('the shared CSV is still 27 columns', app.CSV_HEADERS.length === 27);
 
 console.log('\n' + (fail ? 'FAILED' : 'ALL PASS') + ' — ' + pass + ' passed, ' + fail + ' failed\n');
 process.exit(fail ? 1 : 0);
