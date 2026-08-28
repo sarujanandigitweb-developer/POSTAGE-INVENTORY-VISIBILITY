@@ -13,7 +13,12 @@
 set -uo pipefail
 
 PROJECT="/home/led-247/POSTAGE-INVENTORY-VISIBILITY"
-ENV_FILE="/home/led-247/Returns-Reason-Hotspot-Report/.env"
+# Hub credentials come from THIS project first. The fallback is the sibling repo the
+# publish originally borrowed from — kept so an older checkout still works, but it is
+# a path outside this project and must not be the primary source: if that repo is
+# moved or cleaned up, a scheduled publish would fail with no obvious cause.
+ENV_FILE="$PROJECT/.env"
+[ -r "$ENV_FILE" ] || ENV_FILE="/home/led-247/Returns-Reason-Hotspot-Report/.env"
 PG_MODULES="/home/led-247/Returns-Reason-Hotspot-Report/scripts/node_modules"
 
 MEMBER_NAME="sarujanan"
