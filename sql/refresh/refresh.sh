@@ -2,7 +2,9 @@
 # ---------------------------------------------------------------------------
 # Postage Inventory Visibility — 2-hourly refresh from the LEDSone database.
 #
-# Runs: pre-flight validation -> extract+build -> price/comments -> atomic apply.
+# Runs: pre-flight validation -> extract+build (inventory, history, containers, Shopify
+# price/comments, and the SKU Fixed Price marketplace data) -> atomic apply -> publish
+# to the Varman AIOS hub, then read the published row back and compare it.
 # Publishes ONLY if every stage passes. On any failure the dashboard is left exactly
 # as it was, and the exit code is non-zero.
 #
@@ -115,4 +117,24 @@ if ! run_step 'sections rendering the wrong count : 0' $NODE "$PROJECT/validatio
   finish FAILED "restored from backup"
 fi
 
-finish OK "published"
+# ---- publish to the Varman AIOS hub -----------------------------------------
+# Refreshing the local file is only half the job: until the hub row is updated, everyone
+# reading the dashboard is still looking at the previous run. This is the step that makes
+# the 2-hourly refresh visible.
+#
+# A failure here is a DISTRIBUTION problem, not a data problem. The dashboard on disk is
+# already validated and installed, so nothing is rolled back — the run reports a distinct
+# status instead, which exits non-zero so a silent stall cannot hide.
+say "publish: pushing to the Varman AIOS hub"
+if ! run_step 'Pushed successfully' /bin/bash "$PROJECT/hub/publish.sh"; then
+  finish OK-NOPUBLISH "refreshed and installed locally, but the hub push failed"
+fi
+
+# publish.sh reports what its own client believes; verify.sh reads the row back over a
+# separate connection and compares the sha256 against the file on disk.
+say "publish: verifying the published page"
+if ! run_step 'VERIFIED' /bin/bash "$PROJECT/hub/verify.sh"; then
+  finish OK-NOVERIFY "hub reported success but the read-back did not match the local file"
+fi
+
+finish OK "published to disk and to the hub"

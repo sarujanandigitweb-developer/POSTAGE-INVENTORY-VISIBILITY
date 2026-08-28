@@ -24,7 +24,7 @@ const log  = (...a) => console.log('[apply]', ...a);
 const FLOOR_ROWS  = 5000;          // a collapse below this must never publish
 const FLOOR_BYTES = 2 * 1024 * 1024;
 const BLOCKS = ['HIST_RAW', 'SHOPIFY_PRICE', 'SHOPIFY_COMMENT', 'SHOPIFY_ALT',
-                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING'];
+                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE'];
 
 // `const INCOMING      = {` is padded for alignment, so the search must tolerate
 // whitespace rather than matching an exact string.
@@ -62,6 +62,7 @@ put('RECEIVED',       rd('RECEIVED.json'));
 put('SHOPIFY_PRICE',  rd('shopify-price_data.json'));
 put('SHOPIFY_ALT',    rd('shopify-alt-price_data.json'));
 put('SHOPIFY_COMMENT', rd('shopify-comments.json'));
+put('FIXED_PRICE',    rd('FIXED_PRICE.json'));
 const inc = rd('INCOMING.json');
 put('INCOMING', inc.INCOMING);
 { // the two interned arrays beside it
@@ -130,6 +131,26 @@ chk('rows rendered', rendered >= FLOOR_ROWS, rendered + ' rows (floor ' + FLOOR_
     const abs = rows.filter(r => /^https?:\/\//i.test(r.i));
     chk('images bare in ' + n, abs.length === 0, abs.length + ' unexpectedly absolute');
   });
+}
+
+// the SKU Fixed Price tab: a collapse here would publish an empty third tab
+{
+  const fp = rd('FIXED_PRICE.json');
+  chk('FIXED_PRICE has a name dictionary', Array.isArray(fp.d) && fp.d.length > 1000,
+      (fp.d || []).length + ' entries');
+  chk('FIXED_PRICE has rows', Array.isArray(fp.r) && fp.r.length >= 20000,
+      (fp.r || []).length + ' rows');
+  const priced = (fp.r || []).filter(r => r[4] || r[5] || r[6] || r[7]).length;
+  chk('every FIXED_PRICE row carries a price', priced === (fp.r || []).length,
+      (fp.r || []).length - priced + ' rows have no price at all');
+  const maxIdx = (fp.d || []).length - 1;
+  const bad = (fp.r || []).filter(r => {
+    const n = r[2];
+    return typeof n === 'number' ? (n < 0 || n > maxIdx)
+                                 : n.some((v, i) => (i === 1 && v < 0) ? false : (v < 0 || v > maxIdx));
+  });
+  chk('every FIXED_PRICE name index resolves', bad.length === 0,
+      bad.length + ' rows point outside the dictionary');
 }
 
 // duplicates across every array

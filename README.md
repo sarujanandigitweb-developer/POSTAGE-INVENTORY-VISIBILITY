@@ -20,6 +20,7 @@ sql/refresh/                         the 2-hourly refresh
   raw-arrays.js                      reads the embedded arrays as they are ON DISK
   rules.js                           loads the page's own CLASSIFY / CATS / prefix rules
   extract/*.js                       read-only queries: products, stock, containers, history, price
+  extract/fixed-price.js             the SKU Fixed Price tab: 4 marketplaces, composed combo names
   build.js                           assembles every data block into out/ as JSON
   apply.js                           validates a temp file, then swaps it in atomically
   query-equivalence.js               pre-flight: old query form vs new, against one snapshot
@@ -37,6 +38,7 @@ sql/live-skus.txt                    input for the refresh diagnostics above
 validation/smoke-render.js           renders the page headless and counts every section
 validation/diff-dashboard.js         proves a refresh changed ONLY the data blocks
 validation/verify-locks.js           guards the locked sections
+validation/check-fixed-price.js      drives the SKU Fixed Price tab: search, sort, filter, paging
 
 hub/                                 publish to the Varman AIOS hub
 evidence/                            numbered findings, one per investigation

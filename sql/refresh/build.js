@@ -25,6 +25,7 @@ const S = require('./extract/stock.js');
 const C = require('./extract/containers.js');
 const H = require('./extract/history.js');
 const PR = require('./extract/price.js');
+const FP = require('./extract/fixed-price.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(__dirname, 'out');
@@ -102,6 +103,11 @@ function derive(bySku){
   const price = await PR.extract(c);
   log('listing SKUs      :', Object.keys(price.listing).length,
       '· pack codes', Object.keys(price.packs).length);
+
+  const fixed = await FP.extract(c);
+  log('fixed price       :', fixed.stats.rows, 'rows ·', fixed.stats.single, 'single ·',
+      fixed.stats.combo, 'combo ·', fixed.stats.dict, 'name parts ·',
+      fixed.stats.unnamed, 'unnamed');
 
   const liveSkus = prod.rows.map(r => r.sku);
   const hist = await H.extract(c, liveSkus);
@@ -184,6 +190,7 @@ function derive(bySku){
     wh5: Object.keys(wh5).length, lastContainer: Object.keys(last.c).length,
     received: Object.keys(received.r).length, receivedMatched: matched, receivedUnmatched: unmatched,
     incoming: Object.keys(incoming).length,
+    fixedPrice: fixed.stats,
     warehousesMissingMaster: stock.missing,
     ms: Date.now() - started
   };
@@ -195,6 +202,7 @@ function derive(bySku){
   write('HIST_RAW.json', histRaw);
   write('RECEIVED.json', received);
   write('INCOMING.json', { INCOMING: incoming, INC_CONTAINER: incNames, INC_STAGE: incStages });
+  write('FIXED_PRICE.json', fixed.payload);
   write('_prefix-table.json', table);
   write('_meta.json', meta);
   // price + comments are produced by the existing validated builder, fed this listing set
