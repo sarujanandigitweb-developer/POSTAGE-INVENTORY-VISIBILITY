@@ -6,7 +6,9 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'dashboard', 'inventory-dashboard.html'), 'utf8');
+// DASHBOARD lets the refresh validate a TEMPORARY file before it is ever installed.
+const FILE = process.env.DASHBOARD || path.join(ROOT, 'dashboard', 'inventory-dashboard.html');
+const html = fs.readFileSync(FILE, 'utf8');
 
 // every id the script may look up must exist in the markup ABOVE <script>
 const above = html.slice(0, html.indexOf('<script>'));

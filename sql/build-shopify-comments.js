@@ -37,6 +37,13 @@ const CHANNEL = [null, 'LEDSone', 'Electricalsone', 'Vintagelite', 'BesBet', 'Dc
 const GBP_UNTIL = 5;                    // channels 1-5 are UK stores priced in pounds
 
 const listing = {};                     // lsku -> { ord: price, … }
+// The refresh feeds this builder straight from sql/refresh/extract/price.js via
+// LISTING=<file>. The tier and channel logic below is untouched — only where the rows
+// come from changes, so there is still exactly one definition of the pricing rules.
+if (process.env.LISTING){
+  const j = JSON.parse(fs.readFileSync(process.env.LISTING, 'utf8'));
+  Object.keys(j.listing).forEach(k => { listing[k] = j.listing[k]; });
+} else
 process.env.IDS.split(',').forEach(id => {
   const j = JSON.parse(fs.readFileSync(path.join(process.env.TR,
     'mcp-claude_ai_Ledsone_postgres-execute_sql-' + id + '.txt'), 'utf8'));
@@ -84,7 +91,8 @@ const packOf = s => { const m = /(\d|A)PK(-[A-Z]{2,3})?$/.exec(s);
                       return m ? (m[1] === 'A' ? PACK_A : parseInt(m[1], 10)) : null; };
 const base = s => s.replace(/(\d|A)PK(-[A-Z]{2,3})?$/, '');
 
-const rows = fs.readFileSync(path.join(ROOT, 'sql', 'dashboard-skus.txt'), 'utf8')
+const SKUFILE = process.env.SKUFILE || path.join(ROOT, 'sql', 'dashboard-skus.txt');
+const rows = fs.readFileSync(SKUFILE, 'utf8')
   .split('\n').filter(Boolean).map(l => l.split('\t'));
 
 // ---- decide the match -------------------------------------------------------
@@ -149,7 +157,7 @@ console.log('  4 complex combo   :', tiers.combo3 || 0);
 console.log('  5 not listed      :', tiers.none || 0);
 
 const accessories = [...new Set([...need].map(base).filter(Boolean))].sort();
-fs.writeFileSync(path.join(ROOT, 'sql', 'accessory-skus.txt'), accessories.join('\n') + '\n');
+fs.writeFileSync(path.join(process.env.OUTDIR || path.join(ROOT,'sql'), 'accessory-skus.txt'), accessories.join('\n') + '\n');
 console.log('accessory SKUs      :', accessories.length, '-> sql/accessory-skus.txt');
 
 if (process.env.PASS1){
@@ -180,7 +188,12 @@ const label = s => {
 const list = a => a.length === 1 ? label(a[0])
   : a.slice(0, -1).map(label).join(', ') + ' and ' + label(a[a.length - 1]);
 
-const PRICE = {}, COMMENT = {};
+// Where no UK store carries the SKU, the foreign price is still worth showing — a
+// picker asking "why is there no price?" deserves the answer on the row, not a blank.
+// It is kept SEPARATE from PRICE so it can never be read as pounds.
+const CURRENCY = { 'LEDSone DE': ['\u20ac', 'EUR'], 'LED Sone FR': ['\u20ac', 'EUR'],
+                   'LEDSone US': ['$', 'USD'], 'Relicelectrical': ['C$', 'CAD'] };
+const PRICE = {}, ALT = {}, COMMENT = {};
 const stat = { ledsone: 0, otherUk: 0, nonGbp: 0, none: 0 };
 const chanCount = {};
 rows.forEach(([, sku]) => {
@@ -194,6 +207,8 @@ rows.forEach(([, sku]) => {
   // Only a UK store's figure reaches the price column: it is labelled in pounds, and a
   // euro or Canadian dollar amount rendered as "£31.49" is a wrong number.
   if (ord && ord <= GBP_UNTIL){ PRICE[sku] = e[ord]; ord === 1 ? stat.ledsone++ : stat.otherUk++; }
+  else if (ord){ const cur = CURRENCY[chan] || ['', ''];
+                 ALT[sku] = [e[ord], cur[0], cur[1], chan]; stat.nonGbp++; }
   else stat.nonGbp++;
 
   let txt;
@@ -210,15 +225,18 @@ rows.forEach(([, sku]) => {
   COMMENT[sku] = txt;
 });
 
-fs.writeFileSync(path.join(ROOT, 'sql', 'shopify-price_data.json'), JSON.stringify(PRICE));
-fs.writeFileSync(path.join(ROOT, 'sql', 'shopify-comments.json'), JSON.stringify(COMMENT));
-fs.writeFileSync(path.join(ROOT, 'sql', 'shopify-comments.csv'),
+const ODIR = process.env.OUTDIR || path.join(ROOT, 'sql');
+fs.writeFileSync(path.join(ODIR, 'shopify-price_data.json'), JSON.stringify(PRICE));
+fs.writeFileSync(path.join(ODIR, 'shopify-alt-price_data.json'), JSON.stringify(ALT));
+fs.writeFileSync(path.join(ODIR, 'shopify-comments.json'), JSON.stringify(COMMENT));
+fs.writeFileSync(path.join(ODIR, 'shopify-comments.csv'),
   'SKU,Comments\n' + rows.map(([, s]) => s + ',"' + COMMENT[s].replace(/"/g, '""') + '"').join('\n') + '\n');
 
 console.log('\npriced from LEDSone      :', stat.ledsone);
 console.log('priced from another UK store:', stat.otherUk);
 console.log('listed only outside the UK  :', stat.nonGbp, '(no price shown)');
 console.log('not listed anywhere         :', stat.none);
+console.log('foreign-currency prices captured:', Object.keys(ALT).length);
 console.log('accessories named           :', Object.keys(NAME).length);
 console.log('\nmatches by channel:');
 Object.keys(chanCount).sort((a, b) => chanCount[b] - chanCount[a])
