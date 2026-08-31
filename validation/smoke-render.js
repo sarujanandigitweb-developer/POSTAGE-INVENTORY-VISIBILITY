@@ -31,7 +31,7 @@ const document = {
   createElement: () => mkEl('new'), addEventListener(){},
   documentElement: mkEl('html'), body: mkEl('body')
 };
-const src = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
+const src = html.slice(html.lastIndexOf('<script>') + 8, html.lastIndexOf('</script>'));
 const sb = { console, out: null };
 let err = null;
 try {

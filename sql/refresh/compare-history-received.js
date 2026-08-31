@@ -68,7 +68,10 @@ const pct = (a, b) => b === 0 ? '100.00' : (100 * a / b).toFixed(2);
   const OLDH = R.CATS ? null : null;
   const H = (function(){ // decode the embedded record
     const src = fs.readFileSync(path.join(ROOT, 'dashboard', 'inventory-dashboard.html'), 'utf8');
-    const o = src.indexOf('<script>');
+  // The page now carries a small early script before the data script, so the data
+    // block is the LAST one — indexOf would slice from the early script and swallow a
+    // stray </script>.
+    const o = src.lastIndexOf('<script>');
     const body = src.slice(o + 8, src.indexOf('const state = {'));
     const el = { addEventListener(){}, appendChild(){}, style:{}, classList:{ add(){}, remove(){}, toggle(){} } };
     const document = { getElementById: () => null, querySelector: () => null, querySelectorAll: () => [],

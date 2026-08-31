@@ -13,7 +13,10 @@ const FILE = path.join(ROOT, 'dashboard', 'inventory-dashboard.html');
 
 function load(){
   const html = fs.readFileSync(FILE, 'utf8');
-  const o = html.indexOf('<script>');
+  // The page now carries a small early script before the data script, so the data
+  // block is the LAST one — indexOf would slice from the early script and swallow a
+  // stray </script>.
+  const o = html.lastIndexOf('<script>');
   const body = html.slice(o + 8, html.indexOf('const state = {'));
   const el = { addEventListener(){}, appendChild(){}, style:{},
                classList:{ add(){}, remove(){}, toggle(){} } };

@@ -26,6 +26,7 @@ const C = require('./extract/containers.js');
 const H = require('./extract/history.js');
 const PR = require('./extract/price.js');
 const FP = require('./extract/fixed-price.js');
+const SM = require('./extract/slow-moving.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(__dirname, 'out');
@@ -109,6 +110,11 @@ function derive(bySku){
       fixed.stats.combo, 'combo ·', fixed.stats.dict, 'name parts ·',
       fixed.stats.unnamed, 'unnamed');
 
+  const slow = await SM.extract(c);
+  log('slow moving       :', slow.stats.slow, 'rows ·', slow.stats.critical, 'critical ·',
+      slow.stats.high, 'high ·', slow.stats.medium, 'medium ·',
+      slow.stats.units.toLocaleString(), 'units held');
+
   const liveSkus = prod.rows.map(r => r.sku);
   const hist = await H.extract(c, liveSkus);
   log('history lines     :', hist.lineCount, '· movements', hist.parsed,
@@ -191,6 +197,7 @@ function derive(bySku){
     received: Object.keys(received.r).length, receivedMatched: matched, receivedUnmatched: unmatched,
     incoming: Object.keys(incoming).length,
     fixedPrice: fixed.stats,
+    slowMoving: slow.stats,
     warehousesMissingMaster: stock.missing,
     ms: Date.now() - started
   };
@@ -203,6 +210,7 @@ function derive(bySku){
   write('RECEIVED.json', received);
   write('INCOMING.json', { INCOMING: incoming, INC_CONTAINER: incNames, INC_STAGE: incStages });
   write('FIXED_PRICE.json', fixed.payload);
+  write('SLOW_MOVING.json', slow.payload);
   write('_prefix-table.json', table);
   write('_meta.json', meta);
   // price + comments are produced by the existing validated builder, fed this listing set

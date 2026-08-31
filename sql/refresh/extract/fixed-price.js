@@ -23,6 +23,17 @@ const { q } = require('../db.js');
 // inventory.products stores this literal string as the title of every combo — and of 52
 // rows flagged single. It is a placeholder, never a product name.
 const PLACEHOLDER = 'Combo Default Title.';
+// Some combo images are stored under a filename naming a DIFFERENT SKU — 38 of the 156
+// comboproducts rows in inventory.product_images. The join is correct (product_id matches
+// products.id); the stored file is simply wrong. Showing it would put another product's
+// photo beside this SKU. Only these URLs can be checked, because only they carry the SKU.
+const imageNamesAnother = (sku, url) => {
+  if (!/comboproducts\//i.test(url || '')) return false;
+  let f = String(url).split('/').pop().replace(/\.(jpg|jpeg|png|webp)$/i, '');
+  try { f = decodeURIComponent(f); } catch (e) {}
+  return f.toUpperCase() !== String(sku).toUpperCase();
+};
+
 
 const IMG_BASE = 'https://sin1.contabostorage.com/4ad62276cb6d4a83bfb1b8a91b839703:newom/newom/newom/img/product_images/';
 
@@ -56,11 +67,17 @@ async function extract(c){
     SELECT DISTINCT ON (product_id) product_id AS pid, image_path AS p, image_url AS u
     FROM inventory.product_images ORDER BY product_id, image_ordering, id`);
   const image = {};
+  const mismatched = [];
   imgs.forEach(r => {
     const o = byId[Number(r.pid)]; if (!o) return;
     const file = String(r.p || '').split('/').pop();
-    // a non-standard host has to be carried whole; the standard one collapses to a filename
-    image[o.sku] = (r.u && r.u.indexOf(IMG_BASE) !== 0) ? r.u : file;
+    // a file named after ANOTHER SKU is not this product's picture — drop it
+    if (imageNamesAnother(o.sku, r.u)){ mismatched.push(o.sku); return; }
+    // a non-standard host has to be carried whole; the standard one collapses to a filename.
+    // The dashboard is served over https; an http:// image is blocked as mixed content
+    // and renders as a broken thumbnail. Same host, same file — only the scheme changes.
+    image[o.sku] = (r.u && r.u.indexOf(IMG_BASE) !== 0)
+      ? String(r.u).replace(/^http:\/\//i, 'https://') : file;
   });
 
   // ---- prices --------------------------------------------------------------
@@ -196,6 +213,7 @@ async function extract(c){
   return { payload: { d: dict, u: dates, r: rows },
            stats: { rows: rows.length, single, combo, named, unnamed: rows.length - named,
                     dict: dict.length, dateTuples: dates.length, withImg,
+                    imagesNamingAnotherSku: mismatched.length,
                     noCatalogueRow: Object.keys(px).length - rows.length } };
 }
 

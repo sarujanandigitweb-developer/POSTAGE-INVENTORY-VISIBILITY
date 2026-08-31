@@ -24,7 +24,7 @@ const log  = (...a) => console.log('[apply]', ...a);
 const FLOOR_ROWS  = 5000;          // a collapse below this must never publish
 const FLOOR_BYTES = 2 * 1024 * 1024;
 const BLOCKS = ['HIST_RAW', 'SHOPIFY_PRICE', 'SHOPIFY_COMMENT', 'SHOPIFY_ALT',
-                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE'];
+                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE', 'SLOW_MOVING'];
 
 // `const INCOMING      = {` is padded for alignment, so the search must tolerate
 // whitespace rather than matching an exact string.
@@ -63,6 +63,7 @@ put('SHOPIFY_PRICE',  rd('shopify-price_data.json'));
 put('SHOPIFY_ALT',    rd('shopify-alt-price_data.json'));
 put('SHOPIFY_COMMENT', rd('shopify-comments.json'));
 put('FIXED_PRICE',    rd('FIXED_PRICE.json'));
+put('SLOW_MOVING',    rd('SLOW_MOVING.json'));
 const inc = rd('INCOMING.json');
 put('INCOMING', inc.INCOMING);
 { // the two interned arrays beside it
@@ -78,6 +79,12 @@ const stamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 const beforeStamp = src;
 src = src.replace(/const DATA_AS_OF = '[^']*';/, "const DATA_AS_OF = '" + stamp + "';");
 if (src === beforeStamp) throw new Error('DATA_AS_OF not found — refusing to publish undated data');
+// The same stamp goes in the HEAD. A page left open checks for new data by reading the
+// first 2 KB of itself; without this it would have to pull the whole 10 MB to find out.
+const beforeMeta = src;
+src = src.replace(/<meta name="data-as-of" content="[^"]*">/,
+                  '<meta name="data-as-of" content="' + stamp + '">');
+if (src === beforeMeta) throw new Error('data-as-of meta not found — refusing to publish');
 log('DATA_AS_OF        :', stamp);
 
 // ---- 3. write the TEMPORARY file --------------------------------------------
@@ -92,6 +99,10 @@ const st = fs.statSync(TMP);
 chk('file exists and is non-empty', st.size > 0);
 chk('file is not truncated', st.size >= FLOOR_BYTES, st.size + ' bytes');
 chk('DATA_AS_OF present', /const DATA_AS_OF = '[^']+';/.test(src));
+chk('the head stamp matches DATA_AS_OF',
+    (new RegExp('<meta name="data-as-of" content="' + stamp + '">')).test(src));
+chk('the head stamp is in the first 2 KB', src.indexOf('name="data-as-of"') < 2048,
+    'at byte ' + src.indexOf('name="data-as-of"'));
 chk('REFRESH_EVERY_HOURS preserved', /const REFRESH_EVERY_HOURS = \d+;/.test(src));
 BLOCKS.forEach(b => chk('block ' + b, new RegExp('const ' + b + '\\s*=\\s*\\{').test(src)));
 ARRAYS.forEach(([n]) => chk('array ' + n, new RegExp('const ' + n + '\\s*=\\s*\\[').test(src)));
@@ -151,6 +162,42 @@ chk('rows rendered', rendered >= FLOOR_ROWS, rendered + ' rows (floor ' + FLOOR_
   });
   chk('every FIXED_PRICE name index resolves', bad.length === 0,
       bad.length + ' rows point outside the dictionary');
+}
+
+// the Slow-Moving tab: never publish it empty, and never let a row claim a priority
+// that its own idle-day count does not support
+{
+  const sm = rd('SLOW_MOVING.json');
+  chk('SLOW_MOVING has rows', Array.isArray(sm.r) && sm.r.length >= 1000,
+      (sm.r || []).length + ' rows');
+  const band = d => d > 365 ? 3 : d > 180 ? 2 : d > 90 ? 1 : 0;
+  const wrong = (sm.r || []).filter(r => band(r.dy) !== r.pr);
+  chk('every priority matches its idle days', wrong.length === 0,
+      wrong.length + ' rows disagree, e.g. ' + JSON.stringify((wrong[0] || {}).s));
+  // zero-stock rows are kept and FLAGGED, never dropped — but the flag must be truthful
+  chk('the zero-stock flag matches the quantity',
+      (sm.r || []).every(r => (r.z === 1) === !(r.q > 0)),
+      (sm.r || []).filter(r => (r.z === 1) !== !(r.q > 0)).length + ' rows disagree');
+  chk('rows that hold stock are present',
+      (sm.r || []).some(r => !r.z), (sm.r || []).filter(r => !r.z).length + ' actionable rows');
+  chk('a dormant entry (no stock AND never sold) is excluded',
+      (sm.r || []).every(r => r.z !== 1 || r.d !== 0));
+  chk('no duplicate SKU in SLOW_MOVING',
+      new Set((sm.r || []).map(r => r.s)).size === (sm.r || []).length);
+  // the three movement sources and the status rule are load-bearing: omitting the combo
+  // source once put 1,259 actively-selling SKUs on this report as "slow"
+  const smSrc = fs.readFileSync(path.join(ROOT, 'sql', 'refresh', 'extract', 'slow-moving.js'), 'utf8');
+  chk('movement reads direct sales', /order_management\.order_item_info/.test(smSrc));
+  chk('movement reads combo usage',  /order_management\.order_combo/.test(smSrc));
+  chk('movement credits ad-hoc combo components', /LIKE '%\+%'/.test(smSrc));
+  chk('cancelled and deleted orders are excluded',
+      /status NOT IN \('Cancelled','Deleted'\)/.test(smSrc));
+  chk('refunded orders are still counted as movement', !/'Refunded'/.test(smSrc));
+
+  chk('sorted: actionable stock first, then Critical, then longest idle',
+      (sm.r || []).every((r, i, a) => { if (i === 0) return true; const p = a[i-1];
+        return p.z < r.z || (p.z === r.z && (p.pr > r.pr ||
+          (p.pr === r.pr && p.dy >= r.dy))); }));
 }
 
 // duplicates across every array

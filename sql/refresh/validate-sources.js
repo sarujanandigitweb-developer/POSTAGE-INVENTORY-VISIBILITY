@@ -16,7 +16,10 @@ const ROOT = path.resolve(__dirname, '..', '..');
 // ---- what the dashboard currently holds -------------------------------------
 function loadDashboard(){
   const html = fs.readFileSync(path.join(ROOT, 'dashboard', 'inventory-dashboard.html'), 'utf8');
-  const o = html.indexOf('<script>');
+  // The page now carries a small early script before the data script, so the data
+  // block is the LAST one — indexOf would slice from the early script and swallow a
+  // stray </script>.
+  const o = html.lastIndexOf('<script>');
   const body = html.slice(o + 8, html.indexOf('const state = {'));
   const el = { addEventListener(){}, appendChild(){}, style:{}, classList:{ add(){}, remove(){}, toggle(){} } };
   const document = { getElementById: () => null, querySelector: () => null, querySelectorAll: () => [],
