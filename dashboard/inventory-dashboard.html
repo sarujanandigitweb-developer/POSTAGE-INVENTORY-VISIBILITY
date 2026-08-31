@@ -242,15 +242,27 @@ input[type=search]:focus,select:focus{outline:2px solid var(--accent);outline-of
    which to DHL without a rainbow. */
 .pgtab thead th{background:var(--thead-bg);color:var(--thead-ink);font-weight:700;
   position:sticky;top:0;z-index:2;white-space:normal;vertical-align:bottom;line-height:1.35}
-.pgtab thead tr.hsub th{background:var(--panel);color:var(--muted);font-weight:600;
-  font-size:11.5px;position:static;border-bottom:0}
-.pgtab thead tr.hsub th.gl{background:var(--thead2-bg);color:var(--thead2-ink);
-  text-align:center;border-left:2px solid var(--thead-bg);border-right:2px solid var(--thead-bg)}
-.pgtab thead tr.hsub th{border-bottom:1px solid var(--line)}
+/* HEADER BANDS. Empty spacer cells used to paint var(--panel) — white — so the header
+   showed ragged holes between groups and a large blank block above the sticky first
+   column. Every header cell now carries its band's colour, so each row reads as one
+   continuous band and only the labels vary. */
+.pgtab thead tr.hsub th{background:var(--thead2-bg);color:var(--thead2-ink);font-weight:600;
+  font-size:11.5px;padding:5px 10px;text-align:center;line-height:1.3;
+  border-bottom:1px solid rgba(255,255,255,.45)}
+.pgtab thead tr.hsub th.gl{font-weight:700;border-left:2px solid var(--panel)}
+.pgtab thead tr.hsub th:first-child{background:var(--thead2-bg)}
+.pgtab thead tr.hsub th.gl:first-child{background:var(--thead2-bg);border-left:0}
+/* the sheet's banner line sits above the groups and reads as a title, not a column */
+.pgtab thead tr.hban th{background:var(--thead-bg);color:var(--thead-ink);font-weight:700;
+  font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;
+  border-bottom:1px solid rgba(255,255,255,.25);border-left:0}
+/* the banner row carries BOTH classes, and `.hsub th:first-child` (0,3,3) outranks
+   `.hban th` (0,2,3) — without these the banner's sticky first cell paints light. */
+.pgtab thead tr.hban th:first-child,
+.pgtab thead tr.hban th.gl:first-child{background:var(--thead-bg);border-left:0}
+.pgtab thead tr.hsub:last-of-type th{border-bottom:2px solid var(--thead-bg)}
 .pgtab thead tr.hmain th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
-  border-right-color:rgba(255,255,255,.20);border-bottom:2px solid var(--thead-bg)}
-/* the group block sits above the column row and needs its own closing edge */
-.pgtab thead tr.hsub:last-of-type th{border-bottom:1px solid var(--thead-bg)}
+  padding:7px 10px;vertical-align:middle;line-height:1.25}
 .pgtab td.num,.pgtab th.num{text-align:right;font-variant-numeric:tabular-nums;
   white-space:nowrap;min-width:92px;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
@@ -269,8 +281,6 @@ input[type=search]:focus,select:focus{outline:2px solid var(--accent);outline-of
 .pgtab tbody tr:hover td:first-child{background:var(--accent-soft)}
 .pgtab thead th:first-child{z-index:3}
 .pgtab thead tr.hmain th:first-child{background:var(--thead-bg)}
-.pgtab thead tr.hsub th:first-child{background:var(--panel)}
-.pgtab thead tr.hsub th.gl:first-child{background:var(--thead2-bg)}
 .pgstate{padding:36px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7}
 .pgstate b{display:block;color:var(--ink);font-size:14px;margin-bottom:6px}
 .pgstate.err b{color:var(--warn)}
@@ -1233,28 +1243,65 @@ function pgCellHTML(v, tag){
 // The spans are reconstructed here: a label runs until the next labelled cell on its own
 // row, or to the end. Nothing is hard-coded — the spans are recomputed from whatever the
 // sheet returns, so a column added or moved tomorrow still lines up.
-function pgSpanCells(r, width){
+// GROUP BANDS. A CSV export of a merged sheet loses the merge ranges: the label lands in
+// the first cell of the merge and the rest come back empty. Google offers no export that
+// keeps them — gviz strips every colspan, pubhtml is 401 and export?format=html is 400 —
+// so the width of each band has to be inferred. Two rules do it correctly:
+//
+//   1. A band cannot cross a boundary set by a SHALLOWER row. "19% VAT RATE INCLUDED ONLY
+//      dhl" starts inside the "(Small Parcels) 0-2kg" band, so it cannot run past where
+//      that band ends, even though no other label follows it on its own row.
+//   2. A band stops at its last USED column. Columns that are empty all the way down are
+//      spacers in the sheet, not part of the group — stretching a label over them is what
+//      pushed every group label out of line with its own data.
+function pgSpanCells(r, width, cuts, used){
   const at = [];
   for (let j = 0; j < width; j++) if (String(r[j] === undefined ? '' : r[j]).trim()) at.push(j);
   let out = '', pos = 0;
   at.forEach((j, k) => {
     if (j > pos) out += '<th colspan="' + (j - pos) + '"></th>';   // gap before this label
-    const end = k + 1 < at.length ? at[k + 1] : width;
-    out += '<th class="gl" colspan="' + (end - j) + '">' +
-           esc(String(r[j]).trim()) + '</th>';
-    pos = end;
+    // the band may not reach past the next label on this row, nor past a shallower cut
+    let end = k + 1 < at.length ? at[k + 1] : width;
+    for (let ci = 0; ci < cuts.length; ci++) if (cuts[ci] > j && cuts[ci] < end) end = cuts[ci];
+    // trim trailing columns that nothing below the header uses
+    let last = j;
+    for (let c = j; c < end; c++) if (used[c]) last = c;
+    const span = Math.max(1, last - j + 1);
+    out += '<th class="gl" colspan="' + span + '">' + esc(String(r[j]).trim()) + '</th>';
+    pos = j + span;
   });
   if (pos < width) out += '<th colspan="' + (width - pos) + '"></th>';
   return out;
 }
-function pgHeadHTML(head, width){
+// Which columns anything below the group rows actually occupies — the leaf header names
+// and every data row. A column empty in all of them is a spacer in the sheet, and no
+// group band should be stretched across it.
+function pgUsedCols(a, width){
+  const used = new Array(width).fill(false);
+  const mark = r => { for (let j = 0; j < width; j++)
+    if (String(r[j] === undefined ? '' : r[j]).trim()) used[j] = true; };
+  if (a.head.length) mark(a.head[a.head.length - 1]);
+  a.groups.forEach(g => g.rows.forEach(mark));
+  return used;
+}
+
+function pgHeadHTML(head, width, used){
   if (!head.length) return '';
+  const cuts = [];                       // boundaries established by the rows above
   return '<thead>' + head.map((r, i) => {
     // The DEEPEST row names the columns one-for-one and must never span: its `Total` at
     // column 4 is one column, not the four that follow it.
     if (i === head.length - 1)
       return '<tr class="hmain">' + pgRowCells(r, width, 'th') + '</tr>';
-    return '<tr class="hsub">' + pgSpanCells(r, width) + '</tr>';
+    const html = pgSpanCells(r, width, cuts.slice(), used);
+    // this row's own labels become boundaries for every row beneath it
+    for (let j = 0; j < width; j++)
+      if (String(r[j] === undefined ? '' : r[j]).trim() && cuts.indexOf(j) === -1) cuts.push(j);
+    cuts.sort((a, b) => a - b);
+    // the first row is the sheet's banner ("(SMALL PARCELS) 0-2KG"); the rows between it
+    // and the leaf names are carrier/service groups. Styling them the same made the header
+    // one undifferentiated slab.
+    return '<tr class="hsub' + (i === 0 ? ' hban' : '') + '">' + html + '</tr>';
   }).join('') + '</thead>';
 }
 function pgRowCells(r, width, tag){
@@ -1302,7 +1349,7 @@ function pgTableHTML(sec){
     if (!rows.length && (q || !g.title)) return '';        // a search hides empty groups
     return (g.title ? '<h4 class="pggrp">' + esc(g.title) + '</h4>' : '') +
       (rows.length
-        ? '<div class="pgscroll"><table class="pgtab">' + pgHeadHTML(a.head, width) +
+        ? '<div class="pgscroll"><table class="pgtab">' + pgHeadHTML(a.head, width, pgUsedCols(a, width)) +
           '<tbody>' + rows.map(r =>
             '<tr' + (tc >= 0 && String(r[tc] === undefined ? '' : r[tc]).trim() ? ' class="sum"' : '') +
             '>' + pgRowCells(r, width, 'td') + '</tr>').join('') +

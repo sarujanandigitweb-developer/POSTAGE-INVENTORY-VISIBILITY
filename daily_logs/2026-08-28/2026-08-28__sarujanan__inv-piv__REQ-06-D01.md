@@ -3,19 +3,27 @@ date: 2026-08-28
 developer: sarujanan
 project: Postage Inventory Visibility
 project_code: INV-PIV
-phase: Phase-06 — History rebuilt to spec, Received columns filled, automatic refresh designed
+phase: Phase-06 — History rebuilt, Received filled, 2-hourly refresh BUILT and running, SKU Fixed Price tab shipped
 requirement_id: REQ-06
 deliverable_id: D01
-status: Completed for the shipped work; the 2-hourly refresh is analysed and proven, not yet built
-evidence_location: /home/led-247/POSTAGE-INVENTORY-VISIBILITY/evidence/50–51, sql/refresh/, validation/, hub/, dashboard/inventory-dashboard.html
+status: >-
+  Shipped and published. The 2-hourly refresh is built, installed in cron and now
+  publishes to the hub itself. One item is OPEN and awaiting a decision — Total SKUs
+  shows 30,193 of 44,332 (see section 4c).
+evidence_location: evidence/50–54, sql/refresh/, sql/refresh/extract/fixed-price.js, validation/check-fixed-price.js, hub/, _archive/, dashboard/inventory-dashboard.html
 blos_keys_used:
   - history_four_types_only
   - history_field_to_warehouse_map          (NEW — Quantity=Unit 3, unit1=Unit 18, unit3=Unit 4)
   - received_from_supply_lines_only         (NEW)
   - container_date_proximity_not_a_key
   - shopify_channel_priority_ledsone_first  (NEW)
-  - population_source_postgres_inventory_bool (NEW — decided, not yet applied)
+  - population_source_postgres_inventory_bool (APPLIED — the refresh reads Postgres, not the Sheet)
   - stock_band_low_1_to_10
+  - fixed_price_uk_live_listings_only       (NEW — the rule that produces 30,193, see §4)
+  - fixed_price_four_marketplaces_exist     (NEW — Wayfair and Temu have no source at all)
+  - combo_name_composed_from_components     (NEW — products.title is a placeholder for combos)
+  - fx_category_prefix_table                (NEW — display-only, does not touch CLASSIFY)
+  - postage_band_cannot_cross_parent        (NEW — sheet merges are lost by CSV export)
 hardcoded_thresholds:
   - low stock band = 1–10 units (cell colour AND header alert)
   - out of stock = total <= 0 across all eight warehouses
@@ -23,13 +31,18 @@ hardcoded_thresholds:
   - Shopify channel order = LEDSone, Electricalsone, Vintagelite, BesBet, Dcvoltage, then non-UK
   - only UK channels may supply the £ price column
   - refresh interval = 2 hours; tag amber at 3 hours, red at 8
+  - Postage sheet poll = 10 minutes; tag amber at 30 min, red at 60
   - passport image frame = 264×340px (35×45mm)
+  - Fixed Price auto page size = fits the window, floor 12 rows, ceiling 24
+  - Fixed Price prices held as INTEGER PENCE; dates as whole days since epoch
 three_am_standard: TRUE
 llm_queryable: TRUE
 company_knowledge_candidate: TRUE
 domain: Inventory — Postage & Warehouse — LEDSone Postgres
 User: Postage & Warehouse Team
-Benefit status: Pass — two long-empty columns filled, history corrected, and stale data quantified
+Benefit status: >-
+  Pass — a third tab now prices 30,193 SKUs across four marketplaces in one view, and the
+  whole dashboard refreshes and republishes itself every two hours unattended
 
 ---
 
@@ -131,6 +144,118 @@ movements. Unchanged today; it belongs to a full re-extraction.
 `5050 WATER PROOF 5M RED STRIP`, `2 PIN CLIP TO CLIP`. Someone typed a product name into
 the SKU field. They go to Other rather than being dropped.
 
+## 4a. WHAT CHANGED AFTER 09:14 — this log originally stopped here
+
+**The 2-hourly refresh was built, installed and proven.** `sql/refresh/` now holds the
+whole pipeline: `db.js` (sole credential reader), `raw-arrays.js` (reads the embedded
+arrays as they are ON DISK, before the page re-types them), `rules.js`, five read-only
+extractors, `build.js`, and an atomic `apply.js`. `refresh.sh` runs under `flock`, and one
+cron entry drives it: `0 */2 * * * .../sql/refresh/refresh.sh`. Sixteen OK runs are logged.
+
+**The refresh now publishes to the hub itself.** Until today `refresh.sh` only rewrote the
+local file — the hub page changed only when someone ran `publish.sh` by hand, so readers
+saw the previous manual push while the data underneath moved every two hours. The publish
+and an independent read-back verify are now the last two steps of the same run. A failure
+there reports `OK-NOPUBLISH` / `OK-NOVERIFY` and never rolls the dashboard back, because at
+that point the file on disk is already validated and installed — a failed push is a
+distribution problem, not a data problem.
+
+**Hub credentials moved into this project.** `publish.sh` and `verify.sh` were reading
+`/home/led-247/Returns-Reason-Hotspot-Report/.env` — a sibling repo. If that repo were
+moved or cleaned up, the scheduled publish would fail every two hours with no obvious
+cause. Both now read this project's own gitignored `.env` (mode 600) and fall back to the
+old path only if it is absent.
+
+**A third tab shipped: SKU Fixed Price.** 30,193 SKUs (4,768 single, 25,425 combo) with
+their fixed UK price on every marketplace the database holds, plus search, sort, a
+category filter, window-fitting pagination and a price-coverage strip. Details in §4b and
+evidence/54.
+
+**The repository was reorganised.** 61 one-off files moved with `git mv` into `_archive/`
+(`apply-scripts/` 14, `extracted-snapshots/` 27, `extraction-queries/` 8,
+`one-off-checks/` 12). `README.md` now maps every live file to its job and states plainly
+that nothing under `_archive/` runs. Generated artefacts (`logs/`, `sql/refresh/out/`,
+`*.bak`, `compare-*.json`) are gitignored.
+
+**The Postage Information header was corrected** — see §4c. It was misaligned for a
+structural reason, not a styling one.
+
+## 4b. THE SKU FIXED PRICE TAB — WHAT THE DATABASE ACTUALLY SUPPORTS
+
+**Only four of the six requested marketplaces exist.** Every schema was searched.
+
+| Marketplace | Source table | SKUs priced |
+|---|---|---|
+| Shopify | `listings.shopify_listings` | 16,671 |
+| eBay | `listings.ebay_listings` | 21,972 |
+| Amazon | `listings.amazon_listings` | 16,974 |
+| B&Q | `listings.bandq_listings` | 3,981 |
+| **Wayfair** | **none — no table, column or channel** | — |
+| **Temu** | **none — no table, column or channel** | — |
+
+The requirement's own mock-up showed Wayfair at 86% and Temu at 81.7%. Those numbers
+cannot exist. Both columns render an explicit *no data source* and a validation check
+asserts **no percentage is ever printed for them**. Correct brand logos are shown, because
+having the right logo does not create data behind it.
+
+**Combo names had to be derived.** `inventory.products.title` is the literal string
+`Combo Default Title.` on **37,481 rows** — every combo, and 52 rows flagged *single*.
+Shopify's combo titles are variant labels (`Green / Without Bulb`, `Pack 2`) and
+`ebay_listings.title` is null throughout. Names are therefore composed from the SKU:
+`A+B+C` joins its component titles; `12BO1002PK` becomes the base product plus `(2 Pack)`.
+Letter pack codes decode through `inventory.product_pk`, so `…APK` correctly reads 10 Pack.
+**24,481 of 30,193 (81.1%)** get a real name; the remaining 5,712 are almost all `ENC*`
+eBay combo placeholders that carry no component information anywhere.
+
+**Size was engineered, not accepted.** Plain names cost 4.63 MB. Names are interned into a
+dictionary and each row stores indices (`5`, `[5,-10]` for a pack, `[5,9,2]` for a combo);
+prices are integer pence; the four per-marketplace dates are interned as tuples — only
+**212 distinct tuples** across 30,193 rows. Final block **2.16 MB**, page 6.08 MB.
+
+## 4c. GAPS FOUND AFTER 09:14
+
+**OPEN — Total SKUs shows 30,193 of 44,332.** `inventory.products` holds 44,332 distinct
+SKUs (6,508 single, 37,824 combo — the reported 44,333 is one high). The extractor
+iterates the *priced* lookup and drops anything without a live UK price, so 14,139 SKUs
+never reach the page:
+
+| Reason | SKUs |
+|---|---:|
+| never appear in any listing table | 10,515 |
+| listed but no `price > 0` anywhere | 47 |
+| priced, but filtered by the UK/live rules | 3,577 |
+| — of those, priced only on a non-UK site | 3,302 |
+| — of those, only an ended listing | 1,107 |
+
+This contradicts the original requirement *"Display all available SKUs in one table."* A
+product listed nowhere is exactly what a pricing dashboard should surface. **The price
+coverage calculation is NOT the cause** — that is computed on the page for display only.
+The fix (iterate the catalogue, add a "not listed anywhere" filter, correct the mislabelled
+"Total SKUs" tile which currently shows the *filtered* count) is specified and **awaiting a
+decision**, because it adds ~0.8 MB and requires rewriting an `apply.js` guard that
+currently asserts every row carries a price.
+
+**Postage header bands crossed their parents.** A CSV export of a merged sheet loses the
+merge ranges — the label lands in the first cell and the rest come back empty. No Google
+export preserves them: `gviz` returns 200 but strips every `colspan`, `pubhtml` is 401,
+`export?format=html` is 400. The old rule spanned a label "until the next label on this
+row", which knows nothing about the row above. `19% VAT RATE INCLUDED ONLY dhl` therefore
+spanned **26 columns**, running out of the DHL block and across the entire
+`Tracked (Small Parcels) 2-5kg*` region, which belongs to a different parent. Two rules now
+bound every band — it cannot cross a boundary set by a shallower row, and it stops at its
+last used column. That label now spans **4**, and every band nests inside its parent while
+each header row still sums to exactly the 36-column width.
+
+**`public.inv_products` no longer exists.** evidence/48–49 were built against it. Nothing
+running depends on it, but that record now references a dropped table.
+
+**`tech_user` hit its server-side connection limit** mid-afternoon with zero connections
+held by this machine. The 05:03 run failed at the first gate and correctly published
+nothing; the retry succeeded. Cron will occasionally log this and skip a cycle, which is
+the safe behaviour — but it means the freshness tag can silently go stale. Raising
+`rolconnlimit` or adding a connect retry in `db.js` is still open.
+
+
 ## 5. VALIDATION RULE ADDED OR CHANGED
 
 **Rule — a rebuilt classifier must reproduce TODAY before it is allowed near tomorrow**
@@ -179,6 +304,22 @@ filter() returns REFERENCES. 31 SKUs ended up in two sections at once and the to
 silently went to 5,883. Assert that no SKU appears in two sections.
 ```
 
+**Added after 09:14 —**
+
+`validation/check-fixed-price.js` drives the page's OWN render, search, sort, filter and
+paging code against the published data and asserts on the result. It caught three real
+defects that would otherwise have shipped: a raw `&` in the B&Q header, the 52 products
+flagged *single* carrying the combo placeholder title, and a lazy regex splitting
+`12BO1002PK` as `12BO1 + 002PK`. It now also asserts that no coverage percentage is ever
+printed for Wayfair or Temu, that no marketplace icon is fetched at runtime, that every
+cell rule outranks the base table rule, and that the refresh details survive navigating
+back to Inventory.
+
+`apply.js` gained four guards for the new block — dictionary > 1,000 entries, ≥ 20,000
+rows, every row carries a price, every name index resolves inside the dictionary — so a
+collapse can never publish an empty third tab. *(The third of those must be rewritten as a
+coverage floor if the §4c Total SKUs fix is approved.)*
+
 ## 6. FAILURE MODE OR EDGE CASE
 
 - **`pkill -f test_lampshade` killed its own shell** — exit 144, for the second time in
@@ -196,6 +337,29 @@ silently went to 5,883. Assert that no SKU appears in two sections.
 - **The suite crossed the session boundary five times** and was reported as "0 failures"
   when it had simply not finished. A count is only trustworthy next to `ALL PASS`.
 
+**CSS specificity, twice.** `table.fxtab td` scores (0,1,2); a bare `.fxname` scores
+(0,1,0). The base rule's `white-space:nowrap` and `text-align:left` therefore beat every
+cell rule beneath it — the product name ran straight through the SKU Type and Shopify
+columns and the prices were never right-aligned, despite rules saying otherwise. It only
+*looked* correct earlier because a line-clamp was forcing a different layout mode. The same
+class of bug appeared in the Postage header, where `.hsub th:first-child` (0,3,3) outranks
+`.hban th` (0,2,3) and would have painted the banner's sticky cell the wrong colour. Both
+are now scoped explicitly and asserted.
+
+**`display:-webkit-box` on a `<td>`** removes the cell from table layout, so it no longer
+shares the row's height or baseline and its border draws at its own height. That was the
+ragged line under the Product Name column. The clamp belongs on an element *inside* the
+cell.
+
+**A bad slice index prepended ~2,000 characters above the doctype**, corrupting the file.
+Caught on the next render check and repaired in place; the protected-region hashes
+confirmed nothing was lost.
+
+**A verification that verified nothing.** A protected-region diff printed "all identical"
+while actually comparing two empty files — the scratchpad had been cleared and both runs
+had errored. Reported as a pass for a moment before being caught and re-run properly. A
+check that cannot fail is worse than no check.
+
 ## 7. DECISIONS MADE TODAY
 
 - **Postgres is the source of truth for SKU membership**, replacing the Google Sheet. The
@@ -210,6 +374,19 @@ silently went to 5,883. Assert that no SKU appears in two sections.
 - **France, Netherlands and Duisburg stay out** for now, mapping left ready.
 - **Warehouse 33 keeps a declared override** until its row exists, with a reminder logged
   on every run.
+
+**Taken after 09:14 —**
+
+| Decision | Why |
+|---|---|
+| Wayfair and Temu show *no data source*, never a number | The mock-up's 86% / 81.7% cannot exist; inventing them on a pricing dashboard is worse than a gap |
+| Marketplace logos inlined, not linked to a CDN | A CDN can fail or change; the page is published to a hub where a broken logo is just a gap |
+| `PH` → Pendant Lamp Holder, not Lighting | It is the dedicated category and it matches `CLASSIFY`, so a SKU reads the same on both tabs |
+| `WS` → Lighting on this tab, per the supplied list | **Flagged conflict:** `CLASSIFY` calls `WS` Wall Arm, so it differs across tabs. Awaiting a ruling |
+| Fixed Price opens on **Single**, 12 rows, auto-fit | Combos are 84% of rows and were burying the products people price |
+| The Fixed Price category filter is display-only | It must not touch `CLASSIFY` / `classifySKU`, which the Inventory tab owns |
+| The hub publish never rolls the dashboard back | By then the local file is validated; a failed push is distribution, not data |
+| Total SKUs fix NOT applied | It changes the deliverable's scope and size; that is the user's call, not mine |
 
 ## 8. COMPANY KNOWLEDGE EXTRACT
 
@@ -255,8 +432,30 @@ silently went to 5,883. Assert that no SKU appears in two sections.
 | Header freshness | "Extracted 2026-08-20" | **live age, amber at 3h, red at 8h** |
 | Known stale rows | unmeasured | **~1 in 5**, measured over 260 SKUs |
 
-Published to hub **218**, verified by independent read at 3,945,912 characters.
+**End-of-day figures (the table above was written at 09:14; these supersede it):**
+
+| | Start of day | End of day |
+|---|---|---|
+| Tabs | 2 | **3 — SKU Fixed Price added** |
+| SKUs priced across marketplaces | 0 | **30,193** (4,768 single, 25,425 combo) |
+| Marketplaces compared in one view | 1 (Shopify only) | **4 — Shopify, eBay, Amazon, B&Q** |
+| Refresh | manual | **cron `0 */2 * * *`, 16 OK runs logged** |
+| Hub publish | manual only | **the last step of every scheduled run** |
+| Hub credentials | a sibling repo's `.env` | **this project's own gitignored `.env`** |
+| Repo root clutter | 61 one-off files loose | **moved to `_archive/`, README maps what is live** |
+| Page size | 3.95 MB | **6.08 MB** (Fixed Price block 2.16 MB) |
+| Postage header bands | crossing their parents (26-col span) | **nested correctly (4-col span)** |
+
+Published to hub **218** at 11:58 UTC, verified by independent read-back:
+6,362,556 characters, sha256 `8cd2c69d30b869e4…`, byte-for-byte identical to the local file.
 Not committed, not pushed.
+
+**Carried into tomorrow:**
+1. **Total SKUs 30,193 vs 44,332** — analysed in §4c, fix specified, awaiting a decision.
+2. **`WS` category conflict** — Lighting here, Wall Arm on Inventory. Needs a ruling.
+3. **`tech_user` connection limit** — raise `rolconnlimit` or add a connect retry in `db.js`.
+4. **52 unplaced SKUs** on the Inventory tab still need a home.
+5. **`CRON_TZ`** is inherited, not pinned to UTC.
 
 ## BLOS GOVERNANCE NOTE
 
@@ -269,3 +468,9 @@ Not committed, not pushed.
 | UK-only channels may supply the £ column | same | Prevents a euro figure being read as pounds |
 | Warehouse 33 = UK Unit 5 | declared override | The database still has no row |
 | Refresh interval and staleness thresholds | dashboard + cron | They decide when the team is told the data is old |
+| Fixed Price = live UK listings only | `sql/refresh/extract/fixed-price.js` | This single rule is why the tab shows 30,193 and not 44,332 |
+| Wayfair and Temu have no source | same + `validation/check-fixed-price.js` | Must never be filled with a plausible-looking number |
+| `Combo Default Title.` is a placeholder | same | 37,481 rows carry it; treating it as a name would mislabel every combo |
+| The FX category prefix table | dashboard, `FX_CATS` | Display-only; it must never be confused with `CLASSIFY` |
+| A header band cannot cross its parent | dashboard, `pgSpanCells` | CSV loses sheet merges; this rule reconstructs them |
+| Hub credentials | this project's `.env` (mode 600, gitignored) | Never in the repo, the dashboard, or the logs |
