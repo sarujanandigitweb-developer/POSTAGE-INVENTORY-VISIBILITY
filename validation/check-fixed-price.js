@@ -206,12 +206,12 @@ chk('sort by Last Updated', asc(fx.view.map(r => r.u)));
 // ---- 7. pagination ----------------------------------------------------------
 console.log('\n=== pagination ===');
 fx.type = 'all'; fx.sort = 's'; fx.dir = 1; fxFilter(); fxDraw();
-chk('page sizes offered', FX_SIZES.join(',') === 'auto,12,25,100,500,all', FX_SIZES.join(' · '));
+chk('page sizes offered', FX_SIZES.join(',') === 'auto,15,25,100,500,all', FX_SIZES.join(' · '));
 chk('with no viewport to measure, auto falls back to the floor rather than guessing',
     fxAutoRows() === FX_AUTO_MIN, fxAutoRows() + ' rows');
-chk('the auto range covers 12 to 15 at a normal window size',
-    FX_AUTO_MIN <= 12 && FX_AUTO_MAX >= 15, FX_AUTO_MIN + '\u2013' + FX_AUTO_MAX);
-[12, 25, 100, 500].forEach(n => {
+chk('the auto range covers 15 to 24 at a normal window size',
+    FX_AUTO_MIN <= 15 && FX_AUTO_MAX >= 15, FX_AUTO_MIN + '\u2013' + FX_AUTO_MAX);
+[15, 25, 100, 500].forEach(n => {
   fx.size = n; fx.page = 1; fxDraw();
   chk('a page of ' + n + ' draws exactly ' + n + ' rows', fx.drawn === n, fx.drawn + ' drawn');
   chk('  page count is right for ' + n,
@@ -222,16 +222,16 @@ chk('"All rows" draws every match on one page', fx.drawn === fx.view.length && f
     fx.drawn.toLocaleString() + ' rows');
 chk('"All rows" hides the pager', els.fxpager.innerHTML === '');
 
-fx.size = 12; fx.page = 1; fxDraw();
+fx.size = 15; fx.page = 1; fxDraw();
 const p1 = els.fxbody.innerHTML;
 fx.page = 2; fxDraw();
 chk('page 2 shows different rows from page 1', els.fxbody.innerHTML !== p1);
-chk('page 2 is the next 12 in order',
-    fx.view[12] && els.fxbody.innerHTML.indexOf('>' + fx.view[12].s + '<') !== -1,
-    'first row of page 2 = ' + (fx.view[12] || {}).s);
+chk('page 2 is the next 15 in order',
+    fx.view[15] && els.fxbody.innerHTML.indexOf('>' + fx.view[15].s + '<') !== -1,
+    'first row of page 2 = ' + (fx.view[15] || {}).s);
 const lastPage = fxPageCount();
 fx.page = lastPage; fxDraw();
-const tail = fx.view.length - (lastPage - 1) * 12;
+const tail = fx.view.length - (lastPage - 1) * 15;
 chk('the final page holds the remainder', fx.drawn === tail, fx.drawn + ' rows');
 chk('Next and Last are disabled on the final page',
     (els.fxpager.innerHTML.match(/disabled/g) || []).length >= 2);
@@ -249,7 +249,7 @@ chk('changing the filter returns to page 1',
     (() => { fx.page = 4; fx.q = 'led'; fxFilter(); return fx.page === 1; })());
 fx.q = ''; fxFilter(); fxDraw();
 chk('the count line reports the visible range and the total',
-    /Showing 1–12 of [\d,]+ SKUs/.test(els.fxcount.textContent), els.fxcount.textContent);
+    /Showing 1–15 of [\d,]+ SKUs/.test(els.fxcount.textContent), els.fxcount.textContent);
 
 // ---- 7b. the full product name is never hidden -----------------------------
 console.log('\n=== full product names ===');

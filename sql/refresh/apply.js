@@ -24,7 +24,7 @@ const log  = (...a) => console.log('[apply]', ...a);
 const FLOOR_ROWS  = 5000;          // a collapse below this must never publish
 const FLOOR_BYTES = 2 * 1024 * 1024;
 const BLOCKS = ['HIST_RAW', 'SHOPIFY_PRICE', 'SHOPIFY_COMMENT', 'SHOPIFY_ALT',
-                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE', 'SLOW_MOVING'];
+                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE', 'SLOW_MOVING', 'PENDING_DISPATCH'];
 
 // `const INCOMING      = {` is padded for alignment, so the search must tolerate
 // whitespace rather than matching an exact string.
@@ -64,6 +64,7 @@ put('SHOPIFY_ALT',    rd('shopify-alt-price_data.json'));
 put('SHOPIFY_COMMENT', rd('shopify-comments.json'));
 put('FIXED_PRICE',    rd('FIXED_PRICE.json'));
 put('SLOW_MOVING',    rd('SLOW_MOVING.json'));
+put('PENDING_DISPATCH', rd('PENDING_DISPATCH.json'));
 const inc = rd('INCOMING.json');
 put('INCOMING', inc.INCOMING);
 { // the two interned arrays beside it
@@ -124,6 +125,29 @@ try {
   chk('smoke render', false, String(e.message).split('\n')[0]);
 }
 chk('rows rendered', rendered >= FLOOR_ROWS, rendered + ' rows (floor ' + FLOOR_ROWS + ')');
+
+// Every tab button must actually be wired. Pending Dispatch once shipped with markup, a
+// view and a renderer but no click handler — the smoke render never noticed, because it
+// calls setView() directly rather than pressing the button.
+try {
+  const out = execFileSync(process.execPath,
+    [path.join(ROOT, 'validation', 'check-tabs-wired.js')],
+    { env: { ...process.env, DASHBOARD: TMP }, encoding: 'utf8' });
+  chk('every tab button is wired', /ALL CHECKS PASSED/.test(out),
+      (out.match(/\*\*\*.*/g) || ['see log'])[0]);
+} catch (e){
+  chk('every tab button is wired', false, String(e.message).split('\n')[0]);
+}
+// the small-screen menu drives the same views; it must work too
+try {
+  const out = execFileSync(process.execPath,
+    [path.join(ROOT, 'validation', 'check-tab-menu.js')],
+    { env: { ...process.env, DASHBOARD: TMP }, encoding: 'utf8' });
+  chk('the small-screen tab menu works', /ALL CHECKS PASSED/.test(out),
+      (out.match(/\*\*\*.*/g) || ['see log'])[0]);
+} catch (e){
+  chk('the small-screen tab menu works', false, String(e.message).split('\n')[0]);
+}
 
 // IMAGE URLs must survive the round trip. `DATA` and `LH_EXTRA` are not passed through
 // imgURL() by the page, so a bare filename in either would 404 every thumbnail. This
@@ -198,6 +222,23 @@ chk('rows rendered', rendered >= FLOOR_ROWS, rendered + ' rows (floor ' + FLOOR_
       (sm.r || []).every((r, i, a) => { if (i === 0) return true; const p = a[i-1];
         return p.z < r.z || (p.z === r.z && (p.pr > r.pr ||
           (p.pr === r.pr && p.dy >= r.dy))); }));
+}
+
+// Pending Dispatch: the open-order queue must stay small and current. A jump into the
+// hundreds of thousands means the shipped-flag trap has been walked into again.
+{
+  const pd = rd('PENDING_DISPATCH.json');
+  chk('PENDING_DISPATCH has rows', Array.isArray(pd.r) && pd.r.length > 0,
+      (pd.r || []).length + ' open orders');
+  chk('the open queue is a queue, not the whole order history',
+      (pd.r || []).length < 20000, (pd.r || []).length + ' rows');
+  chk('every row carries an order id and an age',
+      (pd.r || []).every(r => r.o && typeof r.dy === 'number' && r.dy >= 0));
+  chk('the SLA flag matches the age', (pd.r || []).every(r => (r.b === 1) === (r.dy > pd.sla)),
+      'SLA = ' + pd.sla + ' days');
+  chk('sorted longest-waiting first',
+      (pd.r || []).every((r, i, a) => i === 0 || a[i-1].dy >= r.dy));
+  chk('no duplicate order id', new Set((pd.r || []).map(r => r.o)).size === (pd.r || []).length);
 }
 
 // duplicates across every array

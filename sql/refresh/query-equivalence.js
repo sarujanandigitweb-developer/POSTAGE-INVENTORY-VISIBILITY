@@ -42,6 +42,15 @@ function verdict(name, n, same){
 (async () => {
   const c = await connect();
 
+  // ONE SNAPSHOT FOR BOTH FORMS. This test compares an old query against a new one, but it
+  // ran them as separate statements against live data — so when a warehouse was picking
+  // between the two, cells differed by a unit or two and the whole refresh was blocked as
+  // "a query fault". It happened for real: 201 of 49,448 cells, every one of them Kronen,
+  // off by 1-4 units. REPEATABLE READ pins both forms to the same MVCC snapshot, so a
+  // difference now means the queries genuinely disagree, which is the only thing this test
+  // is meant to catch.
+  await q(c, 'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+
   // ============ A. STOCK ====================================================
   // OLD: a correlated sub-select per warehouse, keyed on products.id  (the shape used by
   //      _archive/extraction-queries/other-categories-extraction-query.sql)
@@ -155,6 +164,7 @@ function verdict(name, n, same){
               '(the new form also drops NULL order_date and the other placeholder names)');
   verdict('container rows', Number(oldC[0].n), Number(newC[0].n));
 
+  await q(c, 'COMMIT');                    // read-only; nothing was written
   await c.end();
 
   console.log('\n=== VERDICT ===');
