@@ -63,7 +63,7 @@ chk('    and a spacer balances the rows where that pair sits below',
   'min-width:max-content stops the title being squeezed to make room');
 chk('    the spacer only appears when the buttons are NOT on row one',
   /\.hspace\{flex:1 1 0;min-width:0;display:none\}/.test(css) &&
-  /@media \(max-width: 1280px\)\{[\s\S]*?\.hspace\{display:block\}/.test(css),
+  /@media \(max-width: 1100px\)\{[\s\S]*?\.hspace\{display:block\}/.test(css),
   'two growing side groups plus a spacer would pull the strip off centre');
 chk('  and it hugs its buttons rather than stretching to the full width',
   !/\.vtabs\{[^}]*[;{]width:100%/.test(css) && /\.vtabs\{[^}]*max-width:100%/.test(css),
@@ -77,9 +77,13 @@ chk('  no breakpoint forces the title to claim a whole row',
 chk('  the buttons sit on row one and the notifications under them',
   /class="hdr-actions"[\s\S]{0,900}class="hbreak"[\s\S]{0,400}class="alerts"/.test(html),
   'markup order carries it, so no reordering is needed at the common widths');
-chk('    and below 1280px they drop to row two together, not onto a third row',
-  /@media \(max-width: 1280px\)\{[\s\S]*?\.hdr-actions\{[^}]*order:6\}[\s\S]*?\.hbreak\{order:3\}/.test(css),
-  'measured: 67px of slack at 1280px, 5px at 1200px, negative at 1180px');
+// The first threshold here was 1280px, from a width model that over-estimated the
+// title, the strip and the buttons — so it fired with a quarter of the row spare
+// and dropped the buttons on a 1920 screen at 150% scaling. Re-measured off the
+// rendered page: 1030px needed of 1256px available at 1280 CSS px.
+chk('    and below 1100px they drop to row two together, not onto a third row',
+  /@media \(max-width: 1100px\)\{[\s\S]*?\.hdr-actions\{[^}]*order:6\}[\s\S]*?\.hbreak\{order:3\}/.test(css),
+  'measured: 226px of slack at 1280px, 75px at 1100px, negative by 980px');
 chk('  the divider between rows is gone',/\.hsep\{display:none\}/.test(css),
   'a vertical rule between two wrapped rows separates nothing');
 // The push sits on .alerts, the FIRST of the pair, so the alerts and the action

@@ -770,12 +770,13 @@ table.smtab td.sm-none{color:var(--muted);opacity:.42;text-align:center}
 .hbreak{display:block;flex-basis:100%;height:0;margin:0}
 /* Wide windows only. Below this the four cannot share a line and the flex break
    stays where it is: title + tabs, then timestamp + alerts + buttons. */
-/* Measured: at 1280px row one needs 1189px of the 1256px available — 67px of slack.
-   By 1200px that is down to 5px, which is not something to rely on, and at 1180px it
-   is negative. So below 1280 the buttons go down to the second row WITH the
+/* Measured off the rendered page, not modelled: at 1280 CSS px the title is 247px,
+   the tab strip 537px and the buttons 218px — 1030px of the 1256px available, so
+   226px spare. They stop fitting near 1000px. At 1100px there is still ~75px of
+   margin, so that is where the buttons go down to the second row WITH the
    notifications; letting them wrap on their own would put the timestamp on a third
    row, because the flex break sits between them. */
-@media (max-width: 1280px){
+@media (max-width: 1100px){
   .hspace{display:block}
   .hdr-actions{flex:0 0 auto;min-width:0;order:6}
   .hbreak{order:3}
