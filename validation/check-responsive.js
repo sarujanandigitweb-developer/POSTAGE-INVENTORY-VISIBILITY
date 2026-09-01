@@ -55,39 +55,42 @@ chk('  the strip is centred by equal side groups, not by auto margins',
   /\.vtabs\{[^}]*flex:0 0 auto/.test(css) &&
   !/\.vtabs\{[^}]*margin:0 auto/.test(css),
   'auto margins would sit it half the side difference off centre');
-chk('    the right-hand pair is wrapped so it counts as one side',
-  /class="hright"/.test(html) && /\.hright\{[^}]*justify-content:flex-end/.test(css));
+chk('    the buttons are that side group, and hold the top-right corner',
+  /\.hdr-actions\{[^}]*flex:1 1 0;min-width:max-content;justify-content:flex-end/.test(css));
 chk('    and a spacer balances the rows where that pair sits below',
   /class="hspace"/.test(html) && /\.hspace\{flex:1 1 0/.test(css) &&
   /\.hleft\{flex:1 1 0;min-width:max-content\}/.test(css),
   'min-width:max-content stops the title being squeezed to make room');
-chk('    the spacer is dropped wherever it would unbalance the row',
-  (css.match(/\.hspace\{display:none\}/g) || []).length >= 2,
-  'once beside the wide layout, once where the tab strip is replaced by the menu');
+chk('    the spacer only appears when the buttons are NOT on row one',
+  /\.hspace\{flex:1 1 0;min-width:0;display:none\}/.test(css) &&
+  /@media \(max-width: 1280px\)\{[\s\S]*?\.hspace\{display:block\}/.test(css),
+  'two growing side groups plus a spacer would pull the strip off centre');
 chk('  and it hugs its buttons rather than stretching to the full width',
   !/\.vtabs\{[^}]*[;{]width:100%/.test(css) && /\.vtabs\{[^}]*max-width:100%/.test(css),
   'a stretched strip is mostly empty bar');
 chk('  no breakpoint forces the title to claim a whole row',
   !/\.hleft\{flex:1 1 100%\}/.test(css), 'plain flex-wrap decides, so it tracks the scale');
-// On a wide monitor the tabs and the buttons ended at two different x positions on
-// two different rows. Above 1560px they all fit on row one, so the alerts and the
-// buttons move up beside the tabs and the timestamp takes row two by itself.
-chk('  on a wide monitor the buttons join the tab row',
-  /@media \(min-width: 1560px\)\{[\s\S]*?\.hbreak\{order:2\}[\s\S]*?\.prov\{order:3\}/.test(css),
-  'measured: title 329 + tabs 666 + alerts 232 + buttons 206 + gaps = 1503 of 1531');
-chk('    and it is done with order, not by moving the markup',
-  /class="hbreak"[\s\S]{0,400}class="prov"/.test(html),
-  'the DOM keeps the order a screen reader should hear');
+// Export CSV and Dark mode hold the top-right corner; the stock alerts sit under
+// them on row two. Below 1280px there is no room for the buttons on row one, so
+// they drop to row two WITH the alerts — wrapping alone would strand the timestamp
+// on a third row, because the flex break sits between them.
+chk('  the buttons sit on row one and the notifications under them',
+  /class="hdr-actions"[\s\S]{0,900}class="hbreak"[\s\S]{0,400}class="alerts"/.test(html),
+  'markup order carries it, so no reordering is needed at the common widths');
+chk('    and below 1280px they drop to row two together, not onto a third row',
+  /@media \(max-width: 1280px\)\{[\s\S]*?\.hdr-actions\{[^}]*order:6\}[\s\S]*?\.hbreak\{order:3\}/.test(css),
+  'measured: 67px of slack at 1280px, 5px at 1200px, negative at 1180px');
 chk('  the divider between rows is gone',/\.hsep\{display:none\}/.test(css),
   'a vertical rule between two wrapped rows separates nothing');
 // The push sits on .alerts, the FIRST of the pair, so the alerts and the action
 // buttons collect into one group in the right-hand corner — and still land right
 // rather than orphaning left if that pair ever wraps to a row of its own.
-chk('  the alerts and actions sit together in the right corner',
-  /\.hright\{[^}]*margin-left:auto/.test(css) &&
-  !/\.hdr-actions\{[^}]*margin-left:auto/.test(css) &&
-  !/\.alerts\{[^}]*margin-left:auto/.test(css),
-  'one auto margin, on the wrapper — a second would split the gap');
+chk('  the notifications hold the right corner of their own row',
+  /\.alerts\{[^}]*margin-left:auto/.test(css) &&
+  !/\.hdr-actions\{[^}]*margin-left:auto/.test(css),
+  'one auto margin — a second would split the gap and strand them mid-row');
+chk('    and the wrapper it replaced is gone, not left as dead CSS',
+  !/class="hright"/.test(html) && !/\.hright\{/.test(css));
 
 const mid=String(widths.find(w=>w>=600&&w<1000)||'');
 if(mid){
@@ -111,7 +114,14 @@ chk('no media query touches the data tables',
 
 // ---- the tab bodies ---------------------------------------------------------
 console.log('');
-const mid1 = String(widths.find(w=>w>=1000&&w<1500)||'');
+// Find it by what it CONTAINS, not by width range. A header-only block was added at
+// 1280px, and a range search picked that up instead of the tab-bodies one — the same
+// trap the tab-drop lookup below already had to avoid.
+// (and bound the width too: the 720px block carries the same padding rule, and
+// integer-like object keys enumerate in ascending numeric order, so an unbounded
+// find returns 720 rather than the mid-width block meant here)
+const mid1 = String(Object.keys(blocks).find(w =>
+  +w >= 1000 && +w < 1500 && /\.fxwrap,\.smwrap,\.pdwrap\{padding:/.test(blocks[w])) || '');
 if (mid1){
   const m = blocks[mid1];
   chk('at '+mid1+'px the sections lose their wide padding',

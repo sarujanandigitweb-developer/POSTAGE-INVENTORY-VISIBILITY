@@ -1,54 +1,56 @@
 #!/usr/bin/env node
-/* The table box must never be able to collapse to nothing.
-   It did on 1 Sep 2026: the hub page adds its own breadcrumb bar above us, so
-   on a laptop screen the fixed chrome was taller than the viewport, `flex:1`
-   resolved to 0px, and every tab showed a header with no rows under it. */
+/* The table must always have real height, and the chrome must not permanently
+   own a third of the screen.
+
+   History, so this is not undone by accident:
+     1 Sep, morning — the page was locked to the viewport and the table box was
+     `flex:1;min-height:0`. When the chrome was taller than the window that
+     resolved to 0px and every tab showed a header with no rows under it.
+     1 Sep, later — a px floor stopped the collapse but the chrome still cost
+     ~220-245px of every screen, permanently. The page now scrolls: each table
+     box is a viewport tall, so scrolling past the header, the category bar and
+     the search row hands the whole screen to the table. The box still scrolls
+     inside itself, which is what keeps its sticky column header working. */
 const fs = require('fs');
 const F = __dirname + '/../dashboard/inventory-dashboard.html';
-const css = /<style>([\s\S]*?)<\/style>/.exec(fs.readFileSync(F, 'utf8'))[1];
+const html = fs.readFileSync(F, 'utf8');
+const css = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
 
 const fail = [];
-const ruleOf = sel => {
-  const m = new RegExp('\\n' + sel.replace('.', '\\.') + '[,{][^}]*', 'g').exec(css);
-  return m ? m[0] : null;
+const chk = (name, ok, note) => {
+  console.log((ok ? '  OK  ' : '  *** ') + name + (note ? '  — ' + note : ''));
+  if (!ok) fail.push(name);
 };
 
-// 1. every panel that holds a table needs a real floor, not min-height:0
-for (const sel of ['.wrap', '.fxwrap', '.smwrap']) {
-  const r = ruleOf(sel);
-  if (!r) { fail.push(`${sel}: rule missing`); continue; }
-  const mh = /min-height:\s*(\d+)px/.exec(r);
-  if (!mh) fail.push(`${sel}: min-height is not a px floor — it can collapse to 0`);
-  else if (+mh[1] < 240) fail.push(`${sel}: floor ${mh[1]}px is under 240px (fewer than ~4 rows)`);
-  else console.log(`  ${sel.padEnd(9)} floor ${mh[1]}px  OK`);
+// 1. the document scrolls; a fixed 100% height would trap the chrome on screen
+chk('the page is free to grow past the viewport',
+  /html\{height:100%\}\s*\nbody\{min-height:100%\}/.test(css),
+  'html,body{height:100%} pinned the chrome permanently on screen');
+chk('  and nothing clips that overflow away',
+  !/\nbody\{[^}]*overflow\s*:\s*hidden/.test(css));
+
+// 2. each scroll box is a viewport tall, with a floor for very short windows
+for (const [sel, re] of [
+  ['.scroll',   /\.scroll\{overflow:auto;flex:none;height:calc\(100vh - (\d+)px\);min-height:(\d+)px\}/],
+  ['.fxscroll', /\.fxscroll\{overflow:auto;flex:none;height:calc\(100vh - (\d+)px\);min-height:(\d+)px;/],
+]) {
+  const m = re.exec(css);
+  if (!m) { fail.push(sel + ': not sized to the viewport'); console.log('  *** ' + sel + ' is not a viewport-tall box'); continue; }
+  const [, off, floor] = m;
+  chk(sel + ' is a viewport-tall box', +floor >= 180,
+    'height 100vh - ' + off + 'px (what sits below it), floor ' + floor + 'px');
 }
 
-// 2. nothing may clip that overflow away at the page level
-if (/\nbody\{[^}]*overflow\s*:\s*hidden/.test(css))
-  fail.push('body has overflow:hidden — the overflow would be clipped, not scrollable');
-else console.log('  body     does not clip overflow  OK');
+// 3. the panels must not flex any more, or they would fight the box height
+for (const sel of ['.wrap', '.fxwrap', '.smwrap'])
+  chk('  ' + sel + ' lets the box set the height', 
+    new RegExp('\\' + sel + '\\{[^}]*flex:none').test(css) &&
+    !new RegExp('\\' + sel + '\\{[^}]*flex:1').test(css));
 
-// 3. the height-based media queries that reclaim chrome space must exist
-for (const q of ['max-height: 900px', 'max-height: 780px']) {
-  if (css.includes('@media (' + q + ')')) console.log(`  @media (${q})  present  OK`);
-  else fail.push(`missing height media query: ${q}`);
-}
-
-// 4. the short-screen overrides must lower the floor (so the page does not
-//    scroll and take the sticky table header with it) but never to nothing
-for (const q of ['900', '780']) {
-  const blk = new RegExp('@media \\(max-height: ' + q + 'px\\)\\{([\\s\\S]*?)\\n\\}').exec(css);
-  if (!blk) { fail.push(`@media max-height ${q}px: block missing`); continue; }
-  for (const m of blk[1].matchAll(/min-height:\s*(\d+)px/g)) {
-    if (+m[1] < 150) fail.push(`@media max-height ${q}px: floor ${m[1]}px is too small`);
-  }
-  console.log(`  @media ${q}px overrides floor  OK`);
-}
-
-// 5. the search row must not carry padding on both .tbar and .status there
-if (!/@media \(max-height: 900px\)\{[\s\S]*?\.status\{padding:2px 0/.test(css))
-  fail.push('short-screen .status padding not flattened — the search row wastes ~20px');
-else console.log('  search row flattened on short screens  OK');
+// 4. the box scrolls INSIDE itself — that is what pins the column header
+chk('the sticky column header still has a scrollport to stick to',
+  /\.scroll\{overflow:auto/.test(css) && /\.fxscroll\{overflow:auto/.test(css),
+  'if the box stopped scrolling, the header would scroll away with the rows');
 
 if (fail.length) { console.error('\nFAILED:'); fail.forEach(f => console.error('  - ' + f)); process.exit(1); }
 console.log('\nALL CHECKS PASSED');

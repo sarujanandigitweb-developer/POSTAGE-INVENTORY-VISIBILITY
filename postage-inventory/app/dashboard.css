@@ -1,0 +1,932 @@
+/* ===========================================================================
+   Ported verbatim from dashboard/inventory-dashboard.html (the live dashboard).
+   Do not restyle here: the brief was to reproduce the current design exactly.
+   The only change is the tab strip, which moves to a sidebar — see sidebar.css.
+
+   Everything below is the original stylesheet, including the density scale
+   (--fs / --py / --cpy / --thr ...) that makes the page shrink with the window.
+   =========================================================================== */
+:root{
+  /* ---- interface density ------------------------------------------------
+     Sizes are not fixed px any more: they interpolate with the viewport, so a
+     laptop window spends its pixels on rows instead of on chrome. Both axes
+     count — vw alone would keep a wide-but-short window as tall as ever.
+     clamp(floor, fluid, ceiling): the ceiling is the old desktop value, so a
+     full-size monitor looks exactly as it did before. */
+  --fs:    clamp(10.5px, 0.20vw + 0.30vh + 6.6px, 13px);   /* controls, cells */
+  --fs-sm: clamp(9.5px,  0.18vw + 0.26vh + 6px,   11.5px); /* secondary text  */
+  --fs-h1: clamp(13px,   0.45vw + 0.30vh + 6px,   18px);   /* the page title  */
+  --py:    clamp(3px,    0.62vh + 1.2px,  9px);            /* band padding    */
+  --hpx:   clamp(10px,   0.80vw + 2px,   20px);            /* band side pad   */
+  --cpy:   clamp(3px,    0.50vh + 1px,    8px);            /* cell padding y  */
+  --cpx:   clamp(6px,    0.35vw + 2px,   12px);            /* cell padding x  */
+  --thr:   clamp(21px,   2.00vh + 8px,   30px);            /* header row height */
+  --bg:#f4f6f9; --panel:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e2e6ec;
+  --head:#eef2f7; --head2:#f7f9fc; --accent:#1f4fd8; --accent-soft:#e8eeff;
+  --fx-frame:#9fbaf5;
+  /* postage table header: one hue at two depths, not the sheet's per-carrier rainbow */
+  --thead-bg:#18386e;  --thead-ink:#ffffff;
+  --thead2-bg:#dce6f5; --thead2-ink:#18386e;
+  --grp-in-bg:#eafaf1; --grp-in-ink:#166534;
+  --pos:#0f7b3e; --neg:#c02626; --zero:#9aa2ae; --warn:#8a5a00; --warn-bg:#fff4d6;
+  --low:#b45309;
+  --neg-bg:#fdecec;
+  --na-bg:#f0f1f4; --na-ink:#8b919b; --sticky:#ffffff;
+  --grp-uk-bg:#dbe6ff; --grp-uk-ink:#123a9e;
+  --grp-de-bg:#ffe6d1; --grp-de-ink:#8a4a10;
+  --grp-pd-bg:#e2e8f0; --grp-pd-ink:#334155;
+  --grp-om-bg:#dcf3e4; --grp-om-ink:#12653a;
+  --crff-bg:#fde8d7;   --crff-ink:#8a4a10;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --panel:#151a21; --ink:#e6e9ee; --muted:#9aa3af; --line:#262d37;
+  --head:#1b222c; --head2:#161c24; --accent:#7aa2ff; --accent-soft:#1d2740;
+  --fx-frame:#3d5a94;
+  --thead-bg:#18386e;  --thead-ink:#eaf1ff;
+  --thead2-bg:#1b2b47; --thead2-ink:#a8c4ff;
+  --grp-in-bg:#122a1e; --grp-in-ink:#86efac;
+  --pos:#4ade80; --neg:#f87171; --zero:#6b7280; --warn:#f3c969; --warn-bg:#3a2f12;
+  --low:#fbbf24;
+  --neg-bg:#3a1c1c;
+  --na-bg:#20262f; --na-ink:#79818d; --sticky:#151a21;
+  --grp-uk-bg:#1c2a4d; --grp-uk-ink:#9db8ff;
+  --grp-de-bg:#3a281a; --grp-de-ink:#f0b184;
+  --grp-pd-bg:#232a34; --grp-pd-ink:#c3ccd8;
+  --grp-om-bg:#16301f; --grp-om-ink:#7fd6a0;
+  --crff-bg:#3a281a;   --crff-ink:#f0b184;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{min-height:100%}
+/* column layout so the table always fills the space left over — its bottom can
+   never fall below the fold the way a fixed max-height calc did */
+body{margin:0;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;
+  font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{background:#15243d;border-bottom:1px solid #0c1729;padding:var(--py) var(--hpx);flex:none}
+header h1{color:#f4f7fc}
+header .sub{color:#a7bcdd}
+header .tag{background:rgba(255,255,255,.12);color:#d6e5ff}
+header .tag.warnt{background:rgba(243,201,105,.18);color:#f6d488}
+/* The header is a navigation bar: identity on the left, the view tabs and the actions
+   on the right, everything on one vertically-centred line. */
+.hbar{display:flex;align-items:center;gap:max(2px,calc(var(--py) - 4px)) 16px;flex-wrap:wrap}
+.hleft{flex:0 1 auto;min-width:0}
+.title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brandmark{display:inline-flex;flex:none;line-height:0;border-radius:9px;
+  box-shadow:0 2px 8px rgba(9,20,44,.45),0 0 0 1px rgba(255,255,255,.10) inset}
+.brandmark svg{display:block}
+h1{font-size:var(--fs-h1);margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:12.5px}
+.prov{margin-top:0;font-size:var(--fs-sm);color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 9px;font-weight:600;font-size:var(--fs-sm)}
+.tag.stale{background:var(--warn-bg);color:var(--warn)}
+.tag.dead{background:var(--neg-bg,#fdecec);color:var(--neg)}
+.tag.warnt{background:var(--warn-bg);color:var(--warn)}
+.controls{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px;
+  display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+input[type=search],select{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  border-radius:7px;padding:7px 10px;font-size:13px;min-width:150px;font-family:inherit}
+input[type=search]{min-width:280px}
+input[type=search]:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+/* The `hidden` attribute is set from script on .wrap, .pgwrap and .catbar. A class
+   selector setting `display:flex` outranks the browser's own [hidden]{display:none},
+   so without this both views render at once. */
+[hidden]{display:none !important}
+/* --- Inventory category row: one dropdown per category, product types inside --- */
+.catbar{background:var(--panel);border-bottom:1px solid var(--line);padding:var(--py) var(--hpx);flex:none}
+.catbar h2{margin:0 0 calc(var(--py) - 2px);font-size:var(--fs);font-weight:700;letter-spacing:-.01em}
+/* One dropdown per category, product types inside it — unchanged behaviour. The
+   sizes below are the only thing that changed when the row grew from six
+   categories to twelve: each column is ~124px instead of ~158px, so twelve fit in
+   the space eight used to take. Nothing was moved to a different control. */
+.cats{display:flex;gap:8px 10px;flex-wrap:wrap}
+/* Equal, flexible columns. Without min-width:0 a <select> is as wide as its widest
+   option, so Wall Arm ("Double Wall/Ceiling Spotlight Arm") alone pushed the last
+   category onto a second line. `flex:1 1 112px` lets all twelve share the row and
+   still wrap sensibly on a narrow screen. */
+.cat{display:flex;flex-direction:column;gap:3px;flex:1 1 112px;min-width:0;max-width:230px}
+.cat-l{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink);
+  max-width:100%}
+/* Only the NAME is allowed to ellipsise. The count and the GAP badge are flex:none
+   so a long label such as "Pendant Lamp Holder" can never clip them away. */
+.cat-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cat-l .gap,.cat-n{flex:none}
+.cat select{width:100%;min-width:0;padding:calc(var(--cpy) - 2px) 7px;font-size:var(--fs-sm)}
+.cat.off .cat-l{color:var(--na-ink)}
+.cat.off select{background:var(--na-bg);color:var(--na-ink);cursor:not-allowed}
+.cat.on .cat-l{color:var(--accent)}
+.cat.on select{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.cat-n{font-size:10px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.gap{background:var(--warn-bg);color:var(--warn);border:1px solid transparent;border-radius:999px;
+  padding:1px 7px;font-size:10px;font-weight:700;letter-spacing:.03em;cursor:help}
+/* --- Stock History dialog (spec 4.6 popup form + 8.2 table) --- */
+.histbtn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);
+  border-radius:6px;padding:2px 10px;font-size:11.5px;font-weight:700;cursor:pointer;
+  font-family:inherit;white-space:nowrap}
+.histbtn:hover{background:var(--accent-soft)}
+.hmodal{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-start;
+  justify-content:center;padding:13vh 24px 48px;background:rgba(17,24,39,.45);overflow:auto}
+.hmodal[hidden]{display:none}
+/* Wider than the old 1120px so all ten columns fit without a horizontal scrollbar.
+   flex-start + a vh top offset keeps it clear of the page header and never clips a
+   tall dialog the way align-items:center does once the content overflows. */
+.hmbox{position:relative;background:var(--panel);border-radius:12px;
+  width:min(1560px,calc(100% - 40px));
+  box-shadow:0 24px 64px rgba(0,0,0,.30);padding:22px 26px 24px}
+.hmx{position:absolute;top:11px;right:13px;border:0;background:transparent;color:var(--muted);
+  font-size:19px;line-height:1;cursor:pointer;padding:3px 8px;border-radius:6px;font-family:inherit}
+.hmx:hover{background:var(--na-bg);color:var(--ink)}
+.hmbox h3{margin:0 0 13px;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.hmsku{margin:0 0 15px;font-size:13px;color:var(--muted)}
+.hmsku b{color:var(--ink);font-weight:700}
+.hmsku .s{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.hmscroll{border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  max-height:min(64vh,760px);overflow-y:auto}
+/* table-layout:fixed + declared column widths means the ten columns always fit the
+   dialog. Long text wraps inside its cell instead of pushing the table sideways, so
+   the history table never gets a scrollbar of its own. */
+.htab{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:12.5px}
+.htab th{position:sticky;top:0;z-index:2;background:var(--head);color:var(--ink);
+  text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:bottom;white-space:normal}
+.htab td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;
+  white-space:normal;overflow-wrap:anywhere;line-height:1.45}
+.htab tbody tr:nth-child(even) td{background:var(--head2)}
+.htab tbody tr:hover td{background:var(--accent-soft)}
+.htab tr:last-child td{border-bottom:0}
+.htab td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.htab td.dt{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+/* a blank field is normal here — a CSV upload has no informed person — so it is a quiet
+   dash with the reason on hover, not the loud Unavailable chip the stock table uses.
+   40.5% of cells are blank; as chips they drowned the real values. */
+.htab td .hblank{color:var(--na-ink);opacity:.55;cursor:help}
+.htab td.rm{color:var(--muted)}
+.hact{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;
+  white-space:nowrap;background:var(--na-bg);color:var(--ink)}
+.hact.recv{background:var(--grp-in-bg);color:var(--grp-in-ink)}
+.hact.csv {background:var(--grp-uk-bg);color:var(--grp-uk-ink)}
+.hact.man {background:var(--grp-de-bg);color:var(--grp-de-ink)}
+.hact.stk {background:var(--grp-om-bg);color:var(--grp-om-ink)}
+.hcont{display:inline-block;margin-left:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10.5px;font-weight:700;background:var(--panel);border:1px solid var(--line);
+  border-radius:5px;padding:1px 6px;color:var(--muted)}
+.hqty.up{color:var(--pos);font-weight:700}
+.hqty.dn{color:var(--neg);font-weight:700}
+.htab td.hgap{background:var(--warn-bg);color:var(--warn);font-weight:700;
+  padding:13px 14px;white-space:normal;text-align:left}
+.hmnote{margin:11px 0 0;font-size:11.5px;color:var(--muted);line-height:1.6}
+.hmnote code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+  background:var(--na-bg);border-radius:4px;padding:1px 5px}
+.hmspec{margin:9px 0 0;font-size:11.5px;color:var(--muted)}
+.hmspec summary{cursor:pointer;font-weight:700;color:var(--ink)}
+.hmspec ul{margin:6px 0 0;padding-left:20px;line-height:1.65}
+/* --- Top-level view tabs: Inventory (default) | Postage Information --- */
+/* NAVIGATION and ACTIONS must not read as the same thing. Both were light translucent
+   fills with a 7px radius, so the four controls looked like one row of identical badges.
+   They are now told apart by depth, shape and weight:
+     nav     — a segmented control SUNK into a dark well, the current view filled solid
+     actions — flat ghost pills, no fill, lighter weight, fully rounded
+   with a hairline rule between the two groups. */
+.hspace{flex:1 1 0;min-width:0;display:none}
+/* the strip is the tallest thing on its row, so this margin adds to the header —
+   kept on the density scale so it shrinks with everything else on a laptop */
+.vtabs{display:flex;gap:3px;flex:0 0 auto;max-width:100%;margin-top:calc(var(--py) - 2px);
+  padding:4px;border-radius:11px;
+  background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.40)}
+.vtab{border:0;background:transparent;color:rgba(255,255,255,.60);
+  border-radius:8px;padding:calc(var(--py) - 1px) calc(var(--cpx) + 6px);font-size:var(--fs);font-weight:600;cursor:pointer;
+  font-family:inherit;white-space:nowrap;letter-spacing:-.005em}
+.vtab:hover{color:#fff;background:rgba(255,255,255,.07)}
+.vtab[aria-selected=true]{background:#f4f7fc;color:#15243d;font-weight:700;
+  box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.vtab:focus-visible{outline:2px solid #8fb4ff;outline-offset:2px}
+/* hairline between navigation and actions */
+.hsep{display:none}   /* a divider between two wrapped rows means nothing */
+/* --- Postage Information: live from the Google Sheet --- */
+.pgwrap{flex:none;display:flex;flex-direction:column;background:var(--bg)}
+.pgbar{background:var(--panel);border-bottom:1px solid var(--line);padding:11px 20px;flex:none}
+.pgtop{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.pgtop h2{margin:0;font-size:14px;font-weight:700;letter-spacing:-.01em}
+.pgmeta{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pgmeta a{color:var(--accent)}
+.pgtop .btn{margin-left:auto}
+.pgsecs{display:flex;gap:6px;flex-wrap:wrap}
+.pgsec{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;
+  padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:7px}
+.pgsec:hover{border-color:var(--accent);color:var(--accent)}
+.pgsec[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.pgsec .n{font-size:10.5px;font-weight:700;opacity:.62;font-variant-numeric:tabular-nums}
+.pgtools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.pgtools input[type=search]{min-width:260px}
+.pgtools select{min-width:190px}
+.pgcount{font-size:12px;color:var(--muted)}
+.pgcount b{color:var(--ink)}
+.pgbody{flex:none;padding:2px 20px 24px}
+/* A sub-heading in the sheet ("ROYAL MAIL", "Boxes - Double Wall") becomes its own table
+   with the heading above it, rather than a bare row sitting inside the grid. */
+.pggrp{margin:20px 0 8px;font-size:13px;font-weight:700;letter-spacing:.01em;color:var(--ink);
+  display:flex;align-items:center;gap:9px}
+.pggrp::after{content:"";flex:1;height:1px;background:var(--line)}
+.pgbody > .pggrp:first-child{margin-top:12px}
+.pglinks{margin:12px 0 0;display:flex;gap:10px;flex-wrap:wrap}
+.pglinks a{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);
+  border-radius:7px;padding:5px 11px;text-decoration:none}
+.pglinks a:hover{text-decoration:underline}
+/* SCROLLING. The horizontal scrollbar belongs to this box, so if the box is allowed to
+   grow to the full height of a 38-row table the scrollbar ends up far below the fold —
+   you had to scroll all the way down before you could scroll sideways. Capping the box to
+   the viewport keeps its bottom edge, and therefore the horizontal scrollbar, on screen.
+   A cap rather than a flex:1 fill because a section can contain SEVERAL of these blocks
+   (Box Purchase History has one per month) and short blocks must stay short. */
+.pgscroll{overflow:auto;max-height:calc(100vh - 90px);min-height:120px;
+  border:1px solid var(--line);border-radius:9px;background:var(--panel);
+  overscroll-behavior:contain}
+/* width:auto + min-width:100% is the important pair. Forcing width:100% on the 43-column
+   International Prices table gave every column ~30px, and `overflow-wrap:anywhere` then
+   broke the headings one character per line. The table now sizes to its content, fills the
+   panel when it is narrower, and scrolls horizontally when it is wider. */
+/* width:auto with NO min-width:100% — the table hugs its content instead of stretching a
+   two-column table across the whole panel. A wide one still scrolls inside .pgscroll. */
+.pgtab{border-collapse:separate;border-spacing:0;font-size:var(--fs);width:auto}
+.pgtab th,.pgtab td{padding:var(--cpy) var(--cpx);vertical-align:top;white-space:normal;
+  min-width:92px;max-width:320px;overflow-wrap:break-word;word-break:normal;
+  border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:left}
+.pgtab th:last-child,.pgtab td:last-child{border-right:0}
+.pgtab tbody tr:last-child td{border-bottom:0}
+/* The sheet tints every carrier group a different colour. Rather than reproduce that,
+   the hierarchy is carried by ONE hue at two depths: a solid band for the column row and
+   a light tint for the group labels above it. A group label is also given a left rule at
+   the column it starts on, so you can still see which columns belong to ROYAL Mail and
+   which to DHL without a rainbow. */
+.pgtab thead th{background:var(--thead-bg);color:var(--thead-ink);font-weight:700;
+  position:sticky;top:0;z-index:2;white-space:normal;vertical-align:bottom;line-height:1.35}
+/* HEADER BANDS. Empty spacer cells used to paint var(--panel) — white — so the header
+   showed ragged holes between groups and a large blank block above the sticky first
+   column. Every header cell now carries its band's colour, so each row reads as one
+   continuous band and only the labels vary. */
+.pgtab thead tr.hsub th{background:var(--thead2-bg);color:var(--thead2-ink);font-weight:600;
+  font-size:11.5px;padding:5px 10px;text-align:center;line-height:1.3;
+  border-bottom:1px solid rgba(255,255,255,.45)}
+.pgtab thead tr.hsub th.gl{font-weight:700;border-left:2px solid var(--panel)}
+.pgtab thead tr.hsub th:first-child{background:var(--thead2-bg)}
+.pgtab thead tr.hsub th.gl:first-child{background:var(--thead2-bg);border-left:0}
+/* the sheet's banner line sits above the groups and reads as a title, not a column */
+.pgtab thead tr.hban th{background:var(--thead-bg);color:var(--thead-ink);font-weight:700;
+  font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;
+  border-bottom:1px solid rgba(255,255,255,.25);border-left:0}
+/* the banner row carries BOTH classes, and `.hsub th:first-child` (0,3,3) outranks
+   `.hban th` (0,2,3) — without these the banner's sticky first cell paints light. */
+.pgtab thead tr.hban th:first-child,
+.pgtab thead tr.hban th.gl:first-child{background:var(--thead-bg);border-left:0}
+.pgtab thead tr.hsub:last-of-type th{border-bottom:2px solid var(--thead-bg)}
+.pgtab thead tr.hmain th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  padding:7px 10px;vertical-align:middle;line-height:1.25}
+.pgtab td.num,.pgtab th.num{text-align:right;font-variant-numeric:tabular-nums;
+  white-space:nowrap;min-width:92px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.pgtab tbody tr:nth-child(even) td{background:var(--head2)}
+.pgtab tbody tr:hover td{background:var(--accent-soft)}
+/* a month's subtotal line, not a purchase */
+.pgtab tbody tr.sum td{background:var(--thead2-bg);color:var(--thead2-ink);font-weight:700;
+  border-top:1px solid var(--thead-bg);border-bottom:1px solid var(--thead-bg)}
+.pgtab tbody tr.sum:hover td{background:var(--thead2-bg)}
+/* On a 43-column table the row label has to stay put, or scrolling right loses which
+   country a price belongs to. The backgrounds are repeated because a sticky cell sits
+   above the rows it scrolls past and would otherwise be transparent. */
+.pgtab th:first-child,.pgtab td:first-child{position:sticky;left:0;z-index:1;
+  background:var(--panel);box-shadow:1px 0 0 var(--line)}
+.pgtab tbody tr:nth-child(even) td:first-child{background:var(--head2)}
+.pgtab tbody tr:hover td:first-child{background:var(--accent-soft)}
+.pgtab thead th:first-child{z-index:4}
+.pgtab thead tr.hmain th:first-child{background:var(--thead-bg)}
+.pgstate{padding:36px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7}
+.pgstate b{display:block;color:var(--ink);font-size:14px;margin-bottom:6px}
+.pgstate.err b{color:var(--warn)}
+.pgstate code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  background:var(--na-bg);border-radius:4px;padding:1px 5px}
+/* "+2" beside a container name: this SKU arrived in 3, and the one shown is the latest */
+.cmore{display:inline-block;margin-left:5px;font-size:10px;font-weight:700;
+  background:var(--na-bg);color:var(--na-ink);border-radius:5px;padding:0 5px;
+  vertical-align:1px}
+.chips{display:flex;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:7px;
+  padding:7px 12px;font-size:12.5px;cursor:pointer;font-weight:600;font-family:inherit}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;
+  padding:7px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.status{padding:10px 20px;font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
+.status b{color:var(--ink)}
+.wrap{margin:0 20px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;flex:none;display:flex;flex-direction:column}
+/* toolbar inside the table box: counts on the left, search and filters on the right */
+.tbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:none;
+  padding:var(--cpy) var(--cpx);border-bottom:1px solid var(--line);background:var(--head2)}
+.tbar .status{padding:0;margin-right:auto;gap:14px}
+.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.tools input[type=search]{min-width:250px}
+.tools select{min-width:145px}
+.tools input[type=search],.tools select,.tools .btn{padding:var(--cpy) 9px;font-size:var(--fs)}
+.scroll{overflow:auto;flex:none;height:calc(100vh - 62px);min-height:200px}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:12.5px}
+th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:var(--cpy) var(--cpx);text-align:left;white-space:nowrap}
+thead th{position:sticky;background:var(--head);font-weight:700;z-index:3;font-size:var(--fs-sm)}
+thead tr:nth-child(1) th{top:0;text-transform:uppercase;letter-spacing:.06em;text-align:center}
+/* The offsets below are DERIVED from the row height, not guessed at. Pinning the
+   Inventory header rows to --thr is what lets rows 2 and 3 stick flush against
+   the row above as the density changes; a hardcoded 30px/60px would leave a gap
+   showing the table scrolling behind the header the moment the rows got shorter. */
+.scroll table thead th{height:var(--thr);padding-top:0;padding-bottom:0;line-height:1.15}
+thead tr:nth-child(2) th{top:var(--thr);background:var(--head2);text-align:center;font-size:var(--fs-sm);color:var(--muted)}
+thead tr:nth-child(3) th{top:calc(var(--thr) * 2);background:var(--head2);font-weight:600}
+.grp-uk{background:var(--grp-uk-bg)!important;color:var(--grp-uk-ink)}
+.grp-de{background:var(--grp-de-bg)!important;color:var(--grp-de-ink)}
+.grp-pd{background:var(--grp-pd-bg)!important;color:var(--grp-pd-ink)}
+.grp-om{background:var(--grp-om-bg)!important;color:var(--grp-om-ink)}
+tbody tr:hover td{background:var(--head2)}
+td.cm{font-size:11px;color:var(--muted);white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+td.sku{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600;
+  position:sticky;left:0;background:var(--sticky);z-index:2;border-right:2px solid var(--line)}
+thead th.sku{position:sticky;left:0;z-index:5}
+tbody tr:hover td.sku{background:var(--head2)}
+.n{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+/* --- stock alerts in the header ------------------------------------------- */
+.alerts{display:flex;gap:6px;align-items:center;margin-left:auto}
+/* the title block grows with the spacer, so the two sides of the strip match */
+.hleft{flex:1 1 0;min-width:max-content}
+.alrt{display:inline-flex;align-items:center;gap:6px;border:0;cursor:pointer;font-family:inherit;
+  border-radius:999px;padding:calc(var(--py) - 1px) 11px calc(var(--py) - 1px) 9px;font-size:var(--fs-sm);font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums}
+.alrt svg{flex:none}
+.alrt-y{background:#ffd233;color:#4a3800}
+.alrt-y:hover{background:#ffdd5c}
+.alrt-r{background:#d93a3a;color:#fff}
+.alrt-r:hover{background:#e75151}
+.alrt[aria-pressed=true]{outline:2px solid #fff;outline-offset:2px}
+.alrt:focus-visible{outline:2px solid #8fb4ff;outline-offset:2px}
+/* --- Shopify price badge ----------------------------------------------------
+   ONE badge for every price. There is deliberately no threshold here: a price is a
+   price, and colouring it by value said "cheap" where the reader expects "low stock".
+   The stock alerts in the header carry that meaning instead. */
+.pb-alt{background:var(--na-bg);color:var(--na-ink);font-weight:600}
+.pcur{font-size:9px;margin-left:3px;opacity:.75;letter-spacing:.02em}
+.pb{display:inline-block;border-radius:6px;padding:2px 7px;font-weight:600;
+  font-variant-numeric:tabular-nums;font-size:12px;
+  background:var(--accent-soft);color:var(--accent)}
+/* --- comment cell: small, click for the whole thing ------------------------ */
+.cmb{max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;
+  border:0;background:transparent;padding:0;margin:0;font:inherit;font-size:11px;
+  color:var(--muted);cursor:pointer;text-align:left;text-decoration:underline dotted;
+  text-underline-offset:2px}
+.cmb:hover{color:var(--accent)}
+.cmb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* --- shared small modal: comment + image ----------------------------------- */
+.smod{position:fixed;inset:0;background:rgba(8,14,25,.62);z-index:70;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.smbox{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 24px 60px rgba(0,0,0,.42);padding:20px 22px;position:relative;
+  max-width:min(460px,100% - 40px)}
+.smx{position:absolute;top:8px;right:10px;border:0;background:transparent;color:var(--muted);
+  font-size:22px;line-height:1;cursor:pointer;font-family:inherit;padding:2px 6px}
+.smx:hover{color:var(--ink)}
+.smsku{margin:0 0 10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-weight:700;font-size:13px}
+.smtxt{margin:0;font-size:13.5px;line-height:1.55;word-break:break-word}
+/* Passport size is 35 x 45 mm. At 96dpi that is 132 x 170 px; shown at 2x so the
+   product is actually readable, with the real ratio kept. */
+.ppt{width:264px;height:340px;object-fit:contain;background:#fff;border:1px solid var(--line);
+  border-radius:8px;display:block;margin:0 auto}
+.ppcap{margin:10px 0 0;font-size:11.5px;color:var(--muted);text-align:center}
+.thumb{cursor:zoom-in}
+.pos{color:var(--pos);font-weight:700}
+/* 1-10 units left: the same band the header's low-stock alert counts */
+.low{color:var(--low);font-weight:700}
+.neg{color:var(--neg);font-weight:700}
+.zero{color:var(--zero)}
+.dash{color:var(--zero);display:block;text-align:center}
+.rdt{font-variant-numeric:tabular-nums;font-size:11.5px}
+.rcn{border-bottom:1px dotted var(--line)}
+.loc{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px}
+.na{display:inline-block;background:var(--na-bg);color:var(--na-ink);border-radius:5px;
+  padding:1px 7px;font-size:11px;font-weight:600;cursor:help;letter-spacing:.01em}
+.type{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:1px 7px;font-size:11px;font-weight:600}
+.type.crsf{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.type.crff{background:var(--crff-bg);color:var(--crff-ink);border-color:transparent}
+img.thumb{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block;background:var(--head2)}
+/* the thumbnail sets the row height, so the cell keeps it from stretching the row further */
+td:has(> img.thumb){padding-top:5px;padding-bottom:5px}
+.grp-in{background:var(--grp-in-bg)!important;color:var(--grp-in-ink)}
+.stage{display:inline-block;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:700;white-space:nowrap}
+.st-ship{background:#dcfce7;color:#166534}.st-prod{background:#dbeafe;color:#1e40af}
+.st-conf{background:#fef3c7;color:#92400e}.st-ord{background:#ede9fe;color:#5b21b6}
+:root[data-theme=dark] .st-ship{background:#14532d;color:#bbf7d0}
+:root[data-theme=dark] .st-prod{background:#1e3a5f;color:#bfdbfe}
+:root[data-theme=dark] .st-conf{background:#4a3410;color:#fde68a}
+:root[data-theme=dark] .st-ord{background:#3b2a63;color:#ddd6fe}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+/* pagination bar, bottom of the table box. Mirrors .tbar so both themes work. */
+.pbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:none;
+  padding:8px 12px;border-top:1px solid var(--line);background:var(--head2);font-size:12.5px}
+.pbar .pinfo{color:var(--muted);margin-right:auto;font-variant-numeric:tabular-nums;font-size:var(--fs)}
+.pctl{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pctl label{color:var(--muted)}
+.pctl select{padding:calc(var(--cpy) - 1px) 8px;font-size:var(--fs-sm);min-width:74px}
+.pbtn{min-width:var(--thr);padding:var(--cpy) 9px;font-size:var(--fs);line-height:1;font-family:inherit;cursor:pointer;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+.pbtn:hover:not(:disabled){background:var(--head);border-color:var(--accent)}
+.pbtn:disabled{opacity:.4;cursor:default}
+.pbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ppage{color:var(--muted);padding:0 6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hdr-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  flex:1 1 0;min-width:max-content;justify-content:flex-end}
+.hbtn{display:inline-flex;align-items:center;gap:7px;font-weight:600;white-space:nowrap;
+  background:transparent;border:1px solid rgba(255,255,255,.20);color:#c3d4ee;
+  padding:calc(var(--py) - 1px) 14px;border-radius:999px;cursor:pointer;font-size:var(--fs-sm);font-family:inherit}
+.hbtn:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.38);color:#fff}
+.hbtn svg{opacity:.8}
+.hbtn:hover svg{opacity:1}
+.hbtn:focus-visible{outline:2px solid #8fb4ff;outline-offset:2px}
+.hbtn svg{display:block;flex:none}
+
+/* ---- SKU Fixed Price ------------------------------------------------------ */
+.fxwrap{max-width:none;margin:0;padding:14px 24px 12px;
+  flex:none;display:flex;flex-direction:column;gap:12px}
+.fxtop,.fxtools,.fxcov,.fxbar,.fxlegend{flex:none}
+
+.fxtop{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.fxh2{margin:0;font-size:21px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.fxinfo{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);
+  font:700 11px/14px Georgia,serif;text-align:center;cursor:help;flex:none}
+.fxinfo:hover,.fxinfo:focus-visible{border-color:var(--accent);color:var(--accent)}
+.fxlead{margin:0;margin-left:auto;text-align:right;color:var(--muted);font-size:12.5px}
+
+.fxtools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.fxsearch{position:relative;flex:1 1 220px;min-width:150px;display:flex;align-items:center}
+.fxsearch svg{position:absolute;left:12px;color:var(--muted);pointer-events:none}
+.fxsearch input{width:100%;padding:var(--cpy) 12px var(--cpy) 34px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--ink);font:inherit;font-size:13.5px}
+.fxsearch input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fxright{margin-left:auto;display:flex;flex-wrap:wrap;gap:7px;align-items:center;min-width:0}
+.fxseg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.fxseg button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;
+  padding:var(--cpy) 10px;cursor:pointer;border-right:1px solid var(--line);white-space:nowrap}
+.fxseg button:last-child{border-right:0}
+.fxseg button b{font-weight:600;opacity:.75}
+.fxseg button[aria-pressed=true]{background:var(--accent);color:#fff;font-weight:700}
+.fxseg button[aria-pressed=true] b{opacity:.9}
+.fxseg button:hover:not([aria-pressed=true]){background:var(--head2);color:var(--ink)}
+.fxtools select,.fxpagebar select{padding:var(--cpy) 10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--ink);font:inherit;font-size:var(--fs)}
+.fxtools select{padding:var(--cpy) 8px;font-size:var(--fs-sm);max-width:152px}
+.fxtog{padding:8px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);
+  color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.fxtog:hover{background:var(--head2)}
+.fxtog[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+
+/* price coverage strip */
+.fxcov{display:flex;align-items:center;gap:16px;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:8px 16px}
+.fxcovlab{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--ink);line-height:1.3;flex:none;padding-right:16px;border-right:1px solid var(--line);
+  align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.fxcovlab span{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:10.5px}
+.fxtiles{display:flex;flex:1;gap:14px;flex-wrap:wrap;min-width:0}
+.fxtile{display:flex;align-items:center;gap:9px;flex:1 1 132px;min-width:124px}
+.fxlogo{width:32px;height:32px;border-radius:8px;flex:none;display:flex;align-items:center;
+  justify-content:center;background:#fff;border:1px solid var(--line);overflow:hidden}
+.fxlogo svg{width:19px;height:19px;display:block}
+.fxlogo img{width:100%;height:100%;object-fit:cover;display:block}
+.fxtile .t{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.fxtile .t b{font-size:12px;font-weight:700;color:var(--ink)}
+.fxtile .t .c{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.fxtile .t .c i{font-style:normal;font-weight:700;color:var(--ink);font-size:12px}
+.fxtile .t .p{font-size:11px;color:var(--muted)}
+.fxnosrc{opacity:.8;font-style:italic}
+.fxtot{flex:none;text-align:right;padding-left:16px;border-left:1px solid var(--line);
+  align-self:stretch;display:flex;flex-direction:column;justify-content:center;max-width:210px}
+.fxtot .l{font-size:11px;color:var(--muted)}
+.fxtot .n{font-size:21px;font-weight:800;color:var(--accent);line-height:1.1}
+.fxtot .cap{font-size:10px;color:var(--muted);line-height:1.25;margin-top:1px;max-width:170px}
+
+.fxbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.fxcount{color:var(--muted);font-size:var(--fs)}
+.fxpagebar{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fxrpp{font-size:12.5px;color:var(--muted)}
+
+.fxscroll{overflow:auto;flex:none;height:calc(100vh - 50px);min-height:200px;
+  border:1px solid var(--line);border-radius:12px;
+  background:var(--panel)}
+table.fxtab{border-collapse:separate;border-spacing:0;width:100%;min-width:1160px;
+  table-layout:fixed;font-size:var(--fs)}
+table.fxtab.fit{min-width:0}
+col.c-sku{width:150px} col.c-img{width:68px}  col.c-name{width:30%} col.c-type{width:88px}
+col.c-p{width:104px}   col.c-na{width:88px}   col.c-upd{width:112px}
+table.fxtab th,table.fxtab td{padding:calc(var(--cpy) + 1px) var(--cpx);border-bottom:1px solid var(--line);text-align:left;
+  white-space:nowrap;vertical-align:middle}
+table.fxtab tbody tr:last-child td{border-bottom:0}
+table.fxtab thead th{position:sticky;top:0;z-index:3;background:var(--thead-bg);color:var(--thead-ink);
+  font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;font-weight:700;
+  height:46px;padding-top:8px;padding-bottom:8px;vertical-align:middle;
+  white-space:normal;overflow:visible;line-height:1.25}
+table.fxtab thead th.sortable{cursor:pointer;-webkit-user-select:none;user-select:none}
+table.fxtab thead th.sortable:hover{background:#22458a}
+table.fxtab thead th .dir{opacity:.5;font-size:10px;margin-left:4px}
+table.fxtab thead th[aria-sort] .dir{opacity:1}
+table.fxtab thead th.fxprice{text-align:right}
+table.fxtab thead th[data-sort="u"]{text-align:right}
+table.fxtab thead th.fximg{text-align:center}
+table.fxtab tbody tr:nth-child(even){background:var(--head2)}
+table.fxtab tbody tr:hover{background:var(--accent-soft)}
+
+table.fxtab td.fxsku{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  font-weight:700;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+.fxcopy{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;
+  border-radius:5px;vertical-align:middle;margin-left:5px;line-height:0}
+.fxcopy:hover{color:var(--accent);background:var(--accent-soft)}
+.fxcopy.done{color:#166534}
+table.fxtab td.fximg{text-align:center;padding:4px}
+.fxfr{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;
+  padding:2px;border:2px solid var(--fx-frame);border-radius:9px;background:#fff;
+  box-shadow:0 1px 2px rgba(16,24,40,.06);transition:border-color .12s,box-shadow .12s,transform .12s}
+.fxfr:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(31,79,216,.18);transform:translateY(-1px)}
+.fxthumb{width:100%;height:100%;object-fit:contain;border-radius:6px;background:#fff;
+  cursor:zoom-in;display:block}
+.fxfr.empty{border-style:dashed;background:var(--bg);box-shadow:none}
+.fxfr.empty:hover{border-color:var(--line);box-shadow:none;transform:none}
+table.fxtab td.fxname{white-space:normal;padding-top:9px;padding-bottom:9px;vertical-align:middle}
+.fxnm{display:block;line-height:1.4;overflow-wrap:anywhere}
+.fxtype{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.2px}
+.fxtype.single{background:#e8eeff;color:#1f4fd8}
+.fxtype.combo{background:#fdf0e3;color:#9a5b12}
+table.fxtab td.fxprice{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;
+  white-space:nowrap;font-size:13.5px}
+td.fxlow{color:#15803d}
+td.fxhigh{color:#c81e1e}
+table.fxtab td.fxnone{color:var(--muted);opacity:.5;text-align:center}
+table.fxtab td.fxna{color:var(--muted);opacity:.45;text-align:center;font-size:11px;white-space:normal}
+table.fxtab td.fxdate{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;
+  white-space:nowrap;text-align:right}
+.fxempty{padding:44px 20px;text-align:center;color:var(--muted)}
+
+.fxlegend{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  font-size:11.5px;color:var(--muted);padding:0 2px}
+.fxlegend b.lo{color:#15803d} .fxlegend b.hi{color:#c81e1e} .fxlegend b.na{color:var(--muted)}
+
+.fxpager{display:flex;flex-wrap:wrap;gap:5px;align-items:center;flex:none}
+.fxpg{min-width:calc(var(--thr) + 8px);height:calc(var(--thr) + 8px);padding:0 var(--cpx);border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--ink);font:inherit;font-size:var(--fs);font-weight:600;cursor:pointer;
+  transition:background .12s,border-color .12s,color .12s}
+.fxpg:hover:not(:disabled):not([aria-current]){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.fxpg[aria-current=page]{background:var(--accent);border-color:var(--accent);color:#fff;cursor:default}
+.fxpg:disabled{opacity:.38;cursor:not-allowed}
+.fxpg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fxgap{color:var(--muted);padding:0 4px;-webkit-user-select:none;user-select:none}
+.fxpgnote{margin-left:8px;color:var(--muted);font-size:12.5px}
+.fxempty{padding:44px 20px;text-align:center;color:var(--muted)}
+
+.smrefresh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:none;
+  font-size:12px;color:var(--muted)}
+.smrstate b{color:var(--ink);font-weight:600}
+.smrefresh .fxtog{padding:5px 10px;font-size:11.5px}
+.smrnew{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.smrnew:hover{background:#1a44be}
+.smrbusy{opacity:.55;pointer-events:none}
+
+/* SLOW-MOVING TOOLBAR — search plus eight filters on a single row. The controls are a
+   little tighter here than on Fixed Price purely because there are twice as many of them;
+   below ~1500px they still wrap rather than overflow. */
+.smwrap .fxtools{gap:8px}
+.smwrap .fxsearch{flex:0 1 260px;min-width:170px}
+.smwrap .fxsearch input{padding:8px 10px 8px 31px;font-size:13px}
+.smwrap .fxright{gap:7px;flex:1 1 auto;justify-content:flex-end}
+.smwrap .fxtools select{padding:7px 8px;font-size:12px;max-width:168px}
+.smwrap .fxseg button{padding:7px 9px;font-size:12px}
+.smwrap .fxtog{padding:7px 11px;font-size:12px}
+
+.pdbox{max-width:960px;padding:20px 24px 18px}
+.pdbox h3{margin:0;font-size:22px;letter-spacing:-.3px;display:inline-block;vertical-align:middle}
+.pdmpill{display:inline-block;vertical-align:middle;margin-left:10px;font-size:11.5px;font-weight:700;
+  padding:4px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.pdmhead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin:6px 0 14px}
+.pdmstate{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pdmstate b{color:var(--accent);font-weight:700}
+.pdmacts{display:flex;gap:8px}
+.pdmbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;
+  padding:7px 13px;border-radius:9px;cursor:pointer}
+.pdmbtn:hover{background:var(--head2);border-color:var(--accent);color:var(--accent)}
+.pdmcard{background:var(--head2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+  margin:0 0 16px}
+.pdmgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px 24px}
+.pdmgrid .f{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
+  display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.pdmgrid .f svg{flex:none;opacity:.7}
+.pdmgrid .v{font-size:14px;color:var(--ink);font-weight:700;line-height:1.35;word-break:break-word}
+.pdmgrid .v.na{color:var(--muted);font-weight:400}
+.pdmgrid .v.link{color:var(--accent)}
+.pdmgrid .sub{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:1px}
+.pdchip{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+.pdchip.ok{background:#dcfce7;color:#166534}
+.pdchip.warn{background:#fdedd3;color:#9a5b12}
+.pdchip.bad{background:#fde2e2;color:#a51111}
+.pdchip.mute{background:var(--panel);color:var(--muted);border:1px solid var(--line);font-weight:600}
+:root[data-theme=dark] .pdchip.ok{background:#12331f;color:#86efac}
+:root[data-theme=dark] .pdchip.warn{background:#4a3410;color:#fde68a}
+:root[data-theme=dark] .pdchip.bad{background:#4a1414;color:#fca5a5}
+.pdbad{color:#a51111;font-weight:700}
+:root[data-theme=dark] .pdbad{color:#fca5a5}
+.pdcopy{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;
+  border-radius:5px;vertical-align:middle;margin-left:6px;line-height:0}
+.pdcopy:hover{color:var(--accent);background:var(--accent-soft)}
+.pdcopy.done{color:#166534}
+.pdmfoot{display:flex;justify-content:flex-end;margin-top:16px}
+.pddet{border:1px solid var(--line);background:var(--panel);color:var(--accent);font:inherit;
+  font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.pddet:hover{background:var(--accent-soft);border-color:var(--accent)}
+table.pdtab td.pd-to{white-space:normal;line-height:1.3;font-size:12px}
+.pdmgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 18px;
+  margin:0 0 14px}
+.pdmgrid .f{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.pdmgrid .v{font-size:13px;color:var(--ink);font-weight:600;line-height:1.35;word-break:break-word}
+.pdmgrid .v.na{color:var(--muted);font-weight:400}
+/* The page-wide default is table{width:max-content;min-width:100%}, which lets a table
+   grow past its container. A 38-character combo SKU and a 120-character product name did
+   exactly that and pushed Qty and Stock outside the dialog. Fixed layout plus declared
+   column widths keeps the table inside the box and makes long text wrap instead. */
+table.pdlines{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;
+  font-size:12.5px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+col.pl-sku{width:31%} col.pl-name{width:auto} col.pl-q{width:62px} col.pl-k{width:76px}
+table.pdlines th,table.pdlines td{white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+table.pdlines th{background:var(--thead-bg);color:var(--thead-ink);font-size:11px;
+  text-transform:uppercase;letter-spacing:.4px;padding:7px 10px;text-align:left}
+table.pdlines td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+table.pdlines td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.pdmh{margin:2px 0 8px;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--muted)}
+.pdna{color:var(--muted)}
+table.pdlines td.sku{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+  font-weight:700;overflow-wrap:anywhere}
+.pdlow{color:#a51111;font-weight:700}
+:root[data-theme=dark] .pdlow{color:#fca5a5}
+
+/* ---- Pending Dispatch ------------------------------------------------------ */
+table.pdtab{min-width:1560px}
+col.p-ord{width:158px}  col.p-date{width:98px}  col.p-sku{width:200px} col.p-mkt{width:96px}
+col.p-to{width:150px}   col.p-wh{width:118px}   col.p-pay{width:104px}
+col.p-disp{width:168px} col.p-days{width:88px}  col.p-pend{width:120px} col.p-age{width:96px}
+col.p-pri{width:88px}   col.p-sla{width:88px}   col.p-det{width:88px}
+table.pdtab td.pd-ord{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  font-weight:700;white-space:normal;overflow-wrap:anywhere}
+table.pdtab td.pd-sku{white-space:normal;line-height:1.35;overflow-wrap:anywhere;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+table.pdtab td.pd-days{text-align:right;font-variant-numeric:tabular-nums;font-weight:800;font-size:14px}
+table.pdtab thead th.pd-days{text-align:right}
+table.pdtab td.pd-none{color:var(--muted);opacity:.45;text-align:center}
+/* The small grey note under a table cell — the tracking number, or "2 lines". It used to
+   be called .pdlines, the same name as the order-lines TABLE in the dialog, and
+   display:block turned that table into a block box: its cells shrank to content width and
+   the right-hand quarter of the bordered box was left empty. */
+.pdsub{display:block;font-size:10.5px;color:var(--muted);font-weight:400}
+.pderr{display:block;font-size:10.5px;color:#a51111;margin-top:2px}
+:root[data-theme=dark] .pderr{color:#fca5a5}
+.pdsla{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;
+  display:inline-block;white-space:nowrap}
+.pdsla.yes{background:#fde2e2;color:#a51111}
+.pdsla.no{background:#dcfce7;color:#166534}
+:root[data-theme=dark] .pdsla.yes{background:#4a1414;color:#fca5a5}
+:root[data-theme=dark] .pdsla.no{background:#12331f;color:#86efac}
+.pdst{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;display:inline-block;
+  background:var(--head2);color:var(--ink);white-space:nowrap}
+
+/* ---- Slow-Moving Products & Components ------------------------------------ */
+.smwrap{max-width:none;margin:0;padding:14px 24px 12px;
+  flex:none;display:flex;flex-direction:column;gap:12px}
+/* WIDTHS. Every column is fixed px and the min-width is their exact sum, so no column can
+   ever be squeezed to nothing. A percentage width here collapsed Item Name to ~0 because
+   the px columns alone already exceeded the table's min-width, and each character wrapped
+   onto its own line. The six columns the database cannot fill are kept narrow — they hold
+   a dash, so giving them 110px each spent 622px on nothing. */
+table.smtab{min-width:1918px}
+col.s-sku{width:132px} col.s-img{width:64px}  col.s-name{width:250px} col.s-type{width:92px}
+col.s-par{width:158px} col.s-qty{width:86px}  col.s-loc{width:196px}  col.s-date{width:104px}
+col.s-days{width:84px} col.s-act{width:84px}  col.s-aq{width:78px}    col.s-pri{width:92px}
+col.s-ph{width:150px}  col.s-asg{width:88px}  col.s-tgt{width:88px}   col.s-st{width:84px}
+col.s-note{width:88px}
+table.smtab td.sm-name,table.smtab td.sm-loc,table.smtab td.sm-ph{
+  white-space:normal;line-height:1.35;overflow-wrap:break-word}
+/* SKUs have no spaces, so they alone need to break mid-token */
+table.smtab td.sm-par{white-space:normal;line-height:1.3;overflow-wrap:anywhere}
+/* two parents plus a count: a component used by nine combos must not make its row nine
+   lines tall while every neighbour is one */
+.smmore{display:block;font-size:10.5px;color:var(--accent);font-weight:700;margin-top:1px}
+/* a zero-stock row is KEPT and marked, never dropped: there is nothing to bundle, repack
+   or dispose of, so it cannot carry an action — but hiding it would hide the fact */
+.smzero{display:block;font-size:9.5px;font-weight:700;letter-spacing:.2px;color:var(--muted);
+  background:var(--head2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+  width:fit-content;margin:2px 0 0 auto;text-transform:uppercase}
+table.smtab td.sm-zero{color:var(--muted)}
+table.smtab tr.smz td{opacity:.72}
+table.smtab td.sm-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+table.smtab td.sm-days{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+table.smtab thead th.sm-num,table.smtab thead th.sm-days{text-align:right}
+/* a field the database does not hold — muted, so it never reads as a real empty value */
+table.smtab td.sm-none{color:var(--muted);opacity:.42;text-align:center}
+.smpri{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;
+  display:inline-block;white-space:nowrap}
+.smpri.p3{background:#fde2e2;color:#a51111}
+.smpri.p2{background:#fdedd3;color:#9a5b12}
+.smpri.p1{background:#e3effb;color:#1f4fd8}
+:root[data-theme=dark] .smpri.p3{background:#4a1414;color:#fca5a5}
+:root[data-theme=dark] .smpri.p2{background:#4a3410;color:#fde68a}
+:root[data-theme=dark] .smpri.p1{background:#1d2740;color:#a8c4ff}
+.smloc{display:block;font-size:11.5px}
+.smloc + .smloc{margin-top:2px}
+.smpar{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+  color:var(--muted)}
+.smnever{font-size:10.5px;color:#a51111;font-weight:700}
+:root[data-theme=dark] .smnever{color:#fca5a5}
+.fxlegend b.cr{color:#a51111} .fxlegend b.hi{color:#9a5b12} .fxlegend b.me{color:#1f4fd8}
+:root[data-theme=dark] .fxlegend b.cr{color:#fca5a5}
+#smmissing{max-width:52ch;text-align:right;line-height:1.4}
+
+/* ---- RESPONSIVE HEADER -----------------------------------------------------
+   The header was laid out for a wide window only: .vtabs carries margin-left:auto and
+   .alerts margin-left:8px, so once .hbar wrapped, the tabs jumped to their own line and
+   sat pushed to the right while everything else stayed left, with a stray divider between
+   them. There was not a single media query in the page.
+
+   The 1500px breakpoint is measured, not guessed: title ~276px + tab strip ~674px +
+   alerts ~220px + actions ~212px + gaps and padding is about 1476px for one row. Below
+   that the header MUST reflow, so the switch happens before it goes ragged, not after. */
+.hbreak{display:block;flex-basis:100%;height:0;margin:0}
+/* Wide windows only. Below this the four cannot share a line and the flex break
+   stays where it is: title + tabs, then timestamp + alerts + buttons. */
+/* Measured: at 1280px row one needs 1189px of the 1256px available — 67px of slack.
+   By 1200px that is down to 5px, which is not something to rely on, and at 1180px it
+   is negative. So below 1280 the buttons go down to the second row WITH the
+   notifications; letting them wrap on their own would put the timestamp on a third
+   row, because the flex break sits between them. */
+@media (max-width: 1280px){
+  .hspace{display:block}
+  .hdr-actions{flex:0 0 auto;min-width:0;order:6}
+  .hbreak{order:3}
+  .prov{order:4}
+  .alerts{order:5}
+}
+@media (max-width: 1500px){
+  .hbar{gap:max(2px,calc(var(--py) - 4px)) 14px}
+  /* the strip scrolls sideways rather than being squeezed or stretched */
+  .vtabs{width:auto;overflow-x:auto;
+    scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .vtab{flex:none}
+}
+@media (max-width: 1060px){
+  /* icon + count only. The words live on in aria-label and the tooltip, and
+     dropping them lets the pill, the alerts and Export CSV share one line. */
+  .alrt-w{display:none}
+}
+@media (max-width: 720px){
+  header{padding:12px 14px}
+  h1{font-size:15px}
+  .brandmark svg{width:28px;height:28px}
+  header .tag{font-size:11px;padding:3px 8px}
+  .vtab{font-size:12px;padding:7px 11px}
+  .alrt{font-size:11px}
+  /* icon-only actions: both buttons already carry a title and an aria-label, so the
+     wording is still available to a screen reader and on hover */
+  .hbtn span{display:none}
+}
+@media (max-width: 480px){
+  .hbar{gap:max(2px,calc(var(--py) - 4px)) 10px}
+  h1{letter-spacing:0}
+  .alerts{width:100%;order:6}
+  .alrt{flex:1 1 auto;justify-content:center}
+}
+
+/* ---- RESPONSIVE TAB BODIES -------------------------------------------------
+   At a narrow window the three data tabs kept their desktop toolbar: search competing for
+   the row with eight filters, a full-width pager spelling out every page number, and 24px
+   side padding. The filters took three rows, the pager took a fourth, and the table was
+   left a few centimetres of height. These rules give that height back to the table. */
+@media (max-width: 1180px){
+  .fxwrap,.smwrap,.pdwrap{padding:12px 14px 10px;gap:9px}
+  /* the search takes its own full-width row; the filters share the next one */
+  .fxright{gap:6px}
+  .fxtools{gap:8px}
+  .fxbar{gap:8px}
+  .fxpagebar{margin-left:0;width:100%;justify-content:flex-start}
+  .fxcount{width:100%}
+  /* the rows-per-page box was never in the .fxtools shrink rule above it */
+  .fxpagebar select{min-width:0}
+  /* Inventory's own pager, which had no responsive rules whatsoever */
+  .pbar{gap:8px}
+  .pctl select{min-width:66px}
+  /* the coverage strip scrolls sideways rather than stacking into a tall block */
+  .fxcov{padding:9px 12px;gap:12px;overflow-x:auto;flex-wrap:nowrap}
+  .fxcovlab,.fxtot{flex:none}
+  .fxtiles{flex-wrap:nowrap;flex:none;min-width:min-content}
+  .fxtile{min-width:104px;flex:none;gap:7px}
+  /* smaller badge: the strip is a summary, not the point of the page */
+  .fxlogo{width:24px;height:24px;border-radius:6px}
+  .fxlogo svg{width:15px;height:15px}
+  .fxtile .t b{font-size:11.5px}
+  .fxtile .t .c,.fxtile .t .c i{font-size:11px}
+  .fxtile .t .p{font-size:10.5px}
+  .fxtot .n{font-size:17px}
+  .fxtot{padding-left:12px}
+  /* the caption repeats the PRICE COVERAGE label two inches to its left */
+  .fxtot .cap{display:none}
+  .fxlegend{font-size:11px}
+}
+@media (max-width: 720px){
+  .fxwrap,.smwrap,.pdwrap{padding:10px 10px 8px;gap:8px}
+  .fxh2{font-size:17px}
+  .fxlead{display:none}              /* the heading already says what the tab is */
+  .fxpgnote{margin-left:4px;font-size:11.5px}
+  .fxrpp{font-size:11.5px}
+  .fxpagebar{gap:6px}
+  /* the row count takes its own line so the controls are not squeezed beside it */
+  .pbar{gap:6px}
+  .pbar .pinfo{width:100%;margin-right:0}
+  .pctl{width:100%;justify-content:flex-start;gap:5px}
+  .pctl select{min-width:60px}
+  .pctl label{font-size:11.5px}
+  .ppage{padding:0 4px;font-size:11.5px}
+  .fxtools select{max-width:150px}
+  /* genuinely out of room at this width — now they stack */
+  .fxsearch,.smwrap .fxsearch{flex:1 1 100%;min-width:0}
+  .fxright{margin-left:0;flex:1 1 100%;justify-content:flex-start;gap:6px}
+  .fxseg{width:100%}
+  .fxseg button{flex:1 1 auto;text-align:center}
+  .fxlegend{flex-direction:column;gap:4px}
+  .fxlegend span:last-child{text-align:left}
+}
+
+/* ---- small-screen tab menu -------------------------------------------------- */
+.vmenu{position:relative;display:none}
+.vmbtn{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.16);color:#f4f7fc;font:inherit;font-size:13px;
+  font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer;white-space:nowrap}
+.vmbtn:hover{background:rgba(255,255,255,.16)}
+.vmlist{position:absolute;top:calc(100% + 6px);left:0;z-index:70;min-width:220px;
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:5px;
+  box-shadow:0 16px 40px rgba(0,0,0,.28)}
+.vmlist[hidden]{display:none}
+.vmlist button{display:block;width:100%;text-align:left;border:0;background:transparent;
+  color:var(--ink);font:inherit;font-size:13px;padding:9px 11px;border-radius:8px;cursor:pointer}
+.vmlist button:hover{background:var(--accent-soft);color:var(--accent)}
+.vmlist button[aria-current=true]{background:var(--accent);color:#fff;font-weight:700}
+.alrt-n{font-weight:800}
+.alrt-w{margin-left:4px}
+
+@media (max-width: 720px){
+  /* five tabs cannot fit; a menu is honest where a scrolling strip is fiddly */
+  .vtabs{display:none}
+  /* with the strip gone there is nothing to balance, and a grower here would eat
+     the free space the menu button needs to reach the corner */
+  .hspace{display:none}
+  /* the menu sits in the top-right corner, on the title's own row, rather than taking a
+     row of its own below it — the title leaves plenty of space beside it at this width */
+  .vmenu{display:block;margin-left:auto}
+  .hleft{flex:1 1 auto;min-width:0}
+  /* opened from the right edge, so it drops down inside the window instead of off it */
+  .vmlist{left:auto;right:0}
+  /* the alert keeps its number and drops the words */
+  .alrt-w{display:none}
+  /* the price-coverage card is a summary, not a control — the table matters more here */
+  .fxcov{display:none}
+}
+
+/* ---- short viewports (laptop screens, and the hub's own breadcrumb bar) ----
+   width is fine, height is not: trim the chrome so real rows stay visible */
+@media (max-width: 480px){
+  /* the label goes, not the control — aria-label still names it "Rows per page" */
+  .fxrpp,.pctl label{display:none}
+  .fxpagebar select,.pctl select{min-width:56px}
+}
+@media (max-height: 900px){
+  /* the search row: .status carried 10px of its own padding inside a bar that
+     already pads, so the row stood ~20px taller than its controls needed */
+  .tbar{gap:8px}
+  .status{padding:2px 0;gap:12px}
+  /* 13 category dropdowns wrapped onto a second row. Hold them to one row that
+     scrolls sideways if it must — worth ~50px, which is a row and a half. */
+  .cats{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:3px}
+  .cat{flex:0 0 128px;max-width:128px}
+  .cats{gap:5px 10px}
+  .wrap{margin:0 20px 10px}
+}
+@media (max-height: 780px){
+  .cat{gap:1px}
+  .cat{flex:0 0 116px;max-width:116px}
+  .wrap{margin:0 14px 8px}
+  .fxwrap,.smwrap{padding:8px 16px 8px}
+}
