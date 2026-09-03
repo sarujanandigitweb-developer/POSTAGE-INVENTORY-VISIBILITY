@@ -1,38 +1,51 @@
 'use client';
-import Brandmark from './Brandmark';
+import { TAB_ICON, IconBox, IconLeft, IconDown } from './Icons';
 
-// The tab strip, moved out of the header. Same buttons, same .vtab styling,
-// stacked instead of laid out in a row — the one change asked for in this pass.
 export const TABS = [
   { id: 'inv', label: 'Inventory' },
   { id: 'postage', label: 'Postage Information' },
   { id: 'fx', label: 'SKU Fixed Price' },
   { id: 'sm', label: 'Slow-Moving Stock' },
   { id: 'pd', label: 'Pending Dispatch' },
+  { id: 'cd', label: 'Container Details' },
 ];
 
-export default function Sidebar({ view, onChange }) {
+export default function Sidebar({ view, onChange, collapsed, onCollapse }) {
   return (
-    <aside className="sidebar">
+    <aside className={'sidebar' + (collapsed ? ' is-collapsed' : '')}>
       <div className="sbrand">
-        <Brandmark size={30} />
-        <h1>POSTAGE INVENTORY VISIBILITY</h1>
+        <span className="sbrand-mark"><IconBox /></span>
+        <span className="sbrand-txt">Postage<br />Inventory<br />Visibility</span>
       </div>
+
       <nav className="snav" role="tablist" aria-label="Dashboard view">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            className="vtab"
-            role="tab"
-            aria-selected={view === t.id}
-            onClick={() => onChange(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map(t => {
+          const Icon = TAB_ICON[t.id];
+          return (
+            <button key={t.id} type="button" role="tab" aria-selected={view === t.id}
+                    className={'snav-i' + (view === t.id ? ' on' : '')}
+                    title={t.label} onClick={() => onChange(t.id)}>
+              <span className="snav-ic"><Icon /></span>
+              <span className="snav-l">{t.label}</span>
+            </button>
+          );
+        })}
       </nav>
-      <div className="sfoot">Live from LEDSone</div>
+
+      <button type="button" className="scollapse" onClick={onCollapse}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand' : 'Collapse'}>
+        <IconLeft />
+      </button>
+
+      <div className="suser">
+        <span className="suser-av">L</span>
+        <span className="suser-txt">
+          <b>Live from LEDSone</b>
+          <i>read-only</i>
+        </span>
+        <IconDown />
+      </div>
     </aside>
   );
 }

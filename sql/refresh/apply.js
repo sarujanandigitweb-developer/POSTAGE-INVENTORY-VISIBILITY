@@ -24,7 +24,8 @@ const log  = (...a) => console.log('[apply]', ...a);
 const FLOOR_ROWS  = 5000;          // a collapse below this must never publish
 const FLOOR_BYTES = 2 * 1024 * 1024;
 const BLOCKS = ['HIST_RAW', 'SHOPIFY_PRICE', 'SHOPIFY_COMMENT', 'SHOPIFY_ALT',
-                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE', 'SLOW_MOVING', 'PENDING_DISPATCH'];
+                'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE', 'SLOW_MOVING', 'PENDING_DISPATCH',
+                'CONTAINER_DETAILS'];
 
 // `const INCOMING      = {` is padded for alignment, so the search must tolerate
 // whitespace rather than matching an exact string.
@@ -65,6 +66,7 @@ put('SHOPIFY_COMMENT', rd('shopify-comments.json'));
 put('FIXED_PRICE',    rd('FIXED_PRICE.json'));
 put('SLOW_MOVING',    rd('SLOW_MOVING.json'));
 put('PENDING_DISPATCH', rd('PENDING_DISPATCH.json'));
+put('CONTAINER_DETAILS', rd('CONTAINER_DETAILS.json'));
 const inc = rd('INCOMING.json');
 put('INCOMING', inc.INCOMING);
 { // the two interned arrays beside it
@@ -191,6 +193,36 @@ try {
 // the Slow-Moving tab: never publish it empty, and never let a row claim a priority
 // that its own idle-day count does not support
 {
+  {
+    // Container Details. The guards that matter here are the two things that would
+    // mislead a picker: a container reported Received while some of its supplier
+    // orders are still open, and a manifest whose totals do not add up to the
+    // container row above it.
+    const cdj = rd('CONTAINER_DETAILS.json');
+    const rows = cdj.r || [];
+    chk('CONTAINER_DETAILS has containers', Array.isArray(rows) && rows.length >= 20,
+      rows.length + ' containers');
+    chk('  every container carries a manifest',
+      rows.every(r => Array.isArray(r.it) && r.it.length > 0),
+      'a container with no lines is a join that lost its rows');
+    chk('  status agrees with the order counts',
+      rows.every(r =>
+        (r.st === 'Received'      && r.op === 0 && r.ar > 0) ||
+        (r.st === 'Upcoming'      && r.ar === 0 && r.op > 0) ||
+        (r.st === 'Part received' && r.ar > 0  && r.op > 0)),
+      'Received with an open order would put stock on the shelf that is still at sea');
+    chk('  manifest totals match the container row',
+      rows.every(r => r.k === r.it.length &&
+        r.q === r.it.reduce((n, i) => n + i.q, 0) &&
+        r.c === r.it.reduce((n, i) => n + i.c, 0)),
+      'the summary and the detail must not disagree');
+    chk('  no duplicate container name',
+      new Set(rows.map(r => r.n)).size === rows.length);
+    chk('  no duplicate SKU within a container',
+      rows.every(r => new Set(r.it.map(i => i.s)).size === r.it.length),
+      'lines of the same SKU are summed, not repeated');
+  }
+
   const sm = rd('SLOW_MOVING.json');
   chk('SLOW_MOVING has rows', Array.isArray(sm.r) && sm.r.length >= 1000,
       (sm.r || []).length + ' rows');

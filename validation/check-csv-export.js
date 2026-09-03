@@ -23,7 +23,7 @@ const els={};
 const document={getElementById:id=>IDS.has(id)?(els[id]||(els[id]=mk(id))):null,
  querySelector:()=>null,querySelectorAll:()=>[],
  createElement:()=>{const a=mk('a');a.click=()=>{captured=Object.assign(captured||{},{name:a.download});};return a;},
- addEventListener(){},documentElement:mk('h'),body:{appendChild(){},removeChild(){}}};
+ addEventListener(){},documentElement:mk('h'),body:{classList:{add(){},remove(){},toggle(){},contains(){return false}},appendChild(){},removeChild(){}}};
 global.Blob=function(parts){ this.text=parts.join(''); captured=Object.assign(captured||{},{text:this.text}); };
 global.URL={createObjectURL:()=>'blob:x',revokeObjectURL(){}};
 const sb={console:{log(){},warn(){},error(){}},out:null};

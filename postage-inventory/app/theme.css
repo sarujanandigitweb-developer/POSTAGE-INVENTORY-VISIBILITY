@@ -1,0 +1,364 @@
+/* ===========================================================================
+   Chrome only. THE TABLE IS NOT TOUCHED HERE — no rule below selects table,
+   thead, tbody, tr, th, td or .scroll. The grouped header bands, the cell
+   padding, the sticky SKU column and the row colours all stay exactly as
+   dashboard.css defines them.
+   =========================================================================== */
+
+:root {
+  --nav:      #16233f;   /* sidebar */
+  --nav-2:    #1d2c4d;
+  --nav-ink:  #a9bad6;
+  --nav-on:   #2563eb;
+  --page:     #f6f8fc;
+  --card:     #ffffff;
+  --edge:     #e4e9f2;
+  --ink-1:    #0f1b34;
+  --ink-2:    #64748b;
+  --brand:    #2563eb;
+  --rad:      12px;
+}
+:root[data-theme=dark] {
+  --page: #0d1526; --card: #131f36; --edge: #243352; --ink-1: #e8eefb; --ink-2: #93a4c4;
+}
+
+body { background: var(--page); color: var(--ink-1); }
+
+/* ---- shell ---------------------------------------------------------------- */
+.app { display: flex; align-items: stretch; height: 100vh; overflow: hidden; }
+.main { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column;
+        background: var(--page); }
+
+/* ---- sidebar -------------------------------------------------------------- */
+.sidebar {
+  flex: none; width: 226px; position: relative;
+  background: linear-gradient(180deg, var(--nav) 0%, var(--nav-2) 100%);
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 16px 14px 14px; overflow: visible;
+  transition: width .18s ease;
+}
+.sidebar.is-collapsed { width: 74px; }
+.sidebar.is-collapsed .sbrand-txt,
+.sidebar.is-collapsed .snav-l,
+.sidebar.is-collapsed .suser-txt,
+.sidebar.is-collapsed .suser svg { display: none; }
+.sidebar.is-collapsed .snav-i { justify-content: center; padding: 10px 0; }
+.sidebar.is-collapsed .suser { justify-content: center; }
+
+.sbrand { display: flex; align-items: center; gap: 11px; padding: 2px 4px 18px; }
+.sbrand-mark {
+  flex: none; width: 38px; height: 38px; border-radius: 11px;
+  background: #fff; color: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .28);
+}
+.sbrand-txt {
+  color: #fff; font-size: 12px; font-weight: 800; line-height: 1.28;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+
+.snav { display: flex; flex-direction: column; gap: 4px; }
+.snav-i {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  padding: 10px 12px; border: 0; border-radius: 10px; cursor: pointer;
+  background: transparent; color: var(--nav-ink);
+  font: inherit; font-size: 13px; font-weight: 600; text-align: left;
+  white-space: nowrap; transition: background .14s, color .14s;
+}
+.snav-i:hover { background: rgba(255, 255, 255, .07); color: #fff; }
+.snav-i.on { background: var(--nav-on); color: #fff; box-shadow: 0 6px 16px rgba(37, 99, 235, .35); }
+.snav-ic { flex: none; display: flex; opacity: .95; }
+.snav-i:focus-visible { outline: 2px solid #7ea6ff; outline-offset: 2px; }
+
+.scollapse {
+  position: absolute; right: -13px; bottom: 96px;
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+  background: var(--card); color: var(--ink-2); border: 1px solid var(--edge);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(15, 27, 52, .16); transition: transform .18s ease;
+}
+.sidebar.is-collapsed .scollapse { transform: rotate(180deg); }
+
+.suser {
+  margin-top: auto; display: flex; align-items: center; gap: 10px;
+  padding: 10px; border-radius: 12px; color: #cfdcf1;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .09);
+}
+.suser-av {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800;
+}
+.suser-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.suser-txt b { font-size: 12px; font-weight: 700; color: #fff; }
+.suser-txt i { font-size: 10.5px; font-style: normal; color: #9db0cd; }
+
+/* ---- top bar -------------------------------------------------------------- */
+header.topbar {
+  flex: none; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  min-height: 68px;                 /* a stable band, not a height that follows its tallest chip */
+  padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--edge);
+}
+.tb-menu {
+  flex: none; width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
+  background: transparent; border: 0; color: var(--ink-2);
+  display: flex; align-items: center; justify-content: center;
+}
+.tb-menu:hover { background: var(--page); color: var(--ink-1); }
+.tb-title { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.015em; color: var(--ink-1); }
+.tb-sel select {
+  padding: 7px 10px; border: 1px solid var(--edge); border-radius: 9px;
+  background: var(--card); color: var(--ink-1); font: inherit; font-size: 13px; font-weight: 600;
+}
+.tb-when {
+  padding: 6px 11px; border-radius: 8px; background: var(--page);
+  border: 1px solid var(--edge); color: var(--ink-2);
+  font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.tb-right { margin-left: auto; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  border: 1px solid transparent; border-radius: 999px; padding: 6px 13px;
+  font: inherit; font-size: 12.5px; font-weight: 600;
+}
+.chip b { font-weight: 800; }
+.chip-r { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.chip-y { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.chip-r:hover { background: #fecaca; }
+.chip-y:hover { background: #fde68a; }
+.chip.on { outline: 2px solid currentColor; outline-offset: 1px; }
+
+.gbtn {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 7px 13px; border-radius: 9px; border: 1px solid var(--edge);
+  background: var(--card); color: var(--ink-1); font: inherit; font-size: 12.5px; font-weight: 600;
+  white-space: nowrap;
+}
+.gbtn:hover { background: var(--page); border-color: #cbd5e1; }
+.tb-av { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); }
+.tb-av-c {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(180deg, #60a5fa, #2563eb); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 800;
+}
+
+/* ---- body ----------------------------------------------------------------- */
+.body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+        gap: 12px; padding: 14px 18px 16px; overflow: hidden; }
+
+.card {
+  background: var(--card); border: 1px solid var(--edge); border-radius: var(--rad);
+  box-shadow: 0 1px 2px rgba(15, 27, 52, .04);
+}
+.card.grow { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ---- category card -------------------------------------------------------- */
+.catbar {
+  flex: none; background: transparent; border: 0; padding: 12px 14px;
+}
+.catbar h2 { display: none; }                 /* the top bar already names the tab */
+/* Twelve fixed 128px categories need 1690px and scrolled sideways on every
+   screen — even at 1920. Letting them flex instead means they fill one row on a
+   wide monitor and wrap to two below it, with no scrollbar at any width. */
+.cats {
+  display: flex; gap: 10px 14px; flex-wrap: wrap;
+  /* dashboard.css sets overflow-x:auto and padding-bottom on .cats inside a
+     max-height media block. Overriding flex-wrap alone leaves that overflow in
+     place and the scrollbar survives, so both are cancelled explicitly. */
+  overflow: visible; padding-bottom: 0;
+}
+.cat { display: flex; flex-direction: column; gap: 5px; flex: 1 1 118px; max-width: 210px; min-width: 0; }
+.cat-l { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.cat-t {
+  font-size: 12px; font-weight: 700; color: var(--ink-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cat.on .cat-t { color: var(--brand); }
+.cat-n { font-size: 11px; font-weight: 700; color: var(--ink-2); }
+.cat.on .cat-n { color: var(--brand); }
+.cat select {
+  width: 100%; min-width: 0; padding: 7px 9px; font: inherit; font-size: 12px;
+  border: 1px solid var(--edge); border-radius: 9px; background: var(--card); color: var(--ink-1);
+}
+.cat.on select { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+
+/* ---- table toolbar (NOT the table) ---------------------------------------- */
+.tbar {
+  flex: none; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border-bottom: 1px solid var(--edge); background: transparent;
+}
+.tbar .status { padding: 0; margin-right: auto; gap: 14px; color: var(--ink-2); font-size: 13px; }
+.tbar .status b { color: var(--ink-1); font-weight: 700; }
+.tools { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-left: auto; }
+.tsearch { position: relative; display: flex; align-items: center; }
+.tsearch input {
+  width: 260px; max-width: 46vw; padding: 8px 36px 8px 12px;
+  border: 1px solid var(--edge); border-radius: 9px; background: var(--card);
+  color: var(--ink-1); font: inherit; font-size: 13px;
+}
+.tsearch input:focus-visible { outline: 2px solid var(--brand); outline-offset: -1px; }
+.tsearch-ic {
+  position: absolute; right: 10px; display: flex; color: var(--ink-2); pointer-events: none;
+}
+.tools select {
+  padding: 8px 10px; border: 1px solid var(--edge); border-radius: 9px;
+  background: var(--card); color: var(--ink-1); font: inherit; font-size: 12.5px;
+}
+.tools .btn {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 8px 13px; border-radius: 9px; border: 1px solid var(--edge);
+  background: var(--card); color: var(--ink-1); font: inherit; font-size: 12.5px; font-weight: 600;
+}
+.tools .btn:hover { background: var(--page); border-color: #cbd5e1; }
+
+/* ---- pager ---------------------------------------------------------------- */
+.pbar {
+  flex: none; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 11px 14px; border-top: 1px solid var(--edge); background: transparent;
+}
+.pbar .pinfo { margin-right: auto; color: var(--ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.pctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pctl label { color: var(--ink-2); font-size: 12.5px; }
+.pctl select {
+  padding: 7px 9px; border: 1px solid var(--edge); border-radius: 9px;
+  background: var(--card); color: var(--ink-1); font: inherit; font-size: 12.5px; min-width: 72px;
+}
+.pbtn {
+  min-width: 32px; height: 32px; padding: 0 9px; cursor: pointer;
+  border: 1px solid var(--edge); border-radius: 9px;
+  background: var(--card); color: var(--ink-1); font: inherit; font-size: 13px; line-height: 1;
+}
+.pbtn:hover:not(:disabled) { background: var(--page); border-color: #cbd5e1; }
+.pbtn:disabled { opacity: .4; cursor: default; }
+.ppage { color: var(--ink-2); font-size: 12.5px; padding: 0 4px; white-space: nowrap; }
+
+.empty { padding: 28px 16px; text-align: center; color: var(--ink-2); font-size: 13px; }
+
+/* ---- the table panel: layout only, never the table's own styling ---------- */
+.wrap { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+        margin: 0; background: transparent; border: 0; border-radius: 0; overflow: hidden; }
+.scroll { flex: 1 1 auto; min-height: 0; height: auto; }
+
+/* Short windows: let the shell scroll rather than crushing the table. */
+@media (max-height: 560px) {
+  .app { height: auto; overflow: visible; }
+  .body { overflow: visible; }
+  .scroll { height: 58vh; min-height: 200px; flex: none; }
+}
+
+/* Narrow windows: the sidebar collapses to icons rather than eating the width. */
+@media (max-width: 900px) {
+  .sidebar { width: 74px; padding: 14px 10px; }
+  .sidebar .sbrand-txt, .sidebar .snav-l, .sidebar .suser-txt, .sidebar .suser svg { display: none; }
+  .sidebar .snav-i { justify-content: center; padding: 10px 0; }
+  .sidebar .suser { justify-content: center; }
+  .scollapse { display: none; }
+  .tb-title { font-size: 16px; }
+  .body { padding: 10px 12px 12px; }
+}
+@media (max-width: 620px) {
+  .gbtn span, .chip span { display: none; }   /* icon + count only */
+  .tsearch input { width: 180px; }
+}
+
+/* a category still loading dims, rather than flashing empty and back */
+.card.is-loading { opacity: .55; transition: opacity .12s; }
+.status .muted { color: var(--ink-2); font-size: 12px; }
+
+/* ---- order detail dialog (Pending Dispatch) -------------------------------- */
+.pdmodal {
+  position: fixed; inset: 0; z-index: 40; display: flex;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(9, 17, 33, .5);
+}
+.pdbox {
+  background: var(--card); border: 1px solid var(--edge); border-radius: var(--rad);
+  box-shadow: 0 24px 60px rgba(9, 17, 33, .3);
+  max-width: 780px; width: 100%; max-height: 84vh; overflow: auto; padding: 20px;
+}
+.pdbox h3 { margin: 0 0 14px; font-size: 16px; }
+.pdmeta { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-bottom: 16px; }
+.pdmeta span { display: flex; flex-direction: column; font-size: 13px; color: var(--ink-1); }
+.pdmeta i { font-style: normal; font-size: 11px; color: var(--ink-2); margin-bottom: 2px; }
+.pdbox .gbtn { margin-top: 16px; margin-left: auto; display: flex; }
+
+/* ---- numbered pager, matching the live dashboard --------------------------- */
+.fxpagebar { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fxrpp { color: var(--ink-2); font-size: 12.5px; }
+.fxpagebar select {
+  padding: 7px 9px; border: 1px solid var(--edge); border-radius: 9px;
+  background: var(--card); color: var(--ink-1); font: inherit; font-size: 12.5px; min-width: 72px;
+}
+.fxpager { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.fxpg {
+  min-width: 32px; height: 32px; padding: 0 9px; cursor: pointer;
+  border: 1px solid var(--edge); border-radius: 9px;
+  background: var(--card); color: var(--ink-1);
+  font: inherit; font-size: 12.5px; font-weight: 600; line-height: 1;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.fxpg:hover:not(:disabled):not([aria-current]) {
+  background: var(--page); border-color: var(--brand); color: var(--brand);
+}
+.fxpg[aria-current=page] { background: var(--brand); border-color: var(--brand); color: #fff; cursor: default; }
+.fxpg:disabled { opacity: .38; cursor: not-allowed; }
+.fxpg:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.fxgap { color: var(--ink-2); padding: 0 2px; }
+.fxpgnote { margin-left: 6px; color: var(--ink-2); font-size: 12.5px; white-space: nowrap; }
+@media (max-width: 620px) { .fxrpp { display: none; } }
+
+/* ---- Container Details ------------------------------------------------------ */
+table.cdtab td.cd-num, table.cdtab th.cd-num,
+table.cdmtab td.cd-num, table.cdmtab th.cd-num {
+  text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+table.cdtab td.cd-name { white-space: normal; font-weight: 700; line-height: 1.3; }
+table.cdtab td.csup { white-space: normal; max-width: 200px; color: var(--ink-2); font-size: 11.5px; }
+.cmix { display: block; font-size: 10.5px; color: #92400e; font-weight: 600; margin-top: 2px; }
+.cdopen { padding: 4px 10px; font-size: 11.5px; }
+
+.cpill {
+  display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 10px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.cst-ok   { background: #dcfce7; color: #166534; }
+.cst-up   { background: #fee2e2; color: #b91c1c; }
+.cst-part { background: #fef3c7; color: #92400e; }
+.cst-ship { background: #dbeafe; color: #1e40af; }
+.cst-prod { background: #ede9fe; color: #5b21b6; }
+.cst-conf { background: #e0f2fe; color: #075985; }
+.cst-ord  { background: var(--page); color: var(--ink-2); }
+
+/* the manifest dialog */
+.cdmodal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center;
+  justify-content: center; padding: 24px; background: rgba(9,17,33,.52); }
+.cdbox { background: var(--card); border: 1px solid var(--edge); border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(9,17,33,.34); width: 100%; max-width: min(1240px, 96vw);
+  max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
+.cdhead { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--edge); }
+.cdhead-t { flex: 1 1 auto; min-width: 0; }
+.cdhead-t h3 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cdsub { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-2); }
+.cdx { border: 0; background: transparent; color: var(--ink-2); font-size: 22px; line-height: 1;
+  cursor: pointer; padding: 2px 8px; border-radius: 8px; }
+.cdx:hover { background: var(--page); color: var(--ink-1); }
+.cdstats { display: flex; flex-wrap: wrap; gap: 10px 30px; margin: 14px 18px 0;
+  padding: 14px 16px; background: var(--page); border: 1px solid var(--edge); border-radius: 12px; }
+.cdstat { display: flex; flex-direction: column; }
+.cdstat i { font-style: normal; font-size: 10.5px; color: var(--ink-2); }
+.cdstat b { font-size: 15px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.cdmtools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px 10px; }
+.cdmsearch { flex: 0 1 320px; }
+.cdmcount { margin-left: auto; color: var(--ink-2); font-size: 12.5px; }
+.cdmscroll { overflow: auto; flex: 1 1 auto; min-height: 0; margin: 0 18px;
+  border: 1px solid var(--edge); border-radius: 11px; }
+.cdmfoot { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
+.cdmfoot .gbtn { margin-left: auto; }
+/* two lines then an ellipsis — on the SPAN, never the cell: display:-webkit-box on a
+   <td> removes it from table layout and collapses the column */
+.cdclamp { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+table.cdmtab td.fxname { white-space: normal; line-height: 1.35; }

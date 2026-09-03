@@ -9,7 +9,12 @@ const ROOT=path.resolve(__dirname,'..');
 const html=fs.readFileSync(process.env.DASHBOARD||path.join(ROOT,'dashboard','inventory-dashboard.html'),'utf8');
 const above=html.slice(0,html.indexOf('<script>'));const IDS=new Set();
 above.replace(/id="([^"]+)"/g,(m,i)=>{IDS.add(i);return m;});
-const items=[...above.matchAll(/data-go="(\w+)">([^<]+)</g)].map(m=>({v:m[1],label:m[2]}));
+// The label is inside a <span class="vml">, not directly after the tag: the items
+// carry an icon and a tick now. The old pattern matched nothing and the check
+// passed over an empty list — a validator that tests nothing still says OK.
+const items=[...above.matchAll(/data-go="(\w+)"[\s\S]*?<span class="vml">([^<]+)</g)]
+  .map(m=>({v:m[1],label:m[2]}));
+if(!items.length){console.error('*** no menu items parsed — the markup shape changed');process.exit(1);}
 const handlers={};
 const mk=id=>({id,innerHTML:'',textContent:'',value:'',hidden:false,attrs:{},options:[],
  selectedOptions:[{textContent:''}],dataset:{},style:{},
@@ -39,5 +44,22 @@ items.forEach(it=>{
   console.log('  '+(ok?'OK  ':'*** ')+it.label.padEnd(22)+'-> '+sb.out.state.view+
     '   label now: '+els.vmnow.textContent);
 });
+
+// The button names the tab you are on, so VM_LABEL needs an entry for every id in
+// VIEWS. A missing one is not a blank — vmSync falls back to 'Inventory', so the
+// button names the WRONG tab. Container Details was added to VIEWS and to the menu
+// but not to VM_LABEL, and read as "Inventory".
+{
+  const ids=[...(/const VIEWS = \[([^\]]*)\]/.exec(src)||['',''])[1].matchAll(/'([a-z]+)'/g)].map(m=>m[1]);
+  const map=(/const VM_LABEL = \{([\s\S]*?)\};/.exec(src)||['',''])[1];
+  const missing=ids.filter(id=>!new RegExp('\\b'+id+'\\s*:').test(map));
+  if(missing.length){bad++;console.log('  *** VM_LABEL missing: '+missing.join(', ')+
+    ' — the button would name the wrong tab');}
+  else console.log('  OK  every view has a menu label  — '+ids.length+' views');
+  if(ids.length!==items.length){bad++;
+    console.log('  *** menu lists '+items.length+' items for '+ids.length+' views');}
+  else console.log('  OK  the menu lists exactly the views  — '+items.length);
+}
+
 console.log('\n'+(bad?'*** '+bad+' CHECK(S) FAILED':'ALL CHECKS PASSED'));
 process.exit(bad?1:0);

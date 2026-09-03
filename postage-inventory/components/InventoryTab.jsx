@@ -1,18 +1,20 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { matches, extraOptions } from '@/lib/filter';
+import { IconSearch, IconReset } from './Icons';
+import Pager from './Pager';
 
 const n = v => (v === 0 ? <span style={{ opacity: .45 }}>0</span>
                         : <b style={{ color: v < 0 ? '#a51111' : '#0a7d33' }}>{v}</b>);
 const dash = () => <span className="dash" title="Not recorded for this SKU at this unit.">-</span>;
 const loc = v => (v ? <span className="loc">{v}</span> : dash());
 
-export default function InventoryTab({ data, st, set }) {
+export default function InventoryTab({ data, st, set, loading }) {
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState('all');
+  const [size, setSize] = useState('15');   // page one first, not 6,181 rows at once
 
   const cfg = data.sections[st.cat] || null;
-  const catRows = useMemo(() => data.rows.filter(r => r.key === st.cat), [data, st.cat]);
+  const catRows = data.rows;   // the API returns only the active category
   const rows = useMemo(() => catRows.filter(r => matches(r, cfg, st)), [catRows, cfg, st]);
 
   const sub2Opts = useMemo(() => extraOptions(catRows, cfg?.sub2), [catRows, cfg]);
@@ -32,13 +34,17 @@ export default function InventoryTab({ data, st, set }) {
       <div className="tbar">
         <div className="status">
           <span>Showing <b>{shown.length.toLocaleString()}</b> of <b>{rows.length.toLocaleString()}</b> SKUs</span>
+          {loading && <span className="muted">refreshing…</span>}
           {rows.length !== catRows.length &&
             <span>filtered from {catRows.length.toLocaleString()}</span>}
         </div>
         <div className="tools">
-          <input type="search" value={st.q} onChange={e => set({ q: e.target.value })}
-                 placeholder={cfg?.placeholder || 'Search SKU or description…'}
-                 autoComplete="off" aria-label="Search SKU or description" />
+          <span className="tsearch">
+            <input type="search" value={st.q} onChange={e => set({ q: e.target.value })}
+                   placeholder={cfg?.placeholder || 'Search SKU or description…'}
+                   autoComplete="off" aria-label="Search SKU or description" />
+            <span className="tsearch-ic"><IconSearch size={15} /></span>
+          </span>
           {cfg?.sub2 && sub2Opts && (
             <select value={st.sub2} onChange={e => set({ sub2: e.target.value })} aria-label={cfg.sub2.label}>
               <option value="">All {cfg.sub2.label.toLowerCase()}s</option>
@@ -67,7 +73,9 @@ export default function InventoryTab({ data, st, set }) {
             <option value="out">Out of stock (0 or less)</option>
           </select>
           <button className="btn" type="button"
-                  onClick={() => set({ fam: '', sub2: '', attr: '', q: '', wh: '', st: '' })}>Reset</button>
+                  onClick={() => set({ fam: '', sub2: '', attr: '', q: '', wh: '', st: '' })}>
+            <IconReset size={14} />Reset
+          </button>
         </div>
       </div>
 
@@ -119,26 +127,8 @@ export default function InventoryTab({ data, st, set }) {
 
       {rows.length === 0 && <div className="empty">No SKUs match the current search and filters.</div>}
 
-      <div className="pbar">
-        <div className="pinfo">
-          {size === 'all'
-            ? `All ${rows.length.toLocaleString()} rows`
-            : `${((cur - 1) * per + 1).toLocaleString()}–${Math.min(cur * per, rows.length).toLocaleString()} of ${rows.length.toLocaleString()}`}
-        </div>
-        <div className="pctl">
-          <label htmlFor="psize">Rows per page</label>
-          <select id="psize" value={size} onChange={e => { setSize(e.target.value); setPage(1); }}>
-            <option value="15">15</option><option value="25">25</option>
-            <option value="100">100</option><option value="500">500</option>
-            <option value="all">All</option>
-          </select>
-          <button className="pbtn" type="button" onClick={() => setPage(1)} disabled={cur === 1}>&laquo;</button>
-          <button className="pbtn" type="button" onClick={() => setPage(cur - 1)} disabled={cur === 1}>&lsaquo;</button>
-          <span className="ppage">{size === 'all' ? '—' : `Page ${cur} of ${pages}`}</span>
-          <button className="pbtn" type="button" onClick={() => setPage(cur + 1)} disabled={cur >= pages}>&rsaquo;</button>
-          <button className="pbtn" type="button" onClick={() => setPage(pages)} disabled={cur >= pages}>&raquo;</button>
-        </div>
-      </div>
+      <Pager total={rows.length} page={cur} pages={pages} size={size}
+             onPage={setPage} onSize={setSize} label="SKUs" />
     </div>
   );
 }

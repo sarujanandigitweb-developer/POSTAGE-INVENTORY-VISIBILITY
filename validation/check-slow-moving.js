@@ -25,12 +25,12 @@ const src = html.slice(html.lastIndexOf('<script>') + 8, html.lastIndexOf('</scr
 const sb = { console, out:null };
 new Function('sandbox','document','window','localStorage','setInterval','clearInterval',
              'setTimeout','clearTimeout','fetch','alert',
-  src + '\n; sandbox.out = { SLOW_MOVING, sm, smRender, smFilter, smDraw, smDate, SM_MISSING, SM_COLS, setView, smPass, smOptCounts, smrCheck, smrRender, smrAuto, SMR_EVERY_MS };')
+  src + '\n; sandbox.out = { SLOW_MOVING, sm, smRender, smFilter, smDraw, smDate, SM_MISSING, SM_COLS, setView, smPass, smOptCounts };')
   (sb, document, { addEventListener(){}, matchMedia:()=>({matches:false,addEventListener(){}}) },
    { getItem:()=>null, setItem(){} }, ()=>0, ()=>0, fn=>0, ()=>0,
    ()=>({then(){return this},catch(){return this}}), ()=>0);
 const { SLOW_MOVING, sm, smFilter, smDraw, smDate, SM_MISSING, SM_COLS, setView,
-        smPass, smOptCounts, smrCheck, smrRender, smrAuto, SMR_EVERY_MS } = sb.out;
+        smPass, smOptCounts } = sb.out;
 
 const fail = [];
 const chk = (n, ok, note) => { console.log('  ' + (ok ? 'OK  ' : '*** ') + n +
@@ -135,28 +135,21 @@ chk('all 17 columns present', SM_COLS.length === 17, SM_COLS.length + ' columns'
 chk('PH sits immediately after Priority',
     SM_COLS.findIndex(c => c[1] === 'PH') === SM_COLS.findIndex(c => c[1] === 'Priority') + 1);
 
-console.log('\n=== auto-refresh ===');
+console.log('\n=== freshness ===');
 {
   const ex = fs.readFileSync(path.join(ROOT,'sql','refresh','extract','slow-moving.js'),'utf8');
-  chk('the tab states when the data was refreshed',
-      /Showing data refreshed/.test(els.smrstate.innerHTML), els.smrstate.innerHTML
-        .replace(/<[^>]+>/g,'').slice(0, 74) + '…');
-  chk('and names the source it came from', /order_management/.test(els.smrstate.innerHTML));
-  chk('the check interval is 10 minutes', SMR_EVERY_MS === 600000,
-      (SMR_EVERY_MS/60000) + ' minutes');
-  chk('nothing reloads on its own — the reader is offered it',
-      els.smrload.hidden === true, 'the load button stays hidden until newer data exists');
-  chk('the freshness stamp is in the page head',
+  // The in-page poll and its banner were removed on request. The stamp itself stays:
+  // the header pill reads it, and it is what proves which build the page is.
+  chk('the refresh banner is gone, and nothing of it is left behind',
+      !/smr/.test(html), 'no smrefresh / smrstate / smrcheck / smrload / smrAuto');
+  chk('the freshness stamp is still in the page head',
       /<meta name="data-as-of" content="[^"]+">/.test(html));
-  chk('  and inside the first 2 KB, so the check is cheap',
-      html.indexOf('name="data-as-of"') < 2048,
-      'byte ' + html.indexOf('name="data-as-of"') + ' of ' + html.length.toLocaleString());
   chk('the head stamp matches the page it was built with',
       (/<meta name="data-as-of" content="([^"]*)">/.exec(html)||[])[1] ===
       (/const DATA_AS_OF = '([^']*)'/.exec(html)||[])[1],
       (/<meta name="data-as-of" content="([^"]*)">/.exec(html)||[])[1]);
-  chk('polling only runs while the tab is open',
-      /smrAuto\(slow\)/.test(html), 'setView starts and stops it');
+  chk('the header still names when the data was read',
+      /function renderFreshness/.test(html), 'the pill beside the title');
   chk('no database credential reaches the browser',
       !/PGPASSWORD|tech_user|149\.28\.|postgres:\/\//.test(html));
 }

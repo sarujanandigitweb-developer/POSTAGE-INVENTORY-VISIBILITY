@@ -61,10 +61,17 @@ chk('    and a spacer balances the rows where that pair sits below',
   /class="hspace"/.test(html) && /\.hspace\{flex:1 1 0/.test(css) &&
   /\.hleft\{flex:1 1 0;min-width:max-content\}/.test(css),
   'min-width:max-content stops the title being squeezed to make room');
-chk('    the spacer only appears when the buttons are NOT on row one',
-  /\.hspace\{flex:1 1 0;min-width:0;display:none\}/.test(css) &&
-  /@media \(max-width: 1100px\)\{[\s\S]*?\.hspace\{display:block\}/.test(css),
-  'two growing side groups plus a spacer would pull the strip off centre');
+// The spacer stands in for the buttons as the strip's right-hand counterweight, so
+// it must appear in exactly the block that moves them down — never a breakpoint of
+// its own. Pinning a literal width here broke the moment that threshold moved.
+{
+  const swap = Object.keys(blocks).find(w => /\.hdr-actions\{[^}]*order:6\}/.test(blocks[w]));
+  chk('    the spacer only appears when the buttons are NOT on row one',
+    /\.hspace\{flex:1 1 0;min-width:0;display:none\}/.test(css) &&
+    !!swap && /\.hspace\{display:block\}/.test(blocks[swap]),
+    swap ? 'both at ' + swap + 'px — two growers plus a spacer would pull the strip off centre'
+         : '*** the spacer and the buttons have drifted apart');
+}
 chk('  and it hugs its buttons rather than stretching to the full width',
   !/\.vtabs\{[^}]*[;{]width:100%/.test(css) && /\.vtabs\{[^}]*max-width:100%/.test(css),
   'a stretched strip is mostly empty bar');
@@ -81,17 +88,32 @@ chk('  the buttons sit on row one and the notifications under them',
 // title, the strip and the buttons — so it fired with a quarter of the row spare
 // and dropped the buttons on a 1920 screen at 150% scaling. Re-measured off the
 // rendered page: 1030px needed of 1256px available at 1280 CSS px.
-chk('    and below 1100px they drop to row two together, not onto a third row',
-  /@media \(max-width: 1100px\)\{[\s\S]*?\.hdr-actions\{[^}]*order:6\}[\s\S]*?\.hbreak\{order:3\}/.test(css),
-  'measured: 226px of slack at 1280px, 75px at 1100px, negative by 980px');
+// The header must be TWO rows at every width. The threshold has to sit where the
+// buttons actually stop fitting beside the title and the strip — measured at ~1300px,
+// so the swap is at 1350px. It was 1100px, from figures taken before the density
+// scale settled, and between 1100 and 1300 the buttons wrapped into a third row on
+// their own: tight under the strip, timestamp stranded below.
+{
+  const swap = Object.keys(blocks).find(w => /\.hdr-actions\{[^}]*order:6\}/.test(blocks[w]));
+  chk('    and they drop to row two together, not onto a third row',
+    !!swap && /\.hbreak\{order:3\}/.test(blocks[swap]) && +swap >= 1320,
+    swap ? 'at ' + swap + 'px — title 283 + strip 695 + buttons 230 needs 1251 of 1324'
+         : '*** nothing moves the buttons down with the notifications');
+}
 chk('  the divider between rows is gone',/\.hsep\{display:none\}/.test(css),
   'a vertical rule between two wrapped rows separates nothing');
 // The push sits on .alerts, the FIRST of the pair, so the alerts and the action
 // buttons collect into one group in the right-hand corner — and still land right
 // rather than orphaning left if that pair ever wraps to a row of its own.
+// One auto margin at a time. Two active together split the free space and strand
+// the pair mid-row. A `body:not(.tab-inv)` rule is exempt: it applies only when the
+// alerts are hidden, so it can never be active alongside theirs.
 chk('  the notifications hold the right corner of their own row',
   /\.alerts\{[^}]*margin-left:auto/.test(css) &&
-  !/\.hdr-actions\{[^}]*margin-left:auto/.test(css),
+  ![...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(^|\n)\s*([^\n{}]+)\{([^}]*)\}/g)]
+    .some(m => /(^|[\s,])\.hdr-actions\s*$/.test(m[2].split(',').pop()) &&
+               /margin-left:auto/.test(m[3]) &&
+               !/tab-inv/.test(m[2])),
   'one auto margin — a second would split the gap and strand them mid-row');
 chk('    and the wrapper it replaced is gone, not left as dead CSS',
   !/class="hright"/.test(html) && !/\.hright\{/.test(css));
@@ -134,13 +156,29 @@ if (mid1){
   // forced apart here, which cost a whole row on windows with room to spare.
   chk('  search and filters are NOT forced onto separate rows yet',
     !/\.fxsearch,\.smwrap \.fxsearch\{flex:1 1 100%/.test(m), 'they share a line until 720px');
-  chk('  the coverage strip scrolls sideways instead of stacking tall',
-    /\.fxcov\{[^}]*overflow-x:auto/.test(m) && /\.fxtiles\{[^}]*flex-wrap:nowrap/.test(m));
+  // The six marketplaces are one band read left to right. Wrapping put Temu alone
+  // on a second line, reading as a different thing rather than the sixth of six.
+  // The rule is now on the BASE, not this breakpoint, so it holds at every width.
+  chk('  the coverage strip is one line at every width',
+    /\.fxcov\{[^}]*flex-wrap:nowrap[^}]*overflow-x:auto/.test(css) &&
+    /\.fxtiles\{[^}]*flex-wrap:nowrap/.test(css));
+  chk('    and the caption that repeated the label is gone',
+    /\.fxtot \.cap\{display:none\}/.test(css),
+    'it cost 170px — enough on its own to push the sixth marketplace down');
   // .fxtiles inherits flex:1;min-width:0 from its base rule. Left alone it shrinks
   // to a sliver while its flex:none tiles carry on at full width and paint OUTSIDE
   // it, over the Total SKUs panel — the scrollbar on .fxcov never sees the overflow.
+  // The original bug: .fxtiles had min-width:0, so it shrank below its own content
+  // while the tiles kept full size and printed over the Total SKUs panel. The floor
+  // that prevents that is min-width:min-content — it may grow to fill the card, but
+  // it can never be narrower than what it holds, so overflow lands on .fxcov where
+  // the scrollbar is.
   chk('  and the tiles overflow the scroll box, not the panel beside them',
-    /\.fxtiles\{[^}]*flex:none/.test(m), 'otherwise the tiles overlap Total SKUs');
+    /\.fxtiles\{[^}]*min-width:min-content/.test(css) &&
+    !/\.fxtiles\{[^}]*min-width:0/.test(css),
+    'otherwise the tiles overlap Total SKUs');
+  chk('    while still filling the card rather than packing left',
+    /\.fxtiles\{[^}]*flex:1 1 auto/.test(css) && /\.fxtile\{[^}]*flex:1 1 104px/.test(css));
   chk('  the pager sits on its own row rather than pushed right',
     /\.fxpagebar\{margin-left:0;width:100%/.test(m));
   // both pagers, not just the Fixed Price one. The Inventory pager (.pbar/.pctl/
@@ -163,8 +201,16 @@ if (small2){
 
 // ---- the small-screen tab menu, alerts and coverage card ---------------------
 {
-  const m = blocks[String(widths.find(w=>w>=600&&w<1000)||'')] || '';
-  chk('the tab strip is replaced by a menu on a small screen',
+  // Find it by what it CONTAINS. A range search broke the moment the swap moved
+  // from 720px to 1040px — and the swap MUST sit where the strip stops fitting
+  // beside the title (~1010px measured), not at a round number.
+  const menuW = Object.keys(blocks).find(w => /\.vtabs\{display:none\}/.test(blocks[w]));
+  const m = menuW ? blocks[menuW] : '';
+  chk('the tab strip is replaced by a menu before it would claim its own row',
+    !!menuW && +menuW >= 1010,
+    menuW ? 'at ' + menuW + 'px — title ~283 + strip ~695 needs ~992 of ~990 at 1010px'
+          : '*** no block swaps the strip for the menu');
+  chk('  the menu appears there',
     /\.vtabs\{display:none\}/.test(m) && /\.vmenu\{display:block/.test(m),
     'five tabs cannot fit; a menu is honest where a scrolling strip is fiddly');
   chk('  the menu sits in the top-right corner, on the title row',
@@ -178,12 +224,15 @@ if (small2){
   chk('  and it drives the same setView the tabs do',
     /setView\(b\.getAttribute\('data-go'\)\)/.test(html), 'it cannot drift out of step');
   chk('  it marks the current tab',/aria-current/.test(html));
+  // These two are NOT tied to the menu swap and live in their own blocks — each is
+  // found by what it does, so moving one breakpoint cannot silently unhook another.
   chk('the stock alerts keep their number and drop the words',
-    /\.alrt-w\{display:none\}/.test(m) &&
+    Object.values(blocks).some(b => /\.alrt-w\{display:none\}/.test(b)) &&
     /<span class="alrt-n">' \+ n \+ '<\/span>/.test(html),
     '"62 out of stock" becomes "62"');
   chk('the price-coverage card is hidden, not squeezed',
-    /\.fxcov\{display:none\}/.test(m), 'the table matters more at that width');
+    Object.values(blocks).some(b => /\.fxcov\{display:none\}/.test(b)),
+    'the table matters more at that width');
 }
 
 // ---- the pager adapts in JS, not just CSS ------------------------------------

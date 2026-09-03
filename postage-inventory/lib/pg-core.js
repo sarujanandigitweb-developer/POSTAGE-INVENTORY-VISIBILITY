@@ -47,18 +47,32 @@ export function redact(err) {
   return pw ? s.split(pw).join('***REDACTED***') : s;
 }
 
-let pool = null;
+// ONE pool for the whole server, kept on globalThis.
+//
+// A module-level `let pool` is not enough: Next bundles each route handler
+// separately, so each of the five routes got its OWN pool. Five pools x max 4 is
+// up to 20 sockets against a role limit of 10, and tech_user answers with
+// "too many connections" — which is exactly what the log showed, with whichever
+// route happened to ask first succeeding and the rest failing.
+//
+// On globalThis it is shared across route bundles and survives dev hot-reloads,
+// which would otherwise leak a pool per edit.
+const KEY = Symbol.for('postage-inventory.pgpool');
 function getPool() {
-  if (pool) return pool;
+  if (globalThis[KEY]) return globalThis[KEY];
   const env = readEnv();
-  pool = new pg.Pool({
+  const pool = new pg.Pool({
     host: env.LEDSONE_HOST,
     port: Number(env.LEDSONE_PORT),
     database: env.LEDSONE_DB,
     user: env.LEDSONE_USER,
     password: env.LEDSONE_PASSWORD,
     ssl: (env.LEDSONE_SSLMODE || 'require') === 'disable' ? false : { rejectUnauthorized: false },
-    max: 4,                       // tech_user has a connection limit — stay well under it
+    // tech_user is capped at 10 and other clients share it — a pgAdmin session was
+    // holding 9. Three leaves room for the 2-hourly refresh, which must never be
+    // starved by this app. Requests past three QUEUE in the pool rather than
+    // opening a socket the server will refuse.
+    max: 3,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
     statement_timeout: 120000,
@@ -66,27 +80,43 @@ function getPool() {
   });
   // an idle-client error must not take the process down
   pool.on('error', e => console.error('[db] idle client error:', redact(e)));
+  globalThis[KEY] = pool;
   return pool;
+}
+
+// tech_user is shared. When another client (a pgAdmin session was holding 9 of the
+// 10) has taken the role to its limit, connecting fails outright rather than
+// queueing — the pool can only queue against ITS own max, not the server's. A short
+// backoff rides out a burst instead of turning it into a 500 the reader sees.
+const LIMIT_HIT = e => /too many connections/i.test(String(e && e.message));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+async function withRetry(fn, what) {
+  let last;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try { return await fn(); }
+    catch (e) {
+      last = e;
+      if (!LIMIT_HIT(e)) break;
+      if (attempt < 3) await wait(400 * Math.pow(2, attempt));   // 0.4s, 0.8s, 1.6s
+    }
+  }
+  throw new Error(what + ' failed: ' + redact(last));
 }
 
 /** Run a read-only query. Returns rows. Throws with the password scrubbed. */
 export async function query(sql, params = []) {
-  try {
-    const res = await getPool().query(sql, params);
-    return res.rows;
-  } catch (e) {
-    throw new Error('query failed: ' + redact(e));
-  }
+  return withRetry(async () => (await getPool().query(sql, params)).rows, 'query');
 }
 
 /** Several queries on one connection, for anything that must see one snapshot. */
 export async function withClient(fn) {
-  const client = await getPool().connect();
-  try {
-    return await fn((sql, params = []) => client.query(sql, params).then(r => r.rows));
-  } catch (e) {
-    throw new Error('query failed: ' + redact(e));
-  } finally {
-    client.release();
-  }
+  return withRetry(async () => {
+    const client = await getPool().connect();
+    try {
+      return await fn((sql, params = []) => client.query(sql, params).then(r => r.rows));
+    } finally {
+      client.release();
+    }
+  }, 'query');
 }

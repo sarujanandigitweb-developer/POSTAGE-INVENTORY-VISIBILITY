@@ -12,7 +12,7 @@ const above=html.slice(0,html.indexOf('<script>'));
 // the tabs the MARKUP offers, and the wrapper each one should reveal
 const tabs=[...above.matchAll(/<button[^>]*class="vtab"[^>]*id="(v\w+)"[^>]*data-view="(\w+)"[^>]*>([^<]*)</g)]
   .map(m=>({id:m[1],view:m[2],label:m[3].trim()}));
-const WRAP={inv:'invwrap',postage:'pgwrap',fx:'fxwrap',sm:'smwrap',pd:'pdwrap'};
+const WRAP={inv:'invwrap',postage:'pgwrap',fx:'fxwrap',sm:'smwrap',pd:'pdwrap',cd:'cdwrap'};
 
 const IDS=new Set(); above.replace(/id="([^"]+)"/g,(m,i)=>{IDS.add(i);return m;});
 const handlers={};

@@ -262,7 +262,17 @@ chk('the rendered cell contains the whole name',
     (() => { fx.q = longest.s.toLowerCase(); fxFilter(); fxDraw(); fx.q = '';
              return els.fxbody.innerHTML.indexOf(longest.n.slice(0, 60)
                .replace(/&/g,'&amp;').replace(/</g,'&lt;')) !== -1; })());
-chk('the name cell is not clamped in CSS', !/\-webkit-line-clamp/.test(html));
+// This used to test the whole document for -webkit-line-clamp, which was fine when
+// the only clamp on the page was this one. Container Details legitimately clamps its
+// manifest names to two lines, so the test is scoped to what it actually means: no
+// clamp may reach the FIXED PRICE name cell. Component titles here are carried whole
+// — they were once cut at 46 characters, which put a literal ellipsis in the middle
+// of a product name.
+chk('the name cell is not clamped in CSS', (() => {
+  const css = /<style>([\s\S]*?)<\/style>/.exec(html)[1].replace(/\/\*[\s\S]*?\*\//g, '');
+  return ![...css.matchAll(/(^|\n)\s*([^\n{}]+)\{([^}]*)\}/g)]
+    .some(m => /line-clamp/.test(m[3]) && /fxname|\bfxtab\b/.test(m[2]) && !/cdmtab|cdclamp/.test(m[2]));
+})());
 // `table.fxtab td` is more specific than a bare `.fxname`, so an unscoped cell rule is
 // silently overridden — that is exactly how the name came to run through its neighbours.
 chk('every cell rule outranks the base table rule',

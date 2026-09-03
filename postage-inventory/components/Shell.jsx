@@ -6,9 +6,14 @@ import Sidebar, { TABS } from './Sidebar';
 import Header from './Header';
 import InventoryTab from './InventoryTab';
 import CategoryBar from './CategoryBar';
+import FixedPriceTab from './FixedPriceTab';
+import SlowMovingTab from './SlowMovingTab';
+import PendingDispatchTab from './PendingDispatchTab';
+import ContainerDetailsTab from './ContainerDetailsTab';
 
 export default function Shell() {
   const [view, setView] = useState('inv');
+  const [collapsed, setCollapsed] = useState(false);
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   // one filter state, as the page keeps it. Ceiling Rose is the default category,
@@ -29,14 +34,44 @@ export default function Shell() {
   };
 
   // The browser fetches an API route. It never speaks to PostgreSQL itself.
+  //
+  // One category at a time: reading all 6,181 SKUs took ~6s before anything
+  // appeared. A section is 124–1,487 rows, so the first paint is quick, and each
+  // section is cached after its first visit so going back is instant.
+  const [cache, setCache] = useState({});
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
+    if (cache[st.cat]) { setData(cache[st.cat]); setLoading(false); return; }
     let live = true;
-    fetch('/api/inventory')
+    setLoading(true); setErr(null);
+    fetch('/api/inventory?cat=' + encodeURIComponent(st.cat))
       .then(r => r.json())
-      .then(j => { if (!live) return; j.ok ? setData(j) : setErr(j.error); })
-      .catch(e => live && setErr(String(e.message || e)));
+      .then(j => {
+        if (!live) return;
+        if (!j.ok) { setErr(j.error); setLoading(false); return; }
+        setCache(c => ({ ...c, [j.cat]: j }));
+        setData(j); setLoading(false);
+      })
+      .catch(e => { if (live) { setErr(String(e.message || e)); setLoading(false); } });
     return () => { live = false; };
-  }, []);
+  }, [st.cat, cache]);
+
+  // Warm the two heavy datasets in the background once Inventory has painted.
+  // Fixed Price (~30k rows) and Slow-Moving (~16k) are built from several
+  // whole-table queries — 4s and 10s cold — so a reader who clicks straight to
+  // them waits. Prefetching means the cache is usually already warm.
+  useEffect(() => {
+    if (!data) return;
+    // One at a time. Firing both at once made them compete for the pool with
+    // whatever tab the reader actually clicked, and against a shared role limit
+    // that turned into failures rather than waiting.
+    const t = setTimeout(async () => {
+      try { await fetch('/api/fixed-price?size=1'); } catch {}
+      try { await fetch('/api/slow-moving?size=1'); } catch {}
+      try { await fetch('/api/container-details'); } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [data]);
 
   // remember the tab across a reload, as the live dashboard does
   useEffect(() => {
@@ -49,8 +84,8 @@ export default function Shell() {
   // catalogue and not the filtered view — the same scope the live page uses, and
   // the reason it reads 62 / 7 on Ceiling Rose rather than 1613 / 687 overall.
   const alerts = useMemo(() => {
-    if (!data) return { out: 0, low: 0 };
-    const rows = data.rows.filter(r => r.key === st.cat);
+    if (!data || data.cat !== st.cat) return { out: 0, low: 0 };
+    const rows = data.rows;
     return {
       out: rows.filter(r => stockLevel(r) === 'out').length,
       low: rows.filter(r => stockLevel(r) === 'low').length,
@@ -65,7 +100,7 @@ export default function Shell() {
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
     // Export what is on screen, for the tab that is on screen — not the whole file.
     const name = (data.sections[st.cat] || {}).name || st.cat;
-    const body = data.rows.filter(r => r.key === st.cat)
+    const body = data.rows
       .filter(r => matches(r, data.sections[st.cat], st))
       .map(r => [r.s, name, r.t, r.a, r.al || '', r.b, r.bl || '',
         r.c, r.u5, r.price ?? '', r.k, r.kl || '', r.m, r.ml || '', r.ca, r.us].map(esc).join(','));
@@ -91,34 +126,44 @@ export default function Shell() {
 
   return (
     <div className="app">
-      <Sidebar view={view} onChange={setView} />
+      <Sidebar view={view} onChange={setView} collapsed={collapsed}
+               onCollapse={() => setCollapsed(c => !c)} />
       <div className="main">
         <Header view={view} asOf={data?.asOf} out={alerts.out} low={alerts.low}
-                section={data ? (data.sections[st.cat] || {}).name : null}
+                order={data?.order} sections={data?.sections || {}}
+                cat={st.cat} onCat={k => setSt(s => ({ ...s, cat: k, fam: '', sub2: '', attr: '' }))}
                 stockFilter={st.st} onStockFilter={v => set({ st: v })}
-                onExport={exportCSV} onTheme={toggleTheme} />
+                onExport={exportCSV} onTheme={toggleTheme}
+                onMenu={() => setCollapsed(c => !c)} />
 
-        {view === 'inv' && (
-          err ? <div className="wrap"><div className="empty">{err}</div></div>
-          : !data ? <div className="wrap"><div className="empty">Loading inventory from LEDSone…</div></div>
-          : <>
-              <CategoryBar order={data.order} sections={data.sections} counts={data.counts}
-                           cat={st.cat} fam={st.fam} onPick={pickCategory} />
-              <InventoryTab data={data} st={st} set={set} />
-            </>
-        )}
+        <div className="body">
+          {view === 'inv' && (
+            err ? <div className="card"><div className="empty">{err}</div></div>
+            : !data ? <div className="card"><div className="empty">Reading {st.cat} from LEDSone…</div></div>
+            : <>
+                <div className="card">
+                  <CategoryBar order={data.order} sections={data.sections} counts={data.counts}
+                               cat={st.cat} fam={st.fam} onPick={pickCategory} />
+                </div>
+                <div className={'card grow' + (loading ? ' is-loading' : '')}>
+                  <InventoryTab data={data} st={st} set={set} loading={loading} />
+                </div>
+              </>
+          )}
 
-        {view !== 'inv' && (
-          <div className="fxwrap">
-            <div className="fxtop">
-              <h2 className="fxh2">{(TABS.find(t => t.id === view) || {}).label}</h2>
+          {view === 'fx' && <div className="card grow"><FixedPriceTab /></div>}
+          {view === 'sm' && <div className="card grow"><SlowMovingTab /></div>}
+          {view === 'pd' && <div className="card grow"><PendingDispatchTab /></div>}
+          {view === 'cd' && <div className="card grow"><ContainerDetailsTab /></div>}
+          {view === 'postage' && (
+            <div className="card grow">
+              <div className="empty">
+                Postage Information is fetched live from the team's Google Sheet on the
+                original dashboard, not from PostgreSQL. Not ported yet.
+              </div>
             </div>
-            <div className="empty" style={{ padding: 24 }}>
-              Not wired to the database yet — this pass covers the UI port, the sidebar
-              and the live Inventory tab. See README.md for what each remaining tab needs.
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

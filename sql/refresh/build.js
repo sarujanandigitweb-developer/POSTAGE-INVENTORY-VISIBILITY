@@ -28,6 +28,7 @@ const PR = require('./extract/price.js');
 const FP = require('./extract/fixed-price.js');
 const SM = require('./extract/slow-moving.js');
 const PD = require('./extract/pending-dispatch.js');
+const CD = require('./extract/container-details.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(__dirname, 'out');
@@ -120,6 +121,11 @@ function derive(bySku){
   log('pending dispatch  :', pend.stats.rows, 'open orders ·', pend.stats.breached,
       'past the ' + PD.SLA_DAYS + '-day SLA');
 
+  const cdet = await CD.extract(c);
+  log('container details :', cdet.stats.containers, 'containers ·', cdet.stats.received, 'received ·',
+      cdet.stats.upcoming, 'upcoming ·', cdet.stats.partial, 'part received ·',
+      cdet.stats.pcs.toLocaleString(), 'pieces');
+
   const liveSkus = prod.rows.map(r => r.sku);
   const hist = await H.extract(c, liveSkus);
   log('history lines     :', hist.lineCount, '· movements', hist.parsed,
@@ -204,6 +210,7 @@ function derive(bySku){
     fixedPrice: fixed.stats,
     slowMoving: slow.stats,
     pendingDispatch: pend.stats,
+    containerDetails: cdet.stats,
     warehousesMissingMaster: stock.missing,
     ms: Date.now() - started
   };
@@ -218,6 +225,7 @@ function derive(bySku){
   write('FIXED_PRICE.json', fixed.payload);
   write('SLOW_MOVING.json', slow.payload);
   write('PENDING_DISPATCH.json', pend.payload);
+  write('CONTAINER_DETAILS.json', cdet.payload);
   write('_prefix-table.json', table);
   write('_meta.json', meta);
   // price + comments are produced by the existing validated builder, fed this listing set

@@ -23,3 +23,30 @@ export function classification() {
 // The category bar's order, including which sections exist. Taken from the page's
 // own CATEGORIES list so the bar reads identically.
 export const CATEGORY_ORDER = ['CR', 'PH', 'LS', 'WA', 'LH', 'LB', 'SPR', 'LGT', 'CSM', 'CLO', 'HAP', 'RFB'];
+
+// Which SKUs belong to a section. Local, so the API can scope its queries to one
+// category instead of reading the whole catalogue on every load.
+let bySection = null;
+export function skusIn(key) {
+  if (!bySection) {
+    const { cls } = classification();
+    bySection = {};
+    for (const sku of Object.keys(cls)) (bySection[cls[sku].key] ||= []).push(sku);
+  }
+  return bySection[key] || [];
+}
+
+// Section populations, for the category strip. No database needed.
+export function sectionCounts() {
+  const { cls } = classification();
+  const c = {};
+  for (const sku of Object.keys(cls)) c[cls[sku].key] = (c[cls[sku].key] || 0) + 1;
+  return c;
+}
+
+// Almost every image is stored as a bare filename and needs the CDN prefix. A few
+// carry a FULL url from a different host; prefixing those makes a double-scheme
+// url that can never load, so absolute urls are left alone. Same rule as the live
+// page's imgURL().
+const IMG_BASE = 'https://sin1.contabostorage.com/4ad62276cb6d4a83bfb1b8a91b839703:newom/newom/newom/img/product_images/';
+export const imgURL = v => (!v ? null : /^https?:\/\//i.test(v) ? v : IMG_BASE + v);
