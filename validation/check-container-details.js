@@ -6,7 +6,8 @@
  * sits on the ORDER, and seven containers currently hold a mix of arrived and
  * not-arrived orders. */
 const fs = require('fs');
-const html = fs.readFileSync(__dirname + '/../dashboard/inventory-dashboard.html', 'utf8');
+const html = fs.readFileSync(process.env.DASHBOARD ||
+  (__dirname + '/../dashboard/inventory-dashboard.html'), 'utf8');
 const css = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
 const js = html.slice(html.lastIndexOf('<script>'));
 
@@ -109,19 +110,82 @@ chk('  both tables declare a colgroup',
   /<col class="cc-name">/.test(html) && /<col class="cm-sku">/.test(html));
 {
   const w = n => { const m = new RegExp('col\\.' + n + '\\{width:(\\d+)px').exec(css); return m ? +m[1] : null; };
-  const cols = { 'cc-name': 1, 'cc-rg': 1, 'cc-st': 1, 'cc-sg': 1, 'cc-n': 4, 'cc-sup': 1, 'cc-d': 2, 'cc-act': 1 };
-  let sum = 0, ok = true;
-  for (const [k, times] of Object.entries(cols)) {
-    const v = w(k);
-    if (v === null) { ok = false; break; }
-    sum += v * times;
-  }
+  // Read the composition from the table's OWN colgroup rather than restating it here.
+  // Hardcoding it meant that hiding three columns failed this check with "a column
+  // width is missing" — which accuses the stylesheet when the truth is that the
+  // checker has gone stale.
+  const seg = html.slice(html.indexOf('id="cdtab"'));
+  const cg = (/<colgroup>([\s\S]*?)<\/colgroup>/.exec(seg) || ['', ''])[1];
+  const names = [...cg.matchAll(/class="(cc-[a-z]+)"/g)].map(m => m[1]);
+  const missing = names.filter(n => w(n) === null);
+  const sum = names.reduce((t, n) => t + (w(n) || 0), 0);
+  const ok = names.length > 0 && missing.length === 0;
   const declared = (/table\.cdtab\{min-width:(\d+)px\}/.exec(css) || [])[1];
   chk('  and min-width equals the columns\' exact sum',
     ok && declared && +declared === sum,
-    ok ? sum + 'px of columns, min-width ' + declared + 'px' : 'a column width is missing');
+    ok ? names.length + ' columns totalling ' + sum + 'px, min-width ' + declared + 'px'
+       : (names.length ? 'no width declared for ' + missing.join(', ') : 'no colgroup found'));
+  // table-layout:fixed shares leftover width EQUALLY between columns, so the declared
+  // total decides how loose the table looks on a wide screen — not any one column's
+  // rule. When this fell to 1056px every column gained 82px at 1790px and the action
+  // button was left adrift in half an empty cell.
+  chk('  the declared total is close enough that a wide screen stays tight',
+    ok && sum >= 1200,
+    sum + 'px over ' + names.length + ' columns -> +' +
+    Math.round((1790 - sum) / Math.max(1, names.length)) + 'px each on a 1790px screen');
 }
 chk('the manifest dialog exists', /id="cdmodal"/.test(html) && /id="cdmbody"/.test(html));
+// ---- the manifest table must agree with itself ------------------------------
+// Removing a column touches four places: the colgroup, the header, the row renderer
+// and the empty-state colspan. Miss one and the table silently skews by a cell, which
+// no amount of reading the markup makes obvious.
+{
+  const seg = html.slice(html.indexOf('<table class="fxtab cdmtab">'));
+  const cg = (/<colgroup>([\s\S]*?)<\/colgroup>/.exec(seg) || ['', ''])[1];
+  const hd = (/<thead>([\s\S]*?)<\/thead>/.exec(seg) || ['', ''])[1];
+  const cols = [...cg.matchAll(/class="cm-[a-z]+"/g)].length;
+  const ths = [...hd.matchAll(/<th[^>]*>/g)].length;
+  const i = js.indexOf('cdmRenderItems');
+  const start = js.indexOf('<td class="fxsku">', i);
+  const rowHtml = js.slice(start, js.indexOf('</tr>', start));
+  const tds = (rowHtml.match(/<td/g) || []).length;
+  const span = +((/<tr><td colspan="(\d+)">/.exec(js.slice(i)) || [])[1] || 0);
+  chk('the manifest colgroup, header, cells and colspan all agree',
+    cols > 0 && cols === ths && ths === tds && tds === span,
+    cols + ' cols / ' + ths + ' headers / ' + tds + ' cells / colspan ' + span);
+  chk('  its min-width matches the columns it now has',
+    (function(){
+      const w = n => { const m = new RegExp('col\\.' + n + '\\{width:(\\d+)px').exec(css); return m ? +m[1] : 0; };
+      const names = [...cg.matchAll(/class="(cm-[a-z]+)"/g)].map(m => m[1]);
+      // cm-name is width:auto and contributes its 100px floor, not a fixed width
+      const sum = names.reduce((t, n) => t + (n === 'cm-name' ? 100 : w(n)), 0);
+      const dec = (/table\.cdmtab\{min-width:(\d+)px\}/.exec(css) || [])[1];
+      return dec && +dec === sum;
+    })(),
+    'a stale min-width leaves the columns compressed under table-layout:fixed');
+  chk('  only ONE min-width is declared for it',
+    (css.match(/table\.cdmtab\{min-width:/g) || []).length === 1,
+    'two rules for one table means the losing one is dead code pretending to be real');
+  chk('  CBM is off the manifest view', !/>CBM</.test(hd) && !/i\.v \? i\.v\.toFixed/.test(rowHtml));
+  // the export is the safety net for what the view no longer shows, so it must line up
+  const eh = (/const head = \['Container',[\s\S]*?\];/.exec(js) || [''])[0];
+  const eb = (/const body = cdmItems\(\)\.map\(i => \[([\s\S]*?)\]\.map/.exec(js) || ['', ''])[1];
+  const nh = (eh.match(/'[^']*'/g) || []).length, nb = eb.split(',').length;
+  chk('  the manifest export still carries CBM, and its header matches its rows',
+    /'CBM'/.test(eh) && nh === nb, nh + ' header fields, ' + nb + ' row fields');
+}
+
+// ---- the two actions carry colour -------------------------------------------
+{
+  chk('the Manifest button is not plain chrome',
+    /\.cdopen\{[^}]*background:var\(--accent\)/.test(css), 'the primary action on a row');
+  chk('the Close button is coloured too',
+    /#cdmclose\{[^}]*color:var\(--accent\)/.test(css));
+  chk('  both stay legible on the dark theme',
+    /data-theme=dark\] \.cdopen\{/.test(css) && /data-theme=dark\] #cdmclose:hover\{/.test(css),
+    'the dark accent is a pale blue, so white-on-accent would wash out');
+}
+
 
 // ---- the detail dialog -----------------------------------------------------
 for (const [what, id] of [
@@ -165,8 +229,16 @@ chk('      the clamp is on a span, never the cell',
   // `<td>` and `display:-webkit-box`, and a naive match reads that as a violation
   !(() => {
     const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    // Only the LAST compound in a selector decides what is being styled.
+    // "td.foo{-webkit-box}" clamps the CELL and is the bug. "td .foo{-webkit-box}"
+    // clamps a SPAN INSIDE the cell and is the fix — the two differ by one space, and
+    // testing the selector as a whole condemns both.
+    const targetsCell = sel => sel.split(',').some(part => {
+      const last = part.trim().split(/[\s>+~]+/).filter(Boolean).pop() || '';
+      return /^td(\.|:|\[|$)/.test(last);
+    });
     return [...bare.matchAll(/(^|\n)\s*([^\n{}]+)\{([^}]*)\}/g)]
-      .some(m => /(^|[\s,>+~])td(\.|:|\[|\s|$)/.test(m[2]) && /display:-webkit-box/.test(m[3]));
+      .some(m => targetsCell(m[2]) && /display:-webkit-box/.test(m[3]));
   })(),
   'display:-webkit-box on a <td> removes it from table layout');
 chk('      and the full name survives in the title attribute',

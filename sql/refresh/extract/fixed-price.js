@@ -19,6 +19,7 @@
 // "Pack 2"), not product names. A combo name is therefore COMPOSED from its component
 // SKUs — "A + B" — which is both truthful and the shape the requirement asked for.
 const { q } = require('../db.js');
+const { dayNum } = require('../daynum.js');
 
 // inventory.products stores this literal string as the title of every combo — and of 52
 // rows flagged single. It is a placeholder, never a product name.
@@ -121,8 +122,8 @@ async function extract(c){
   const put = (rows, key) => rows.forEach(r => {
     const e = px[r.sku] = px[r.sku] || { d: {} };
     e[key] = Math.round(Number(r.p) * 100);   // pence, so no float noise
-    const t = r.u ? Date.parse(r.u) : 0;
-    if (t) e.d[key] = Math.round(t / 86400000);
+    // dayNum, not a bare division: an afternoon price update must not date-stamp as tomorrow
+    if (r.u) e.d[key] = dayNum(r.u);
   });
   put(sh, 'sh'); put(eb, 'eb'); put(am, 'am'); put(bq, 'bq');
 

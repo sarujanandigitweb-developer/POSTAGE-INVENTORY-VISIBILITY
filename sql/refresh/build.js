@@ -29,6 +29,7 @@ const FP = require('./extract/fixed-price.js');
 const SM = require('./extract/slow-moving.js');
 const PD = require('./extract/pending-dispatch.js');
 const CD = require('./extract/container-details.js');
+const RD = require('./extract/recent-dispatch.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(__dirname, 'out');
@@ -121,6 +122,11 @@ function derive(bySku){
   log('pending dispatch  :', pend.stats.rows, 'open orders ·', pend.stats.breached,
       'past the ' + PD.SLA_DAYS + '-day SLA');
 
+  const rdis = await RD.extract(c);
+  log('recent dispatch   :', rdis.stats.rows, 'completed in the last',
+      RD.WINDOW_DAYS, 'days ·', rdis.stats.sameDay, 'within 24h ·',
+      rdis.stats.withTracking, 'with tracking');
+
   const cdet = await CD.extract(c);
   log('container details :', cdet.stats.containers, 'containers ·', cdet.stats.received, 'received ·',
       cdet.stats.upcoming, 'upcoming ·', cdet.stats.partial, 'part received ·',
@@ -211,6 +217,7 @@ function derive(bySku){
     slowMoving: slow.stats,
     pendingDispatch: pend.stats,
     containerDetails: cdet.stats,
+    recentDispatch: rdis.stats,
     warehousesMissingMaster: stock.missing,
     ms: Date.now() - started
   };
@@ -226,6 +233,7 @@ function derive(bySku){
   write('SLOW_MOVING.json', slow.payload);
   write('PENDING_DISPATCH.json', pend.payload);
   write('CONTAINER_DETAILS.json', cdet.payload);
+  write('RECENT_DISPATCH.json', rdis.payload);
   write('_prefix-table.json', table);
   write('_meta.json', meta);
   // price + comments are produced by the existing validated builder, fed this listing set

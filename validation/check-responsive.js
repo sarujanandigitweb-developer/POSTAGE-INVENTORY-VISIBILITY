@@ -118,7 +118,10 @@ chk('  the notifications hold the right corner of their own row',
 chk('    and the wrapper it replaced is gone, not left as dead CSS',
   !/class="hright"/.test(html) && !/\.hright\{/.test(css));
 
-const mid=String(widths.find(w=>w>=600&&w<1000)||'');
+// By content, not by position: this took the first media query in a range, so any new
+// block landing in that range (the Orders regroup put one at 990px) accused the page.
+const mid=String(Object.keys(blocks).find(w=>+w>=600&&+w<1000&&
+  /h1\{font-size/.test(blocks[w])&&/header\{padding/.test(blocks[w]))||'');
 if(mid){
   const m=blocks[mid];
   chk('at '+mid+'px the title and chrome shrink',/h1\{font-size/.test(m)&&/header\{padding/.test(m));
@@ -129,10 +132,15 @@ if(mid){
     /id="theme"[^>]*aria-label="[^"]+"/.test(html),
     'title on Export CSV, aria-label on the theme toggle');
 }
-const small=String(widths.find(w=>w<600)||'');
-if(small){
-  chk('at '+small+'px the stock alerts get their own row',
-    /\.alerts\{[^}]*width:100%/.test(blocks[small]));
+// Look for the rule, not for a position. This used to take the FIRST media query
+// under 600px and assume it was the header's — so adding any unrelated small-screen
+// block ahead of it (the Orders sub-strip did exactly that) failed a page that was fine.
+const smalls=widths.filter(w=>w<600);
+if(smalls.length){
+  const at=smalls.find(w=>/\.alerts\{[^}]*width:100%/.test(blocks[String(w)]));
+  chk('the stock alerts get their own row on a small screen',!!at,
+    at?'at '+at+'px (of '+smalls.join('px, ')+'px)':
+       '*** none of '+smalls.join('px, ')+'px gives .alerts its own row');
 }
 chk('no media query touches the data tables',
   !Object.values(blocks).some(x=>/\.fxtab|\.pdtab|\.smtab|\.pgtab/.test(x)),
@@ -206,9 +214,20 @@ if (small2){
   // beside the title (~1010px measured), not at a round number.
   const menuW = Object.keys(blocks).find(w => /\.vtabs\{display:none\}/.test(blocks[w]));
   const m = menuW ? blocks[menuW] : '';
+  // The strip is as wide as the labels in it, so DERIVE that rather than freeze a
+  // number. The old constant (>=1010, from a 695px six-tab strip) outlived two
+  // relabellings: it wrongly passed a seven-tab strip and then wrongly failed a
+  // six-tab one. Calibrated against the recorded measurement — the same labels that
+  // measured ~695px come out at ~719px here, so the model runs slightly wide, which
+  // is the safe direction for a threshold.
+  const labels=[...html.matchAll(/<button[^>]*class="vtab"[^>]*>([^<]*)</g)].map(x=>x[1].trim());
+  const TITLE=283, PER_CH=5.9, TAB_PAD=24, GAP=3, STRIP_PAD=8, TITLE_GAP=14;
+  const strip=Math.round(labels.reduce((a,l)=>a+l.length*PER_CH+TAB_PAD+GAP,0)+STRIP_PAD);
+  const need=TITLE+strip+TITLE_GAP;
   chk('the tab strip is replaced by a menu before it would claim its own row',
-    !!menuW && +menuW >= 1010,
-    menuW ? 'at ' + menuW + 'px — title ~283 + strip ~695 needs ~992 of ~990 at 1010px'
+    !!menuW && +menuW >= need,
+    menuW ? 'menu at '+menuW+'px; '+labels.length+' tabs ('+labels.join(', ')+
+            ') need ~'+need+'px beside the title'
           : '*** no block swaps the strip for the menu');
   chk('  the menu appears there',
     /\.vtabs\{display:none\}/.test(m) && /\.vmenu\{display:block/.test(m),
@@ -218,9 +237,11 @@ if (small2){
     'rather than taking a row of its own below the title');
   chk('  its dropdown opens right-aligned so it stays inside the window',
     /\.vmlist\{left:auto;right:0\}/.test(m));
+  const VIEWS=[...(/const VIEWS = \[([^\]]*)\]/.exec(html)||['',''])[1]
+    .matchAll(/'([a-z]+)'/g)].map(x=>x[1]);
   chk('  the menu lists every tab',
-    ['inv','postage','fx','sm','pd'].every(v=>new RegExp('data-go="'+v+'"').test(html)),
-    '5 items');
+    VIEWS.length>0 && VIEWS.every(v=>new RegExp('data-go="'+v+'"').test(html)),
+    VIEWS.length+' views, each with a menu entry — the strip groups some of them, the menu must not lose any');
   chk('  and it drives the same setView the tabs do',
     /setView\(b\.getAttribute\('data-go'\)\)/.test(html), 'it cannot drift out of step');
   chk('  it marks the current tab',/aria-current/.test(html));
@@ -279,6 +300,39 @@ chk('  the page count is always spelled out beside it',
     /thead tr:nth-child\(3\) th\{top:calc\(var\(--thr\) \* 2\)/.test(css) &&
     /\.scroll table thead th\{height:var\(--thr\)/.test(css),
     'a 30px/60px guess would show the table scrolling behind the header');
+}
+
+
+console.log('');
+// ---- the type scale holds together -----------------------------------------
+// .fxh2 was a flat 21px: bigger than the page TITLE at its own maximum (18px), and the
+// only text on the page that ignored the window while everything around it scaled.
+{
+  const clamp = name => {
+    const m = new RegExp('--' + name + ':\\s*clamp\\(([\\d.]+)px,\\s*([\\d.]+)vw \\+ ([\\d.]+)vh \\+ ([\\d.]+)px,\\s*([\\d.]+)px\\)').exec(css);
+    return m ? { lo:+m[1], vw:+m[2], vh:+m[3], add:+m[4], hi:+m[5] } : null;
+  };
+  const at = (c,w,h) => Math.max(c.lo, Math.min(c.vw*w/100 + c.vh*h/100 + c.add, c.hi));
+  const h1 = clamp('fs-h1'), h2 = clamp('fs-h2');
+  chk('section headings use the density scale, not a fixed size',
+    !!h2 && /\.fxh2\{[^}]*font-size:var\(--fs-h2\)/.test(css),
+    h2 ? 'clamp(' + h2.lo + 'px .. ' + h2.hi + 'px)' : '*** --fs-h2 is not defined');
+  if (h1 && h2) {
+    const sizes = [[1366,768],[1600,900],[1920,1080],[2560,1440]];
+    const bad = sizes.filter(([w,h]) => at(h2,w,h) > at(h1,w,h));
+    chk('  a section heading never outgrows the page title',bad.length===0,
+      bad.length ? '*** h2 beats h1 at ' + bad.map(s=>s.join('x')).join(', ')
+                 : sizes.map(([w,h]) => w + 'x' + h + ': ' + at(h2,w,h).toFixed(1) + ' < ' +
+                     at(h1,w,h).toFixed(1)).join('  ·  '));
+  }
+  // a heading long enough to wrap costs a whole row of height on a narrow window
+  // measure what RENDERS: "&amp;" is one character on screen, not five
+  const decode = t => t.replace(/&amp;/g,'&').replace(/&mdash;/g,'-').replace(/&ndash;/g,'-')
+                       .replace(/&middot;/g,'.').replace(/&hellip;/g,'...').replace(/&nbsp;/g,' ');
+  const heads = [...html.matchAll(/<h2 class="fxh2">([^<]*)/g)].map(m => decode(m[1]).trim());
+  const longest = heads.reduce((a,b) => b.length > a.length ? b : a, '');
+  chk('  no section heading is long enough to wrap',longest.length <= 34,
+    heads.length + ' headings, longest "' + longest + '" at ' + longest.length + ' chars');
 }
 
 console.log('\n'+(fail.length?'*** '+fail.length+' CHECK(S) FAILED':'ALL CHECKS PASSED'));

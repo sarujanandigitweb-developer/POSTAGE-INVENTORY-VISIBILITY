@@ -20,6 +20,7 @@
 // Target Date, Status, Team Notes. Every schema was searched. They are workflow fields
 // and would need tables that have not been created. Nothing here guesses them.
 const { q } = require('../db.js');
+const { dayNum } = require('../daynum.js');
 
 // 91-180 Medium, 181-365 High, over 365 Critical. No existing rule was found in the
 // database or the current system, so this is the interim rule from the requirement.
@@ -309,7 +310,9 @@ async function extract(c){
       q: st.qty,
       z: held ? 0 : 1,                              // 1 = holds no stock, flagged not dropped
       w: where,
-      d: last ? Math.round(last.getTime() / 86400000) : 0,   // whole days since epoch, 0 = never sold
+      // dayNum for the same reason the day COUNT above aligns to midnight first: an
+      // afternoon sale must not be reported as having happened the next day.
+      d: last ? dayNum(last) : 0,                   // whole days since epoch, 0 = never sold
       dy: days,
       pr: pr,
       ph: p ? p.cat : '',

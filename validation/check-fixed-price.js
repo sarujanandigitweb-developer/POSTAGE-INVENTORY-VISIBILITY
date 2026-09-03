@@ -36,7 +36,7 @@ const sb = { console, out: null };
 const timers = [];
 new Function('sandbox','document','window','localStorage','setInterval','clearInterval',
              'setTimeout','clearTimeout','fetch','alert',
-  src + '\n; sandbox.out = { FIXED_PRICE, fx, fxRender, fxFilter, fxDraw, fxName, fxDate, FX_MK, FX_ABSENT, setView, fxPageCount, fxPageList, FX_SIZES, fxEffSize, fxAutoRows, FX_AUTO_MIN, FX_AUTO_MAX, fxCat, FX_CATS, FX_RULES, FX_ICON, renderFreshness, FRESH_SRC, state, pg, freshStamp };')
+  src + '\n; sandbox.out = { FIXED_PRICE, fx, fxRender, fxFilter, fxDraw, fxName, fxDate, FX_MK, FX_ABSENT, setView, fxPageCount, fxPageList, FX_SIZES, fxEffSize, fxAutoRows, FX_AUTO_MIN, FX_AUTO_MAX, fxCat, FX_CATS, FX_RULES, FX_ICON, renderFreshness, FRESH_SRC, state, pg, freshStamp, PG_TABS };')
   (sb, document, { addEventListener(){}, matchMedia: () => ({ matches:false, addEventListener(){} }) },
    { getItem: () => null, setItem(){} }, () => 0, () => 0,
    fn => { timers.push(fn); return timers.length; }, () => 0,
@@ -44,7 +44,7 @@ new Function('sandbox','document','window','localStorage','setInterval','clearIn
 
 const { FIXED_PRICE, fx, fxRender, fxFilter, fxDraw, fxName, fxDate, FX_MK, FX_ABSENT, setView,
         fxPageCount, fxPageList, FX_SIZES, fxEffSize, fxAutoRows, FX_AUTO_MIN, FX_AUTO_MAX,
-        fxCat, FX_CATS, FX_RULES, FX_ICON, renderFreshness, FRESH_SRC, state, pg, freshStamp } = sb.out;
+        fxCat, FX_CATS, FX_RULES, FX_ICON, renderFreshness, FRESH_SRC, state, pg, freshStamp, PG_TABS } = sb.out;
 const fail = [];
 const chk = (name, ok, note) => { console.log('  ' + (ok ? 'OK  ' : '*** ') + name +
   (note !== undefined ? '  — ' + note : '')); if (!ok) fail.push(name); };
@@ -305,8 +305,14 @@ chk('the refresh date and time are shown, not just "x minutes ago"',
 chk('the source names real database tables, not a label',
     /listings\.shopify_listings/.test(FRESH_SRC.fx.src) &&
     /inventory\.products/.test(FRESH_SRC.inv.src));
-chk('Postage names its actual sheet tab', /Postage Information/.test(FRESH_SRC.postage.src) &&
-    /gid \d+/.test(FRESH_SRC.postage.src), FRESH_SRC.postage.src);
+// An entry is either one tab with a title, or a legacy multi-table tab that yields
+// the sections named in `take`. Both kinds have to be named in the freshness line.
+{
+  const named = PG_TABS.reduce((a, t) => a.concat(t.take || [t.title]), []);
+  chk('Postage names every section it actually reads',
+      named.length > 0 && named.every(n => FRESH_SRC.postage.src.indexOf(n) !== -1),
+      named.length + ' sections: ' + named.join(', '));
+}
 setView('inv'); renderFreshness();
 chk('the tag is still shown on the Inventory (home) tab',
     els.freshTag.hidden === false && els.freshTag.textContent.length > 0,

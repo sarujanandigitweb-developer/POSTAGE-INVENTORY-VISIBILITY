@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import Loading from './Loading';
 
 const gbp = p => (p == null ? null : '£' + (p / 100).toFixed(2));
 
@@ -28,7 +29,7 @@ export default function FixedPriceTab() {
   useEffect(() => { setPage(1); }, [q, type, mk]);
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <div className="empty">Reading fixed prices from LEDSone…</div>;
+  if (!d) return <Loading what="fixed prices" cols={11} rows={9} />;
 
   return (
     <>

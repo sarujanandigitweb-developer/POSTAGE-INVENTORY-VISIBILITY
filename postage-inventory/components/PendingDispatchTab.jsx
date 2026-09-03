@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import Loading from './Loading';
 
 const PRI = { 3: 'Critical', 2: 'High', 1: 'Normal' };
 const priCls = p => (p === 3 ? 'cr' : p === 2 ? 'hi' : 'me');
@@ -40,7 +41,7 @@ export default function PendingDispatchTab() {
   useEffect(() => { setPage(1); }, [q, band, dis]);
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <div className="empty">Reading open orders from LEDSone…</div>;
+  if (!d) return <Loading what="open orders" cols={13} rows={9} />;
 
   const per = size === 'all' ? rows.length || 1 : Number(size);
   const pages = Math.max(1, Math.ceil(rows.length / per));

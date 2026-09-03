@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import Loading from './Loading';
 
 const n = v => (v === null || v === undefined ? '—' : Number(v).toLocaleString());
 const STATUS = ['Upcoming', 'Part received', 'Received'];
@@ -45,7 +46,7 @@ export default function ContainerDetailsTab() {
   }, [open, mq]);
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <div className="empty">Reading containers from LEDSone…</div>;
+  if (!d) return <Loading what="containers" cols={12} rows={8} />;
 
   const per = size === 'all' ? (d.rows.length || 1) : Number(size);
   const pages = Math.max(1, Math.ceil(d.rows.length / per));

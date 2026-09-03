@@ -1,5 +1,40 @@
 import { withClient, query } from '@/lib/db';
 import { classification, CATEGORY_ORDER, skusIn, sectionCounts, imgURL } from '@/lib/classification';
+import { parseLine, region as histRegion } from '@/lib/history-parser';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// PRICE COMMENT IS NOT IN POSTGRES. It is produced by a separate pass of the
+// 2-hourly pipeline (sql/build-shopify-comments.js), which reads a Trello export —
+// there is no query that returns it. The pipeline's own output is reused rather
+// than the value being invented or the column quietly dropped. It is the one field
+// on this tab that is file-sourced, and only as fresh as the last pipeline run:
+// re-copy sql/refresh/out/shopify-comments.json to data/price-comments.json.
+//
+// The PRICE follows the same route, and for the same reason. It is not `min(price)`
+// over the UK channels — that is what this route used to do, and it left LSFC160BT
+// blank where the dashboard shows £12.22. The real rule is a five-tier match:
+//   1 exact SKU · 2 a combo with exactly ONE '+' · 3 a pack · 4 a larger combo · 5 none
+// with LEDSone winning at EVERY tier before price is considered, and combos
+// decomposed to find which listing actually contains this SKU. Roughly 200 lines.
+//
+// A £ figure may only come from a UK channel. A euro or dollar listing is a
+// DIFFERENT number, not a cheaper one, so it goes to its own column carrying its
+// currency — which is why LSFC300BG reads "€12.89 EUR" and not "£12.89".
+//
+// Re-deriving that here would be a second implementation of a validated rule, free
+// to drift. These three files are the pipeline's own output; re-copy them from
+// sql/refresh/out/ when it next runs.
+const FILES = { comments: 'price-comments.json', price: 'price.json', alt: 'price-alt.json' };
+const LOADED = {};
+function pipelineFile(which) {
+  if (LOADED[which]) return LOADED[which];
+  try {
+    LOADED[which] = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'data', FILES[which]), 'utf8'));
+  } catch { LOADED[which] = {}; }
+  return LOADED[which];
+}
 
 // The browser calls this route; only this route touches PostgreSQL.
 export const dynamic = 'force-dynamic';
@@ -47,6 +82,57 @@ const ALL_SKUS = `
      AND pr.sku NOT LIKE '%+%'
      AND pr.sku !~ '[0-9A-Z]PK$'
      AND upper(pr.sku) NOT LIKE '%DUMMY%'`;
+
+// Containers a SKU has actually arrived on, newest last. "Latest" is ORDER BY
+// order_date — never a text maximum of the name ('Container 9' > 'Container 16'
+// under a text maximum, wrong on 39% of pairs).
+const ARRIVED = `
+  SELECT DISTINCT upper(oi.sku) AS sku,
+         CASE WHEN COALESCE(fc.main_container, cc.main_container) IN ('DE','GERMAN') THEN 'DE'
+              ELSE COALESCE(fc.main_container, cc.main_container) END AS region,
+         COALESCE(fc.name, cc.name) AS cname,
+         o.order_date::text AS od
+    FROM suppliers.order_items oi
+    JOIN suppliers.orders o ON o.id = oi.order_id
+    LEFT JOIN suppliers.final_containers fc ON fc.id = oi.final_container_id
+    LEFT JOIN suppliers.containers      cc ON cc.id = oi.assigned_container_id
+   WHERE o.status_arrived
+     AND upper(oi.sku) = ANY($1)
+     AND COALESCE(fc.name, cc.name) IS NOT NULL
+     AND upper(trim(COALESCE(fc.name, cc.name))) NOT IN ('UNASSIGN','UNASSIGNED','N/A','-')
+     AND o.order_date IS NOT NULL`;
+
+// Stock on a container that has NOT arrived yet — kept visually distinct from
+// stock on the shelf so a picker cannot mistake one for the other.
+const INCOMING = `
+  SELECT DISTINCT upper(oi.sku) AS sku,
+         COALESCE(fc.name, cc.name) AS cname,
+         CASE WHEN o.status_shipped             THEN 'Shipped'
+              WHEN o.status_finished_production THEN 'Production done'
+              WHEN o.status_confirmed           THEN 'Confirmed'
+              ELSE 'Ordered' END AS stage
+    FROM suppliers.order_items oi
+    JOIN suppliers.orders o ON o.id = oi.order_id
+    LEFT JOIN suppliers.final_containers fc ON fc.id = oi.final_container_id
+    LEFT JOIN suppliers.containers      cc ON cc.id = oi.assigned_container_id
+   WHERE NOT o.status_arrived
+     AND upper(oi.sku) = ANY($1)
+     AND COALESCE(fc.name, cc.name) IS NOT NULL
+     AND upper(trim(COALESCE(fc.name, cc.name))) NOT IN ('UNASSIGN','UNASSIGNED','N/A','-')`;
+
+// Stock-movement history. There is no movement table — the lines live as free text
+// on inventory.product_history, which is why the shipped parser is reused.
+const HISTORY = `
+  SELECT upper(p.sku) AS sku, trim(l.line) AS line
+    FROM inventory.products p
+    JOIN inventory.product_history h ON h.inventory_id = p.id,
+    LATERAL unnest(string_to_array(h.history, E'\\n')) WITH ORDINALITY AS l(line, ord)
+   WHERE upper(p.sku) = ANY($1)
+     AND trim(l.line) <> ''
+     AND (l.line ILIKE '%UK stock changes%'
+       OR trim(l.line) ILIKE 'Supply%'
+       OR trim(l.line) ILIKE 'German Supply%'
+       OR l.line ~* 'german ?Inventory +Changed +from')`;
 
 const WAREHOUSES = `
   SELECT warehouse, warehouse_name, warehouse_location
@@ -126,21 +212,97 @@ export async function GET(request) {
       const price = {};
       for (const r of await q(PRICE, [wanted])) price[r.lsku] = Number(r.p);
 
+      // ---- last container, per region -------------------------------------
+      // ordered by order_date so the LAST entry is the newest arrival
+      const arrived = {};
+      for (const r of await q(ARRIVED, [wanted])) {
+        if (r.region !== 'UK' && r.region !== 'DE') continue;
+        ((arrived[r.sku] ||= {})[r.region] ||= []).push({ od: r.od, name: r.cname });
+      }
+      for (const sku of Object.keys(arrived))
+        for (const rg of Object.keys(arrived[sku]))
+          arrived[sku][rg].sort((a, b) => a.od.localeCompare(b.od) || a.name.localeCompare(b.name));
+
+      const incoming = {};
+      for (const r of await q(INCOMING, [wanted])) incoming[r.sku] = { name: r.cname, stage: r.stage };
+
+      // ---- history: movement counts, and the latest genuine goods receipt ---
+      const hist = {};
+      for (let i = 0; i < wanted.length; i += 800) {
+        for (const r of await q(HISTORY, [wanted.slice(i, i + 800)]))
+          (hist[r.sku] ||= []).push(r.line);
+      }
+      // The dialog shows the 12 most recent movements per region and says so when
+      // there are more — the same cap the published pipeline uses, so the two agree.
+      const CAP = 12;
+      const moves = {}, received = {};
+      for (const sku of Object.keys(hist)) {
+        const mv = [];
+        for (const line of hist[sku]) for (const m of parseLine(line)) mv.push(m);
+        // newest first, by date then time
+        mv.sort((a, b) => (b.dt + ' ' + (b.tm || '')).localeCompare(a.dt + ' ' + (a.tm || '')));
+        for (const m of mv) {
+          const rg = histRegion(m.tl);
+          const bucket = ((moves[sku] ||= {})[rg] ||= { n: 0, rows: [] });
+          bucket.n++;
+          if (bucket.rows.length < CAP) bucket.rows.push({
+            dt: m.dt, fl: m.fl || '', tl: m.tl || '', sb: m.sb, sa: m.sa, qt: m.qt,
+            ac: m.ac || '', ip: m.ip || '', cp: m.cp || '', rm: m.rm || '',
+          });
+          // Received Warehouse and Received Date are NOT columns anywhere — they
+          // are read out of the history text. Only a "Goods received" movement
+          // counts; anything else is a correction or a pick.
+          if (m.ac !== 'Goods received') continue;
+          const cur = ((received[sku] ||= {})[rg]);
+          const stamp = m.dt + ' ' + (m.tm || '');
+          // the warehouse is the movement's TITLE (m.tl), not an m.wh field — the
+          // parser names the warehouse there, e.g. "Unit 3". Reading m.wh gave a
+          // blank column where the dashboard shows the unit.
+          if (!cur || stamp > cur.stamp) received[sku][rg] = { stamp, wh: m.tl || '', dt: m.dt };
+        }
+      }
+
       // Join the CURATED classification on. A SKU the arrays do not know is
       // reported as unplaced, never silently dropped and never guessed at — the
       // same contract build.js keeps.
       const { cls } = classification();
+      const comments = pipelineFile('comments');
+      const gbp = pipelineFile('price');
+      const alt = pipelineFile('alt');
       const rows = [];
       for (const p of products) {
         const c = cls[p.sku];
         if (!c) continue;              // not in this section's curated list
         const s = stock[p.pid] || {};
-        const row = { s: p.sku, d: p.d, i: imgURL(p.img), price: price[p.sku] ?? null,
+        // £ only from a UK channel; anything else keeps its own currency
+        const g = gbp[p.sku];
+        const a = alt[p.sku];
+        const row = { s: p.sku, d: p.d, i: imgURL(p.img),
+                      price: typeof g === 'number' ? g : null,
+                      alt: a ? { v: a[0], sym: a[1], cur: a[2], ch: a[3] } : null,
                       key: c.key, f: c.f ?? null, t: c.t ?? null };
         // the attribute columns each section filters on
         for (const k of ['x', 'mt', 'sh', 'ft', 'sr', 'gp', 'ws']) if (c[k] !== undefined) row[k] = c[k];
         for (const [col, id] of Object.entries(COL)) row[col] = s[id] ? s[id].q : 0;
         for (const [col, id] of Object.entries(LOC)) if (s[id]?.loc) row[col] = s[id].loc;
+
+        // last container per region: the newest arrival, and how many it has had
+        for (const rg of ['UK', 'DE']) {
+          const list = (arrived[p.sku] || {})[rg];
+          if (list && list.length) {
+            const latest = list[list.length - 1];
+            row[rg === 'UK' ? 'ukc' : 'dec'] = { name: latest.name, od: latest.od, n: list.length };
+          }
+          const rec = (received[p.sku] || {})[rg];
+          if (rec) row[rg === 'UK' ? 'ukr' : 'der'] = { wh: rec.wh, dt: rec.dt };
+          const h = (moves[p.sku] || {})[rg];
+          if (h) row[rg === 'UK' ? 'ukh' : 'deh'] = h;   // { n, rows }
+        }
+        const inc = incoming[p.sku];
+        if (inc) row.inc = inc;
+        const pc = comments[p.sku];
+        if (pc) row.pc = pc;
+
         rows.push(row);
       }
 

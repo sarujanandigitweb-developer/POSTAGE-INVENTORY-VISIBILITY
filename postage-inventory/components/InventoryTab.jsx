@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { matches, extraOptions } from '@/lib/filter';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import HistoryDialog from './HistoryDialog';
 
 const n = v => (v === 0 ? <span style={{ opacity: .45 }}>0</span>
                         : <b style={{ color: v < 0 ? '#a51111' : '#0a7d33' }}>{v}</b>);
@@ -11,6 +12,7 @@ const loc = v => (v ? <span className="loc">{v}</span> : dash());
 
 export default function InventoryTab({ data, st, set, loading }) {
   const [page, setPage] = useState(1);
+  const [hist, setHist] = useState(null);   // { sku, region, data, other }
   const [size, setSize] = useState('15');   // page one first, not 6,181 rows at once
 
   const cfg = data.sections[st.cat] || null;
@@ -80,26 +82,34 @@ export default function InventoryTab({ data, st, set, loading }) {
       </div>
 
       <div className="scroll">
-        <table>
+        {/* All 27 leaf columns the HTML dashboard carries, in its own grouping. */}
+        <table className="invtab">
           <thead>
             <tr>
               <th className="sku grp-pd" rowSpan={3}>SKU</th>
               <th className="grp-pd" colSpan={2}>Product</th>
-              <th className="grp-uk" colSpan={7}>UK</th>
-              <th className="grp-de" colSpan={4}>German</th>
+              <th className="grp-uk" colSpan={12}>UK</th>
+              <th className="grp-de" colSpan={8}>German</th>
               <th className="grp-om" colSpan={2}>Other markets</th>
+              <th className="grp-in" colSpan={2}>Incoming</th>
             </tr>
             <tr>
               <th rowSpan={2}>Type</th><th rowSpan={2}>Image</th>
               <th colSpan={2}>Unit 3</th><th colSpan={2}>Unit 4</th>
-              <th>Unit 18</th><th>Unit 5</th><th rowSpan={2}>Shopify Price</th>
+              <th>Unit 18</th><th>Unit 5</th>
+              <th colSpan={3}>Last Container</th>
+              <th rowSpan={2}>Shopify Price</th><th rowSpan={2}>Price Comment</th><th rowSpan={2}>History</th>
               <th colSpan={2}>Kronen</th><th colSpan={2}>Schmutter</th>
-              <th rowSpan={2}>Canada</th><th rowSpan={2}>US</th>
+              <th colSpan={3}>Last Container</th><th rowSpan={2}>History</th>
+              <th rowSpan={2}>CA</th><th rowSpan={2}>US</th>
+              <th rowSpan={2}>Container</th><th rowSpan={2}>Stage</th>
             </tr>
             <tr>
               <th>Stock</th><th>Location</th><th>Stock</th><th>Location</th>
               <th>Stock</th><th>Stock</th>
+              <th>Received Warehouse</th><th>Received Date</th><th>Container Number</th>
               <th>Stock</th><th>Location</th><th>Stock</th><th>Location</th>
+              <th>Received Warehouse</th><th>Received Date</th><th>Container Number</th>
             </tr>
           </thead>
           <tbody>
@@ -115,10 +125,41 @@ export default function InventoryTab({ data, st, set, loading }) {
                 <td className="num">{n(r.a)}</td><td>{loc(r.al)}</td>
                 <td className="num">{n(r.b)}</td><td>{loc(r.bl)}</td>
                 <td className="num">{n(r.c)}</td><td className="num">{n(r.u5)}</td>
-                <td className="num">{r.price != null ? '£' + r.price.toFixed(2) : dash()}</td>
+                {/* Received warehouse and date are read out of the history text —
+                    no column holds them — so a blank here means "not recorded". */}
+                <td>{r.ukr?.wh || dash()}</td>
+                <td className="fxdate">{r.ukr?.dt || dash()}</td>
+                <td>{r.ukc ? r.ukc.name : <span className="na">Unavailable</span>}</td>
+                {/* A euro or dollar listing is a different number, not a cheaper
+                    one, so it is shown with its own currency rather than as £. */}
+                <td className="num">
+                  {r.price != null
+                    ? '£' + r.price.toFixed(2)
+                    : r.alt
+                      ? <>{r.alt.sym}{r.alt.v.toFixed(2)} <span className="cur" title={'From the ' + r.alt.ch + ' listing — no UK price exists for this SKU.'}>{r.alt.cur}</span></>
+                      : dash()}
+                </td>
+                <td className="pcom" title={r.pc || ''}>{r.pc ? <span className="cdclamp">{r.pc}</span> : dash()}</td>
+                <td className="num">{r.ukh
+                  ? <button type="button" className="hbadge"
+                            onClick={() => setHist({ sku: r.s, region: 'UK', data: r.ukh, other: r.deh?.n || 0 })}>
+                      History {r.ukh.n}
+                    </button>
+                  : dash()}</td>
                 <td className="num">{n(r.k)}</td><td>{loc(r.kl)}</td>
                 <td className="num">{n(r.m)}</td><td>{loc(r.ml)}</td>
+                <td>{r.der?.wh || dash()}</td>
+                <td className="fxdate">{r.der?.dt || dash()}</td>
+                <td>{r.dec ? r.dec.name : <span className="na">Unavailable</span>}</td>
+                <td className="num">{r.deh
+                  ? <button type="button" className="hbadge"
+                            onClick={() => setHist({ sku: r.s, region: 'DE', data: r.deh, other: r.ukh?.n || 0 })}>
+                      History {r.deh.n}
+                    </button>
+                  : dash()}</td>
                 <td className="num">{n(r.ca)}</td><td className="num">{n(r.us)}</td>
+                <td>{r.inc ? r.inc.name : dash()}</td>
+                <td>{r.inc ? <span className={'cpill st-' + r.inc.stage.replace(/\s+/g, '-').toLowerCase()}>{r.inc.stage}</span> : dash()}</td>
               </tr>
             ))}
           </tbody>
@@ -129,6 +170,8 @@ export default function InventoryTab({ data, st, set, loading }) {
 
       <Pager total={rows.length} page={cur} pages={pages} size={size}
              onPage={setPage} onSize={setSize} label="SKUs" />
+
+      {hist && <HistoryDialog {...hist} onClose={() => setHist(null)} />}
     </div>
   );
 }

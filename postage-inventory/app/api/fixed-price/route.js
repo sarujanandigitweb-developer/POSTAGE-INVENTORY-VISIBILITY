@@ -97,12 +97,26 @@ async function build() {
 
     // a date PER marketplace: one max() across all four says "updated today" on a
     // row whose Shopify price has not moved in a year
+    // DATE, NOT INSTANT. `updated_at` is `timestamp without time zone`: node-postgres
+    // builds the Date from the stored wall clock in THIS process's timezone, and this
+    // host runs UTC+5:30. toISOString() then shifts it back across midnight, so a row
+    // written at 02:00 reports the previous day. The listing sync runs in the small
+    // hours, so that was 100% of Amazon rows, 99.9% of eBay and 83% of Shopify.
+    // Reading the calendar fields back returns exactly what was stored, whatever the
+    // server's timezone.
+    const ymd = v => {
+      const d = v instanceof Date ? v : new Date(v);
+      if (!isFinite(d.getTime())) return null;
+      const p = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    };
+
     const px = new Map();
     for (const { key } of MARKETS) {
       for (const r of await q(SQL[key])) {
         const e = px.get(r.sku) || { d: {} };
         e[key] = Math.round(Number(r.p) * 100);       // pence, so no float noise
-        if (r.u) e.d[key] = new Date(r.u).toISOString().slice(0, 10);
+        if (r.u) e.d[key] = ymd(r.u);
         px.set(r.sku, e);
       }
     }

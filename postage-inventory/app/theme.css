@@ -362,3 +362,101 @@ table.cdtab td.csup { white-space: normal; max-width: 200px; color: var(--ink-2)
 .cdclamp { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 table.cdmtab td.fxname { white-space: normal; line-height: 1.35; }
+
+/* ---- loading skeleton ------------------------------------------------------ */
+.skwrap { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.skbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 14px 16px; border-bottom: 1px solid var(--edge); color: var(--ink-2); font-size: 13px;
+}
+.sktext b { color: var(--ink-1); font-variant-numeric: tabular-nums; margin-left: 2px; }
+.sknote { color: var(--ink-2); font-size: 12px; opacity: .85; }
+.skspin {
+  width: 15px; height: 15px; border-radius: 50%; flex: none;
+  border: 2px solid var(--edge); border-top-color: var(--brand);
+  animation: skspin .8s linear infinite;
+}
+@keyframes skspin { to { transform: rotate(360deg); } }
+
+.sktable { padding: 10px 16px 16px; overflow: hidden; }
+.skhead, .skrow { display: flex; gap: 12px; align-items: center; padding: 11px 0; }
+.skhead { border-bottom: 1px solid var(--edge); }
+.skrow { border-bottom: 1px solid var(--edge); animation: skfade .5s ease both; }
+@keyframes skfade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.skcell {
+  flex: 1 1 0; height: 11px; border-radius: 6px;
+  background: linear-gradient(90deg, var(--page) 25%, var(--edge) 37%, var(--page) 63%);
+  background-size: 400% 100%;
+  animation: skshine 1.4s ease-in-out infinite;
+}
+.skhead .skcell { height: 9px; opacity: .75; }
+@keyframes skshine { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* someone who prefers less motion still gets the shape, without the movement */
+@media (prefers-reduced-motion: reduce) {
+  .skspin, .skrow, .skcell { animation: none; }
+  .skcell { background: var(--edge); }
+}
+
+/* ---- Inventory: the full 27-column table ------------------------------------ */
+table.invtab { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%;
+  font-size: 12.5px; }
+table.invtab th, table.invtab td {
+  padding: 8px 10px; border-right: 1px solid var(--edge); border-bottom: 1px solid var(--edge);
+  text-align: left; white-space: nowrap; vertical-align: middle;
+}
+table.invtab thead th { position: sticky; background: var(--page); font-weight: 700; z-index: 3; font-size: 11px; }
+table.invtab thead tr:nth-child(1) th { top: 0; text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+table.invtab thead tr:nth-child(2) th { top: 30px; text-align: center; }
+table.invtab thead tr:nth-child(3) th { top: 60px; font-weight: 600; }
+table.invtab thead th { height: 30px; padding-top: 0; padding-bottom: 0; line-height: 1.15; }
+table.invtab td.sku, table.invtab th.sku {
+  position: sticky; left: 0; z-index: 4; background: var(--card);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700;
+  box-shadow: 1px 0 0 var(--edge);
+}
+table.invtab thead th.sku { z-index: 5; background: var(--page); }
+table.invtab td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.invtab tbody tr:nth-child(even) td { background: var(--page); }
+table.invtab tbody tr:nth-child(even) td.sku { background: var(--page); }
+table.invtab tbody tr:hover td { background: #eef4ff; }
+table.invtab td.pcom { white-space: normal; max-width: 210px; color: var(--ink-2); font-size: 11.5px; }
+table.invtab td.fxdate { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.grp-pd { background: #eef2f7; } .grp-uk { background: #e8f0ff; }
+.grp-de { background: #fdf1e3; } .grp-om { background: #e9f7ee; } .grp-in { background: #f3edff; }
+.na { color: var(--ink-2); opacity: .6; font-size: 11px; }
+.hbadge { display: inline-block; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--brand);
+  background: transparent; color: var(--brand); font: inherit; font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; transition: background .12s, color .12s; }
+.st-shipped { background: #dbeafe; color: #1e40af; }
+.st-production-done { background: #ede9fe; color: #5b21b6; }
+.st-confirmed { background: #e0f2fe; color: #075985; }
+.st-ordered { background: var(--page); color: var(--ink-2); }
+
+/* ---- stock history dialog --------------------------------------------------- */
+.hmodal { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center;
+  justify-content: center; padding: 24px; background: rgba(9,17,33,.52); }
+.hmbox { position: relative; background: var(--card); border: 1px solid var(--edge);
+  border-radius: 12px; box-shadow: 0 24px 60px rgba(9,17,33,.34);
+  width: 100%; max-width: min(1160px, 96vw); max-height: 86vh; overflow: auto; padding: 20px 22px; }
+.hmx { position: absolute; top: 11px; right: 13px; border: 0; background: transparent;
+  color: var(--ink-2); font-size: 22px; line-height: 1; cursor: pointer; padding: 2px 8px; border-radius: 8px; }
+.hmx:hover { background: var(--page); color: var(--ink-1); }
+.hmbox h3 { margin: 0 0 13px; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.hmsku { margin: 0 0 15px; font-size: 13px; color: var(--ink-2); }
+.hmsku b { color: var(--ink-1); font-weight: 700; }
+.hmsku .s { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.hmscroll { border: 1px solid var(--edge); border-radius: 10px; overflow: hidden; }
+table.htab { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 12px; }
+table.htab th, table.htab td { padding: 8px 10px; border-bottom: 1px solid var(--edge);
+  text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+table.htab tr.hh th { background: var(--page); font-weight: 700; font-size: 11px; color: var(--ink-1); }
+table.htab tr.hr:last-child td { border-bottom: 0; }
+table.htab td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.htab td.hgap { text-align: center; color: var(--ink-2); padding: 22px 10px; }
+.hdash { color: var(--ink-2); opacity: .5; }
+.hmnote { margin: 12px 0 0; font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+.hbadge { cursor: pointer; }
+.hbadge:hover { background: var(--brand); color: #fff; }
+.cur { font-size: 9.5px; font-weight: 700; color: var(--ink-2); margin-left: 2px;
+  vertical-align: 1px; letter-spacing: .02em; }

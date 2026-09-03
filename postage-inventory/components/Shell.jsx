@@ -10,6 +10,7 @@ import FixedPriceTab from './FixedPriceTab';
 import SlowMovingTab from './SlowMovingTab';
 import PendingDispatchTab from './PendingDispatchTab';
 import ContainerDetailsTab from './ContainerDetailsTab';
+import Loading from './Loading';
 
 export default function Shell() {
   const [view, setView] = useState('inv');
@@ -62,15 +63,11 @@ export default function Shell() {
   // them waits. Prefetching means the cache is usually already warm.
   useEffect(() => {
     if (!data) return;
-    // One at a time. Firing both at once made them compete for the pool with
-    // whatever tab the reader actually clicked, and against a shared role limit
-    // that turned into failures rather than waiting.
-    const t = setTimeout(async () => {
-      try { await fetch('/api/fixed-price?size=1'); } catch {}
-      try { await fetch('/api/slow-moving?size=1'); } catch {}
-      try { await fetch('/api/container-details'); } catch {}
-    }, 800);
-    return () => clearTimeout(t);
+    // Nothing to do here any more: instrumentation.js warms these on the server
+    // before a reader arrives. Warming again from the browser duplicated every
+    // build — the same dataset was being read from Postgres twice, competing for a
+    // role that allows ten connections.
+    return () => {};
   }, [data]);
 
   // remember the tab across a reload, as the live dashboard does
@@ -139,7 +136,7 @@ export default function Shell() {
         <div className="body">
           {view === 'inv' && (
             err ? <div className="card"><div className="empty">{err}</div></div>
-            : !data ? <div className="card"><div className="empty">Reading {st.cat} from LEDSone…</div></div>
+            : !data ? <div className="card grow"><Loading what={(data?.sections?.[st.cat]?.name) || 'inventory'} cols={16} rows={9} /></div>
             : <>
                 <div className="card">
                   <CategoryBar order={data.order} sections={data.sections} counts={data.counts}

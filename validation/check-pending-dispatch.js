@@ -75,13 +75,25 @@ console.log('\n=== filters ===');
 [3,2,1].forEach(p=>{pd.age=String(p);pdFilter();
   chk('age filter '+['','0-1','2-3','4+'][p],pd.view.every(r=>r.pr===p),
     pd.view.length.toLocaleString()+' rows');});
-pd.age='';pd.sla='1';pdFilter();
-chk('"Past SLA only" returns just breaches',pd.view.every(r=>r.b===1),
-  pd.view.length.toLocaleString()+' breached');
-pd.sla='0';pdFilter();
-chk('"Within SLA" returns just the rest',pd.view.every(r=>r.b===0),
-  pd.view.length.toLocaleString()+' within');
-pd.sla='';
+pd.age='';
+// The SLA select ("All orders") was replaced by a Warehouse select. SLA is still
+// a column and still drives the priority bands — it just is not a filter any more,
+// so nothing below may assume pd.sla exists.
+chk('the SLA "All orders" select is gone',!/id="pdsla"/.test(html));
+chk('a warehouse select stands in its place',/id="pdwh"/.test(html));
+chk('the SLA Breach column survived the swap',/class="pdsla /.test(src));
+const WH=[...new Set(R.map(r=>r.w||'(not recorded)'))].sort();
+chk('warehouse is recorded on the rows',WH.length>1,WH.join(' · '));
+let whTotal=0;
+WH.forEach(w=>{pd.wh=w;pdFilter();whTotal+=pd.view.length;
+  chk('warehouse filter '+w,
+    pd.view.length>0&&pd.view.every(r=>(r.w||'(not recorded)')===w),
+    pd.view.length.toLocaleString()+' rows');});
+chk('the warehouses partition the queue — no row lost, none counted twice',
+  whTotal===R.length,whTotal.toLocaleString()+' of '+R.length.toLocaleString());
+pd.wh='';pdFilter();
+chk('clearing the warehouse filter restores every row',pd.view.length===R.length,
+  pd.view.length.toLocaleString()+' rows');
 const st=R.find(r=>r.s);
 pd.disp=st.s;pdFilter();
 chk('dispatch-status filter works',pd.view.every(r=>r.s===st.s),

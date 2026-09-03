@@ -20,6 +20,7 @@
 // eBay returns or supplier invoices. SLA_DAYS below is therefore a stated assumption taken
 // from the requirement's own age bands, not a value read from anywhere.
 const { q } = require('../db.js');
+const { dayNum } = require('../daynum.js');
 
 const SLA_DAYS = 3;                       // an order still unshipped after this is a breach
 const OPEN_STATUSES = ['Inprogress', 'New', 'Hold'];
@@ -120,7 +121,9 @@ async function extract(c){
 
     out.push({
       o: r.order_id,
-      d: Math.round(Date.parse(r.order_date) / 86400000),   // whole days since epoch
+      // dayNum, never a bare division — see sql/refresh/daynum.js for the two off-by-ones
+      // that hides. 44% of this queue was showing an order date one day late.
+      d: dayNum(r.order_date),                   // whole days since epoch
       k: r.skus || '',
       l: Number(r.lines) || 0,
       p: pay,                                    // '' renders as "-", never invented

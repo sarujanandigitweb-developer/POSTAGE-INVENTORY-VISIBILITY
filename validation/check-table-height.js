@@ -12,7 +12,7 @@
      the search row hands the whole screen to the table. The box still scrolls
      inside itself, which is what keeps its sticky column header working. */
 const fs = require('fs');
-const F = __dirname + '/../dashboard/inventory-dashboard.html';
+const F = process.env.DASHBOARD || (__dirname + '/../dashboard/inventory-dashboard.html');
 const html = fs.readFileSync(F, 'utf8');
 const css = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
 

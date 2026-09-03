@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import Loading from './Loading';
 
 const BANDS = ['Critical', 'High', 'Medium'];
 const bandCls = b => (b === 'Critical' ? 'cr' : b === 'High' ? 'hi' : 'me');
@@ -30,7 +31,8 @@ export default function SlowMovingTab() {
   useEffect(() => { setPage(1); }, [q, band, ph, held]);
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <div className="empty">Reading slow-moving stock from LEDSone…</div>;
+  if (!d) return <Loading what="slow-moving stock" cols={10} rows={9}
+                          note="16,000 rows are built from three movement sources; after this it is instant." />;
 
   return (
     <>

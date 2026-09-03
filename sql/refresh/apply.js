@@ -25,7 +25,7 @@ const FLOOR_ROWS  = 5000;          // a collapse below this must never publish
 const FLOOR_BYTES = 2 * 1024 * 1024;
 const BLOCKS = ['HIST_RAW', 'SHOPIFY_PRICE', 'SHOPIFY_COMMENT', 'SHOPIFY_ALT',
                 'WH5_STOCK', 'LAST_CONTAINER', 'RECEIVED', 'INCOMING', 'FIXED_PRICE', 'SLOW_MOVING', 'PENDING_DISPATCH',
-                'CONTAINER_DETAILS'];
+                'CONTAINER_DETAILS', 'RECENT_DISPATCH'];
 
 // `const INCOMING      = {` is padded for alignment, so the search must tolerate
 // whitespace rather than matching an exact string.
@@ -67,6 +67,7 @@ put('FIXED_PRICE',    rd('FIXED_PRICE.json'));
 put('SLOW_MOVING',    rd('SLOW_MOVING.json'));
 put('PENDING_DISPATCH', rd('PENDING_DISPATCH.json'));
 put('CONTAINER_DETAILS', rd('CONTAINER_DETAILS.json'));
+put('RECENT_DISPATCH', rd('RECENT_DISPATCH.json'));
 const inc = rd('INCOMING.json');
 put('INCOMING', inc.INCOMING);
 { // the two interned arrays beside it
@@ -149,6 +150,19 @@ try {
       (out.match(/\*\*\*.*/g) || ['see log'])[0]);
 } catch (e){
   chk('the small-screen tab menu works', false, String(e.message).split('\n')[0]);
+}
+// Recently Dispatched drives its filters, its dialog and its CSV through the page's own
+// code, and checks that every class its cells use is styled FOR ITS OWN TABLE — the cell
+// rules here are table-qualified, so a reused class name silently inherits nothing and
+// long values run over the column beside them.
+try {
+  const out = execFileSync(process.execPath,
+    [path.join(ROOT, 'validation', 'check-recent-dispatch.js')],
+    { env: { ...process.env, DASHBOARD: TMP }, encoding: 'utf8' });
+  chk('Recently Dispatched holds up', /ALL CHECKS PASSED/.test(out),
+      (out.match(/\*\*\*.*/g) || ['see log'])[0]);
+} catch (e){
+  chk('Recently Dispatched holds up', false, String(e.message).split('\n')[0]);
 }
 
 // IMAGE URLs must survive the round trip. `DATA` and `LH_EXTRA` are not passed through
@@ -271,6 +285,32 @@ try {
   chk('sorted longest-waiting first',
       (pd.r || []).every((r, i, a) => i === 0 || a[i-1].dy >= r.dy));
   chk('no duplicate order id', new Set((pd.r || []).map(r => r.o)).size === (pd.r || []).length);
+}
+
+// Recently Dispatched: the finished side of the same queue. The dangers here are a
+// window that has quietly stopped moving (a stale dispatch date) and a turnaround
+// computed from a completion that predates the order, which would mean the three-tier
+// completion timestamp has picked the wrong tier.
+{
+  const rdd = rd('RECENT_DISPATCH.json');
+  const R = rdd.r || [];
+  const today = Math.floor(Date.now() / 86400000);
+  chk('RECENT_DISPATCH has rows', Array.isArray(R) && R.length > 0, R.length + ' dispatched');
+  chk('the window is a window, not the whole order history', R.length < 50000, R.length + ' rows');
+  chk('every row carries an order id, a dispatch date and a turnaround',
+      R.every(r => r.o && typeof r.x === 'number' && typeof r.th === 'number' && r.th >= 0));
+  chk('nothing was dispatched before it was ordered', R.every(r => r.x >= r.d),
+      'turnaround can never be negative');
+  chk('every row falls inside the ' + rdd.days + '-day window',
+      R.every(r => r.x >= today - rdd.days - 1 && r.x <= today + 1),
+      'dispatch dates span ' + (R.length ? (Math.min.apply(null, R.map(r => r.x)) + '..' +
+        Math.max.apply(null, R.map(r => r.x))) : '-') + ', today = ' + today);
+  chk('the window is still moving', R.some(r => r.x >= today - 1),
+      'at least one order dispatched today or yesterday');
+  chk('every row has a dispatch status', R.every(r => r.s && r.s.trim()));
+  chk('sorted most recently dispatched first',
+      R.every((r, i, arr) => i === 0 || arr[i-1].x >= r.x));
+  chk('no duplicate order id', new Set(R.map(r => r.o)).size === R.length);
 }
 
 // duplicates across every array
