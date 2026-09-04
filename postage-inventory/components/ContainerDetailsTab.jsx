@@ -143,7 +143,7 @@ export default function ContainerDetailsTab() {
       </div>
 
       {d.rows.length === 0 && <div className="empty">No containers match the current search and filters.</div>}
-      <Pager total={d.rows.length} page={cur} pages={pages} size={size}
+      <Pager total={d.rows.length} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="containers" />
 
       {open && (

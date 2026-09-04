@@ -24,6 +24,18 @@ function findEnvFile() {
 let cachedEnv = null;
 function readEnv() {
   if (cachedEnv) return cachedEnv;
+
+  // A HOSTED DEPLOYMENT HAS NO .env FILE. The comment below used to say "process.env
+  // wins, so a deployment can inject secrets without a file on disk" — but findEnvFile()
+  // ran first and THREW when no file existed, so the merge was never reached. On Vercel,
+  // where .env is gitignored and the values come from the dashboard, every database
+  // request would have failed with "No .env found". The environment is checked first.
+  if (REQUIRED.every(k => process.env[k])) {
+    cachedEnv = Object.fromEntries(REQUIRED.map(k => [k, process.env[k]]));
+    if (process.env.LEDSONE_SSLMODE) cachedEnv.LEDSONE_SSLMODE = process.env.LEDSONE_SSLMODE;
+    return cachedEnv;
+  }
+
   const file = findEnvFile();
   const env = {};
   for (const line of fs.readFileSync(file, 'utf8').split('\n')) {

@@ -1,4 +1,5 @@
 import { withClient } from '@/lib/db';
+import { getOrBuild } from '@/lib/dataset';
 import { ymd, hoursBetween } from '@/lib/dates';
 
 // RECENTLY DISPATCHED — orders the Postage Team FINISHED in the last 3 days.
@@ -99,7 +100,29 @@ const STOCK = `
 
 export async function GET() {
   try {
-    const out = await withClient(async q => {
+    // Served from the snapshot shipped with the deployment when there is one, so a
+    // hosted instance opens no database connection. Falls through to a live query in
+    // development, where there is no snapshot and the database is next door.
+    const out = await getOrBuild('recent-dispatch', buildSnapshot);
+    return Response.json({
+      ok: true, asOf: new Date().toISOString(), days: WINDOW_DAYS,
+      count: out.length,
+      sameDay: out.filter(r => r.th <= 24).length,
+      bands: out.reduce((a, r) => ((a[r.band] = (a[r.band] || 0) + 1), a), {}),
+      warehouses: [...new Set(out.map(r => r.w).filter(Boolean))].sort(),
+      markets: [...new Set(out.map(r => r.m).filter(Boolean))].sort(),
+      states: [...new Set(out.map(r => r.s).filter(Boolean))].sort(),
+      rows: out,
+    });
+  } catch (e) {
+    console.error('[api/recent-dispatch]', e.message);
+    return Response.json({ ok: false, error: 'Recent dispatch query failed. See server log.' }, { status: 500 });
+  }
+}
+
+// The snapshot builder, exported for scripts/build-snapshots.mjs so a deployment can
+// ship the data instead of querying for it. The route calls this same function.
+export const buildSnapshot = () => withClient(async q => {
       const orders = await q(ORDERS, [WINDOW_DAYS, LOOKBACK_DAYS]);
       const ids = orders.map(r => r.id);
       const lineRows = ids.length ? await q(LINES, [ids]) : [];
@@ -160,20 +183,4 @@ export async function GET() {
       rows.sort((a, b) => (a.x < b.x ? 1 : a.x > b.x ? -1 : 0) || a.th - b.th ||
                           String(a.o).localeCompare(String(b.o)));
       return rows;
-    });
-
-    return Response.json({
-      ok: true, asOf: new Date().toISOString(), days: WINDOW_DAYS,
-      count: out.length,
-      sameDay: out.filter(r => r.th <= 24).length,
-      bands: out.reduce((a, r) => ((a[r.band] = (a[r.band] || 0) + 1), a), {}),
-      warehouses: [...new Set(out.map(r => r.w).filter(Boolean))].sort(),
-      markets: [...new Set(out.map(r => r.m).filter(Boolean))].sort(),
-      states: [...new Set(out.map(r => r.s).filter(Boolean))].sort(),
-      rows: out,
-    });
-  } catch (e) {
-    console.error('[api/recent-dispatch]', e.message);
-    return Response.json({ ok: false, error: 'Recent dispatch query failed. See server log.' }, { status: 500 });
-  }
-}
+});

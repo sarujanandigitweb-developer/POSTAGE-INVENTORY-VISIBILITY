@@ -224,3 +224,7 @@ export async function GET(request) {
     return Response.json({ ok: false, error: 'Fixed price query failed. See server log.' }, { status: 500 });
   }
 }
+
+// The snapshot builder, for scripts/build-snapshots.mjs. Same function the route
+// uses, so a snapshot and a live read can never be shaped differently.
+export const buildSnapshot = build;

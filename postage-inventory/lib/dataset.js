@@ -48,10 +48,39 @@ function writeDisk(key, at, data) {
   } catch (e) { console.error('[dataset] could not cache ' + key + ':', e.message); }
 }
 
+// A SNAPSHOT SHIPPED WITH THE DEPLOYMENT. Built before the app is packaged — by the
+// build, or by the machine that already runs the 2-hourly refresh — and read instead of
+// the database. It carries NO TTL: it is not a cache of a live source, it IS the source
+// in a deployment, exactly as the published HTML dashboard is a 2-hourly snapshot rather
+// than a live page.
+//
+// This is what makes the app hostable. Serverless gives every concurrent request its own
+// instance and its own pool, against a role that allows TEN connections in total and
+// shares them with pgAdmin and the refresh cron. Four readers would exhaust it. With a
+// snapshot the deployed app opens no connection at all.
+const SNAP_DIR = path.join(process.cwd(), 'data', 'snapshots');
+function readShipped(key) {
+  try {
+    const raw = fs.readFileSync(path.join(SNAP_DIR, key + '.json'), 'utf8');
+    const { at, data } = JSON.parse(raw);
+    return { at, data };
+  } catch { return null; }        // no snapshot: fall through and query
+}
+
+/** Was this dataset shipped, rather than queried? */
+export function shippedAt(key) {
+  const s = readShipped(key);
+  return s ? s.at : null;
+}
+
 export async function getOrBuild(key, build) {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) return hit.data;
   if (inflight.has(key)) return inflight.get(key);
+
+  // shipped first, and it never expires — see the note above
+  const shipped = readShipped(key);
+  if (shipped) { cache.set(key, { at: Date.now(), data: shipped.data }); return shipped.data; }
 
   const onDisk = readDisk(key);
   if (onDisk) { cache.set(key, onDisk); return onDisk.data; }

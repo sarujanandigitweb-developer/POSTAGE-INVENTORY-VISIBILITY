@@ -153,7 +153,7 @@ export default function RecentlyDispatchedTab() {
       </div>
 
       {rows.length === 0 && <div className="empty">No dispatched order matches the current search and filters.</div>}
-      <Pager total={rows.length} page={cur} pages={pages} size={size}
+      <Pager total={rows.length} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="orders" />
 
       {open && (

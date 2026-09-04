@@ -1,4 +1,5 @@
 import { withClient, query } from '@/lib/db';
+import { getOrBuild, shippedAt } from '@/lib/dataset';
 import { classification, CATEGORY_ORDER, skusIn, sectionCounts, imgURL } from '@/lib/classification';
 import { parseLine, region as histRegion } from '@/lib/history-parser';
 import fs from 'node:fs';
@@ -165,7 +166,12 @@ const WH_OVERRIDE = { 33: 'UK Unit 5' };   // no row in inventory.warehouse yet
 // after it carries the list.
 let unplacedCache = null;
 let unplacedRunning = false;
-function unplacedSkus() {
+function unplacedSkus(fromSnapshot) {
+  // A DEPLOYMENT SERVING SNAPSHOTS MUST NOT OPEN A CONNECTION — not even in the
+  // background. This check is a diagnostic (which SKUs are missing from the curated
+  // classification), and it was firing one query per request against a role that allows
+  // ten. It is answered by whoever builds the snapshots, not by the hosted app.
+  if (fromSnapshot) return { pending: false, list: [], skipped: 'served from a snapshot' };
   const fresh = unplacedCache && Date.now() - unplacedCache.at < 10 * 60 * 1000;
   if (!fresh && !unplacedRunning) {
     unplacedRunning = true;
@@ -191,7 +197,44 @@ export async function GET(request) {
     return Response.json({ ok: false, error: 'Unknown category: ' + key }, { status: 400 });
   }
   try {
-    const data = await withClient(async q => {
+    // One snapshot PER CATEGORY, keyed the same way the request is. A single
+    // whole-catalogue snapshot would be one 6,181-row object to load for a section of
+    // 124, which is the cost this route was written to avoid in the first place.
+    const data = await getOrBuild('inventory-' + key, () => buildSnapshot(key));
+
+    const { sections } = classification();
+    // Populations for the whole strip come from the local classification, so every
+    // category shows its real count even though only one was queried. The header's
+    // stock alerts are NOT global — the page computes them from the ACTIVE
+    // category, which is why it reads 62 / 7 on Ceiling Rose. The client does that.
+    return Response.json({
+      ok: true,
+      cat: key,
+      asOf: new Date().toISOString(),
+      count: data.rows.length,
+      unplaced: unplacedSkus(shippedAt('inventory-' + key) !== null),          // null until the background check lands
+      order: CATEGORY_ORDER,
+      sections, counts: sectionCounts(),
+      warehouses: data.warehouses,
+      missingWarehouses: data.missingWarehouses,
+      rows: data.rows,
+    });
+  } catch (e) {
+    // the message is already scrubbed by lib/db, but never echo a query either
+    console.error('[api/inventory]', e.message);
+    return Response.json({ ok: false, error: 'Inventory query failed. See server log.' }, { status: 500 });
+  }
+}
+
+// The snapshot builder, exported for scripts/build-snapshots.mjs. Takes the category
+// because this route snapshots one section at a time: a single whole-catalogue file
+// would be 6,181 rows to load for a section of 124, which is the cost the route was
+// written to avoid. The route calls this same function.
+export function buildSnapshot(cat) {
+  const wanted = skusIn(cat);
+  if (!wanted.length) throw new Error('Unknown category: ' + cat);
+  const key = cat;
+  return withClient(async q => {
       const products = await q(PRODUCTS, [wanted]);
       const pids = products.map(p => p.pid);
 
@@ -307,28 +350,9 @@ export async function GET(request) {
       }
 
       return { rows, warehouses, missingWarehouses };
-    });
-
-    const { sections } = classification();
-    // Populations for the whole strip come from the local classification, so every
-    // category shows its real count even though only one was queried. The header's
-    // stock alerts are NOT global — the page computes them from the ACTIVE
-    // category, which is why it reads 62 / 7 on Ceiling Rose. The client does that.
-    return Response.json({
-      ok: true,
-      cat: key,
-      asOf: new Date().toISOString(),
-      count: data.rows.length,
-      unplaced: unplacedSkus(),          // null until the background check lands
-      order: CATEGORY_ORDER,
-      sections, counts: sectionCounts(),
-      warehouses: data.warehouses,
-      missingWarehouses: data.missingWarehouses,
-      rows: data.rows,
-    });
-  } catch (e) {
-    // the message is already scrubbed by lib/db, but never echo a query either
-    console.error('[api/inventory]', e.message);
-    return Response.json({ ok: false, error: 'Inventory query failed. See server log.' }, { status: 500 });
-  }
+  });
 }
+
+// re-exported so the snapshot script can enumerate the sections without a second
+// copy of the category list
+export { CATEGORY_ORDER };

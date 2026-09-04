@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { matches, extraOptions } from '@/lib/filter';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import { perPage, useAutoRows } from '@/lib/rows';
 import HistoryDialog from './HistoryDialog';
 
 const n = v => (v === 0 ? <span style={{ opacity: .45 }}>0</span>
@@ -15,6 +16,7 @@ export default function InventoryTab({ data, st, set, loading }) {
   const [page, setPage] = useState(1);
   const [hist, setHist] = useState(null);   // { sku, region, data, other }
   const [size, setSize] = useState('15');   // page one first, not 6,181 rows at once
+  const autoRows = useAutoRows();
 
   const cfg = data.sections[st.cat] || null;
   const catRows = data.rows;   // the API returns only the active category
@@ -27,7 +29,10 @@ export default function InventoryTab({ data, st, set, loading }) {
   // are never left looking at an empty page 9 of a narrower result set
   useEffect(() => { setPage(1); }, [st.cat, st.fam, st.sub2, st.attr, st.q, st.wh, st.st]);
 
-  const per = size === 'all' ? (rows.length || 1) : Number(size);
+  // Number('auto') is NaN, and the Pager offers Auto, so picking it turned pages, cur
+  // and the slice into NaN and emptied the table. perPage() is the one place that
+  // knows what 'auto' and 'all' mean; every page size goes through it.
+  const per = perPage(size, rows.length, autoRows);
   const pages = Math.max(1, Math.ceil(rows.length / per));
   const cur = Math.min(page, pages);
   const shown = size === 'all' ? rows : rows.slice((cur - 1) * per, cur * per);
@@ -167,7 +172,7 @@ export default function InventoryTab({ data, st, set, loading }) {
 
       {rows.length === 0 && <div className="empty">No SKUs match the current search and filters.</div>}
 
-      <Pager total={rows.length} page={cur} pages={pages} size={size}
+      <Pager total={rows.length} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="SKUs" />
 
       {hist && <HistoryDialog {...hist} onClose={() => setHist(null)} />}

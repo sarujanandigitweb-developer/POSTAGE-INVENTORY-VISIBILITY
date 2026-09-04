@@ -37,7 +37,7 @@ export function pageList(cur, last, room) {
   return out;
 }
 
-export default function Pager({ total, page, pages, size, onPage, onSize, label }) {
+export default function Pager({ total, page, pages, size, per, onPage, onSize, label }) {
   const [room, setRoom] = useState(7);
   useEffect(() => {
     const fit = () => setRoom(pagerRoom(window.innerWidth));
@@ -46,10 +46,16 @@ export default function Pager({ total, page, pages, size, onPage, onSize, label 
     return () => window.removeEventListener('resize', fit);
   }, []);
 
+  // THE PAGER MUST NOT WORK OUT ITS OWN PAGE SIZE. It used to call useAutoRows() here —
+  // an ESTIMATE from the window height — while Container Details slices its rows with
+  // useFitRows(), a MEASUREMENT of the rendered row. The two disagreed, and the same page
+  // read "Showing 21 of 36 containers" at the top and "Showing 1-15 of 36" at the bottom
+  // with 21 rows actually on screen. The caller owns the number and passes it in; the
+  // estimate survives only as a fallback for a caller that passes nothing.
   const auto = useAutoRows();
-  const per = perPage(size, total, auto);
-  const from = total === 0 ? 0 : (page - 1) * per + 1;
-  const to = size === 'all' ? total : Math.min(page * per, total);
+  const eff = per > 0 ? per : perPage(size, total, auto);
+  const from = total === 0 ? 0 : (page - 1) * eff + 1;
+  const to = size === 'all' ? total : Math.min(page * eff, total);
   const nums = size === 'all' ? [] : pageList(page, pages, room);
 
   return (

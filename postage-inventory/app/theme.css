@@ -726,3 +726,16 @@ table.cdtab tbody td:last-child{text-align:center}
    one on the same baseline; centring made the short cells drift down the tall rows. */
 table.cdtab tbody td{vertical-align:top}
 table.cdtab tbody td.cd-num,table.cdtab tbody td.fxdate{vertical-align:top}
+
+/* TALLER ROWS ON THIS TABLE ALONE. A container row carries a two-line status
+   ("Part received" over "8 of 10 orders arrived"), and at the shared cell padding the
+   second line sits hard against the row border — the page reads cramped next to the
+   published dashboard. --cpy stays the app-wide density knob; this adds to it here
+   rather than replacing it, so the table still tightens on a short window.
+
+   The Auto page size needs no matching edit: Container Details sizes its pages with
+   useFitRows(), which MEASURES the rendered row and the scroll box, so taller rows
+   produce fewer of them on their own. That is the whole reason this table measures
+   instead of modelling — a second hard-coded number here would be one more thing to
+   keep in step, and the two would drift. */
+table.cdtab tbody td{padding-top:calc(var(--cpy) + 5px);padding-bottom:calc(var(--cpy) + 5px)}

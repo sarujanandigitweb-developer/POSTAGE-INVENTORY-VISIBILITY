@@ -30,10 +30,13 @@ export default function SlowMovingTab() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState('25');
   const autoRows = useAutoRows();
+  // ONE number for both the request and the pager. The server pages this table, so
+  // the size sent up and the size the footer describes must be the same value.
+  const per = perPage(size, 0, autoRows);
 
   useEffect(() => {
     let live = true; setBusy(true);
-    const p = new URLSearchParams({ q, pri, stock, type, ph, php, sort, page: String(page), size: String(perPage(size, 0, autoRows)) });
+    const p = new URLSearchParams({ q, pri, stock, type, ph, php, sort, page: String(page), size: String(per) });
     fetch('/api/slow-moving?' + p)
       .then(r => r.json())
       .then(j => { if (!live) return; j.ok ? (setD(j), setErr(null)) : setErr(j.error); setBusy(false); })
@@ -195,7 +198,7 @@ export default function SlowMovingTab() {
       </div>
 
       {d.rows.length === 0 && <div className="empty">No SKUs match the current search and filters.</div>}
-      <Pager total={d.total} page={d.page} pages={d.pages} size={size}
+      <Pager total={d.total} page={d.page} pages={d.pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="SKUs" />
     </>
   );

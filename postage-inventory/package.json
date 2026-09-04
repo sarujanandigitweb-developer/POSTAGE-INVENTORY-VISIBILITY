@@ -7,7 +7,9 @@
     "dev": "next dev -p 3020",
     "build": "next build",
     "start": "next start -p 3020",
-    "lint": "next lint"
+    "lint": "next lint",
+    "snapshots": "node --conditions=react-server scripts/with-alias.mjs",
+    "prebuild": "node --conditions=react-server scripts/with-alias.mjs || echo \"snapshots not built — see the warning above\""
   },
   "dependencies": {
     "next": "^15.5.4",
