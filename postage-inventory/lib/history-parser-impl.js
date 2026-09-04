@@ -1,4 +1,3 @@
-'use strict';
 // Parser for inventory.product_history — REWRITTEN to the four history types the team
 // actually uses. Everything else in that table (catalogue edits, product flags, CSV
 // location moves, order cancellations, "low inventory checkup") is not a warehouse
@@ -142,4 +141,20 @@ function parseLine(line){
 // UK types are UK; German types are German. There is nothing else left to classify.
 const region = tl => tl === GERMAN ? 'DE' : 'UK';
 
-module.exports = { parseLine, region, WAREHOUSE, clean, tidy, qty, informed, warehouseOf };
+// ESM, NOT CommonJS, AND NOT LOADED THROUGH createRequire.
+//
+// This was a .cjs pulled in by lib/history-parser.js with
+// `createRequire(import.meta.url)`. That is a RUNTIME resolution: webpack cannot
+// follow it, so on Vercel the wrapper was left unbundled and its sibling .cjs was
+// never copied beside it. Every request to /api/inventory died with
+//
+//   Error: Cannot find module './history-parser.cjs'
+//   Require stack: /vercel/path0/postage-inventory/lib/history-parser.js
+//
+// and, because the import fails before the route's own try/catch, Next answered with
+// an HTML 500 — which the browser reported as "Unexpected token '<'".
+//
+// Locally it worked, twice over: `next dev` resolves from the real directory, and the
+// trace file even listed the .cjs. Neither is proof the deployed bundle can load it.
+// A plain static export removes the question — webpack bundles this like any module.
+export { parseLine, region, WAREHOUSE, clean, tidy, qty, informed, warehouseOf };
