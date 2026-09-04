@@ -1,6 +1,7 @@
 import 'server-only';
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir } from './data-dir.js';
 
 // The curated placement, exported from the live dashboard's arrays by
 // scripts/export-classification.cjs. build.js states the rule plainly:
@@ -11,7 +12,10 @@ import path from 'node:path';
 // So section and type are DATA, not something to re-derive from a SKU prefix.
 // The first version of this app derived them and disagreed with the dashboard on
 // six of the twelve sections. Re-run the export whenever those arrays change.
-const DIR = path.join(process.cwd(), 'data');
+// Not process.cwd() — see lib/data-dir.js. This read happens at module scope for
+// the inventory route and throws outside its try/catch, so getting it wrong takes
+// the whole route to a 500 HTML page.
+const DIR = dataDir();
 const load = f => JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8'));
 
 let cache = null;

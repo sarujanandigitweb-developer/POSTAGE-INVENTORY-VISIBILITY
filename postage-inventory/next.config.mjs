@@ -15,6 +15,12 @@ const nextConfig = {
   // are simply there. On Vercel the function gets its own bundle, the read throws ENOENT,
   // and every route silently falls back to querying the database — the exact thing the
   // snapshots exist to prevent, against a role that allows ten connections.
+  // A NOTE FOR THE NEXT PERSON: do NOT pin outputFileTracingRoot to this directory.
+  // It looks like the obvious way to stop Next inferring the repository root, and it
+  // fails the build outright — "Collecting build traces" then ENOENT on the first
+  // .nft.json it tries to write. The layout is handled at runtime instead, by
+  // lib/data-dir.js finding the data directory rather than assuming it.
+
   outputFileTracingIncludes: {
     '/api/**': ['./data/**/*.json'],
   },

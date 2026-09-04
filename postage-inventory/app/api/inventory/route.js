@@ -4,6 +4,7 @@ import { classification, CATEGORY_ORDER, skusIn, sectionCounts, imgURL } from '@
 import { parseLine, region as histRegion } from '@/lib/history-parser';
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir } from '@/lib/data-dir';
 
 // PRICE COMMENT IS NOT IN POSTGRES. It is produced by a separate pass of the
 // 2-hourly pipeline (sql/build-shopify-comments.js), which reads a Trello export —
@@ -32,7 +33,7 @@ function pipelineFile(which) {
   if (LOADED[which]) return LOADED[which];
   try {
     LOADED[which] = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), 'data', FILES[which]), 'utf8'));
+      fs.readFileSync(path.join(dataDir(), FILES[which]), 'utf8'));
   } catch { LOADED[which] = {}; }
   return LOADED[which];
 }

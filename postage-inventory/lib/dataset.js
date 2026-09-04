@@ -1,6 +1,7 @@
 import 'server-only';
 import fs from 'node:fs';
 import path from 'node:path';
+import { snapshotDir } from './data-dir.js';
 
 // Fixed Price is ~30k rows and Slow-Moving ~16k. Both are built from several
 // whole-table queries, so they cannot be paginated in SQL without rewriting the
@@ -58,7 +59,7 @@ function writeDisk(key, at, data) {
 // instance and its own pool, against a role that allows TEN connections in total and
 // shares them with pgAdmin and the refresh cron. Four readers would exhaust it. With a
 // snapshot the deployed app opens no connection at all.
-const SNAP_DIR = path.join(process.cwd(), 'data', 'snapshots');
+const SNAP_DIR = snapshotDir();
 function readShipped(key) {
   try {
     const raw = fs.readFileSync(path.join(SNAP_DIR, key + '.json'), 'utf8');
