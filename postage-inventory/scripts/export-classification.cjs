@@ -112,7 +112,15 @@ bounds.forEach(([key, at], i) => {
       if (body[p] === '[') d++;
       else if (body[p] === ']') { d--; if (!d) { end = p + 1; break; } }
     }
-    const fre = /\[\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*\]/g;
+    // THREE OR MORE, not exactly three. The six original sections write their
+    // families as ['code','label','value']; the four newest — Cosmetics, Clothes,
+    // Home Appliances and Refurbished — write a FOURTH element, the SKU prefix:
+    //   ['ZLBT','Laundry bags','Laundry bags','LBT']
+    // A pattern that demanded ']' straight after the third string matched none of
+    // them and silently produced zero families for exactly those four sections, so
+    // their dropdowns offered nothing but "All ...". Anything after the third
+    // string is consumed up to the closing bracket and ignored.
+    const fre = /\[\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*(?:,[^\]]*)?\]/g;
     let f; while ((f = fre.exec(body.slice(start, end)))) {
       fams.push({ code: f[1], label: decode(f[2]), value: f[3] });
     }
@@ -140,7 +148,10 @@ console.log('  transforms  : ' + handles + ' handles HAP->SPR · ' + waCollapsed
             ' Wall Arm codes collapsed · ' + lbRetyped + ' Bulbs re-typed');
 console.log('  classification.json : ' + Object.keys(cls).length.toLocaleString() + ' SKUs');
 console.log('  sections.json       : ' + Object.keys(sections).length + ' sections');
-const LIVE = { CR:383, LS:996, PH:482, WA:181, LH:417, LB:335, SPR:1487, LGT:563,
+// What the published dashboard's own category strip shows. Kept in step with it by
+// hand: when the strip moves, this moves. CR and LGT went 383->384 and 563->564 when
+// CRSF100CF and WSSH68YBCF were added to the embedded arrays.
+const LIVE = { CR:384, LS:996, PH:482, WA:181, LH:417, LB:335, SPR:1487, LGT:564,
                CSM:124, CLO:177, HAP:684, RFB:352 };
 let bad = 0;
 for (const [k, v] of Object.entries(sections)) {

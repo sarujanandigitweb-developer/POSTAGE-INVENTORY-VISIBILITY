@@ -370,7 +370,28 @@
     "name": "Cosmetics",
     "placeholder": "e.g. CSBE\\u2026, belt, hair clip, wallet\\u2026",
     "file": "cosmetics-inventory",
-    "fams": [],
+    "fams": [
+      {
+        "code": "XHO",
+        "label": "Hair Ornaments",
+        "value": "Hair Ornaments"
+      },
+      {
+        "code": "XHC",
+        "label": "Hair Clips",
+        "value": "Hair Clips"
+      },
+      {
+        "code": "XBE",
+        "label": "Belt",
+        "value": "Belt"
+      },
+      {
+        "code": "XWA",
+        "label": "Wallets",
+        "value": "Wallets"
+      }
+    ],
     "sub2": null,
     "attr": null
   },
@@ -379,7 +400,53 @@
     "name": "Clothes",
     "placeholder": "e.g. CTBO\\u2026, boxer, pajamas, apron\\u2026",
     "file": "clothes-inventory",
-    "fams": [],
+    "fams": [
+      {
+        "code": "YBO",
+        "label": "Boxer",
+        "value": "Boxer"
+      },
+      {
+        "code": "YMS",
+        "label": "Shorts (M)",
+        "value": "Shorts (M)"
+      },
+      {
+        "code": "YMP",
+        "label": "Pajamas (M)",
+        "value": "Pajamas (M)"
+      },
+      {
+        "code": "YFP",
+        "label": "Pajamas (Fem)",
+        "value": "Pajamas (Fem)"
+      },
+      {
+        "code": "YKMP",
+        "label": "Pajamas (K.M)",
+        "value": "Pajamas (K.M)"
+      },
+      {
+        "code": "YKFP",
+        "label": "Pajamas (K.Fem)",
+        "value": "Pajamas (K.Fem)"
+      },
+      {
+        "code": "YKMT",
+        "label": "T-Shirts (K.M)",
+        "value": "T-Shirts (K.M)"
+      },
+      {
+        "code": "YKFT",
+        "label": "T-Shirts (K.Fem)",
+        "value": "T-Shirts (K.Fem)"
+      },
+      {
+        "code": "YAP",
+        "label": "Apron",
+        "value": "Apron"
+      }
+    ],
     "sub2": null,
     "attr": null
   },
@@ -388,7 +455,98 @@
     "name": "Home Appliances",
     "placeholder": "e.g. CK\\u2026, clock, mail bag, table cloth\\u2026",
     "file": "home-appliances-inventory",
-    "fams": [],
+    "fams": [
+      {
+        "code": "ZLBT",
+        "label": "Laundry bags",
+        "value": "Laundry bags"
+      },
+      {
+        "code": "ZSB",
+        "label": "Storage Box",
+        "value": "Storage Box"
+      },
+      {
+        "code": "ZHB",
+        "label": "Hanging layer bags",
+        "value": "Hanging layer bags"
+      },
+      {
+        "code": "ZMB",
+        "label": "Mail bags",
+        "value": "Mail bags"
+      },
+      {
+        "code": "ZSS",
+        "label": "Sports",
+        "value": "Sports"
+      },
+      {
+        "code": "ZBS",
+        "label": "Bathroom sets",
+        "value": "Bathroom sets"
+      },
+      {
+        "code": "ZCK",
+        "label": "Clock",
+        "value": "Clock"
+      },
+      {
+        "code": "ZWM",
+        "label": "Weight Machine",
+        "value": "Weight Machine"
+      },
+      {
+        "code": "ZMA",
+        "label": "Mat",
+        "value": "Mat"
+      },
+      {
+        "code": "ZWB",
+        "label": "White Board",
+        "value": "White Board"
+      },
+      {
+        "code": "ZFCB",
+        "label": "Clip Board",
+        "value": "Clip Board"
+      },
+      {
+        "code": "ZAFW",
+        "label": "Artificial Flowers",
+        "value": "Artificial Flowers"
+      },
+      {
+        "code": "ZFWS",
+        "label": "Foot wear",
+        "value": "Foot wear"
+      },
+      {
+        "code": "ZTC",
+        "label": "Table cloth",
+        "value": "Table cloth"
+      },
+      {
+        "code": "ZSUA",
+        "label": "Shower curtain",
+        "value": "Shower curtain"
+      },
+      {
+        "code": "ZWK",
+        "label": "Walking Stick",
+        "value": "Walking Stick"
+      },
+      {
+        "code": "ZBTR",
+        "label": "Back Scratchers",
+        "value": "Back Scratchers"
+      },
+      {
+        "code": "ZPMS",
+        "label": "Mortar and Pestle",
+        "value": "Mortar and Pestle"
+      }
+    ],
     "sub2": null,
     "attr": {
       "key": "gp",
@@ -400,7 +558,13 @@
     "name": "Refurbished",
     "placeholder": "e.g. RB\\u2026, refurbished\\u2026",
     "file": "refurbished-inventory",
-    "fams": [],
+    "fams": [
+      {
+        "code": "RRB",
+        "label": "Refurbished",
+        "value": "Refurbished"
+      }
+    ],
     "sub2": null,
     "attr": null
   }

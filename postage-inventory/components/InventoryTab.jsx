@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { matches, extraOptions } from '@/lib/filter';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import { typeClass } from '@/lib/type-class';
+import { commentLabel, commentTone } from '@/lib/comment-label';
+import CommentDialog from './CommentDialog';
 import { perPage, useAutoRows } from '@/lib/rows';
 import HistoryDialog from './HistoryDialog';
 
@@ -17,6 +20,7 @@ export default function InventoryTab({ data, st, set, loading }) {
   const [hist, setHist] = useState(null);   // { sku, region, data, other }
   const [size, setSize] = useState('15');   // page one first, not 6,181 rows at once
   const autoRows = useAutoRows();
+  const [cmt, setCmt] = useState(null);   // the Price Comment dialog
 
   const cfg = data.sections[st.cat] || null;
   const catRows = data.rows;   // the API returns only the active category
@@ -122,7 +126,14 @@ export default function InventoryTab({ data, st, set, loading }) {
             {shown.map(r => (
               <tr key={r.s}>
                 <td className="sku">{r.s}</td>
-                <td>{r.t || dash()}</td>
+                {/* The published page renders this as a BADGE, not raw text, and the
+                    difference is not only cosmetic: the column is nowrap in a
+                    width:max-content table, so "Double Wall/Ceiling Arm / Multi-Lamp
+                    Holder" stretched the column past 270px and pushed every warehouse
+                    column off screen. The badge wraps inside a capped width instead. */}
+                <td className="ty">
+                  {r.t ? <span className={'type ' + typeClass(r.f)}>{r.t}</span> : dash()}
+                </td>
                 <td style={{ textAlign: 'center' }}>
                   <ImageZoom src={r.i} caption={r.s} />
                 </td>
@@ -143,7 +154,18 @@ export default function InventoryTab({ data, st, set, loading }) {
                       ? <>{r.alt.sym}{r.alt.v.toFixed(2)} <span className="cur" title={'From the ' + r.alt.ch + ' listing — no UK price exists for this SKU.'}>{r.alt.cur}</span></>
                       : dash()}
                 </td>
-                <td className="pcom" title={r.pc || ''}>{r.pc ? <span className="cdclamp">{r.pc}</span> : dash()}</td>
+                {/* One WORD, and the sentence behind a click — the published page puts
+                    its comment behind a `.cmb` button for the same reason. The title
+                    still carries the full text for a hover. */}
+                <td className="pcom">
+                  {r.pc ? (
+                    <button type="button" title={r.pc}
+                            className={'cmb cmb-' + commentTone(commentLabel(r.pc))}
+                            onClick={() => setCmt({ sku: r.s, text: r.pc })}>
+                      {commentLabel(r.pc)}
+                    </button>
+                  ) : dash()}
+                </td>
                 <td className="num">{r.ukh
                   ? <button type="button" className="hbadge"
                             onClick={() => setHist({ sku: r.s, region: 'UK', data: r.ukh, other: r.deh?.n || 0 })}>
@@ -176,6 +198,7 @@ export default function InventoryTab({ data, st, set, loading }) {
              onPage={setPage} onSize={setSize} label="SKUs" />
 
       {hist && <HistoryDialog {...hist} onClose={() => setHist(null)} />}
+      {cmt && <CommentDialog {...cmt} onClose={() => setCmt(null)} />}
     </div>
   );
 }

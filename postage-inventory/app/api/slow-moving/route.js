@@ -60,12 +60,62 @@ const SQL = {
     WHERE COALESCE(NULLIF(oi.real_sku,''), oi.item_sku) LIKE '%+%' AND ${LIVE}
     GROUP BY 1`,
   // names, where inventory.products has none. Each source only fills a gap.
+  // TWO GUARDS THAT WERE MISSING, AND THEY ARE THE WHOLE DIFFERENCE.
+  //
+  //   site='UK' — without it a German or French listing wins the name, and those
+  //   titles are variant OPTIONS, not product names. The tab was showing "Schwarz /
+  //   Ja", "Argent brosse / Non" and "Typ 8" as product names on 692 rows.
+  //
+  //   wrong_sku=0 — a listing flagged wrong_sku is one whose SKU mapping is known to
+  //   be bad. Taking its title puts a DIFFERENT product's name against this SKU.
+  //
+  // B&Q sits third, before eBay, exactly as the refresh has it: promoting eBay into
+  // that slot let it win names that belong to B&Q. The order is the precedence.
   shopName: `SELECT upper(COALESCE(NULLIF(mapped_sku,''),sku)) AS s, min(title) AS t
-             FROM listings.shopify_listings WHERE title IS NOT NULL AND title <> '' GROUP BY 1`,
+             FROM listings.shopify_listings
+             WHERE site='UK' AND title IS NOT NULL AND title <> ''
+               AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
   amzName: `SELECT upper(COALESCE(NULLIF(mapped_sku,''),sku)) AS s, min(title) AS t
-            FROM listings.amazon_listings WHERE title IS NOT NULL AND title <> '' GROUP BY 1`,
+            FROM listings.amazon_listings
+            WHERE site='UK' AND title IS NOT NULL AND title <> ''
+              AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
+  bqName: `SELECT upper(COALESCE(NULLIF(mapped_sku,''),sku)) AS s, min(title) AS t
+           FROM listings.bandq_listings
+           WHERE title IS NOT NULL AND title <> ''
+             AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
   ebayName: `SELECT upper(sku) AS s, min(title) AS t
-             FROM listings.ebay_listings WHERE title IS NOT NULL AND title <> '' GROUP BY 1`,
+             FROM listings.ebay_listings
+             WHERE site='UK' AND title IS NOT NULL AND title <> ''
+               AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
+  // Last resort for a name: the newest order line's own wording — the most recent
+  // text a customer actually saw. Ordered by id, not order_date: ids are issued in
+  // insertion order, and joining for the date costs ~110s on the refresh for the
+  // same answer.
+  lineName: `SELECT DISTINCT ON (upper(COALESCE(NULLIF(real_sku,''),item_sku)))
+                    upper(COALESCE(NULLIF(real_sku,''),item_sku)) AS s, item_title AS t
+             FROM order_management.order_item_info
+             WHERE item_title IS NOT NULL AND item_title <> '' ORDER BY 1, id DESC`,
+
+  // THE SAME CHAIN FOR IMAGES. This route read inventory.product_images and stopped;
+  // ~3,200 SKUs have no row there at all, and the picture usually exists on a listing
+  // or an order line. Same sources, same order, same two guards.
+  shopImg: `SELECT upper(COALESCE(NULLIF(mapped_sku,''),sku)) AS s, min(main_image_url) AS u
+            FROM listings.shopify_listings
+            WHERE site='UK' AND main_image_url <> '' AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
+  amzImg: `SELECT upper(COALESCE(NULLIF(mapped_sku,''),sku)) AS s, min(main_image_url) AS u
+           FROM listings.amazon_listings
+           WHERE site='UK' AND main_image_url <> '' AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
+  bqImg: `SELECT upper(COALESCE(NULLIF(mapped_sku,''),sku)) AS s, min(main_image_url) AS u
+          FROM listings.bandq_listings
+          WHERE main_image_url <> '' AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
+  ebayImg: `SELECT upper(sku) AS s, min(main_image_url) AS u
+            FROM listings.ebay_listings
+            WHERE site='UK' AND main_image_url IS NOT NULL AND main_image_url <> ''
+              AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
+  lineImg: `SELECT DISTINCT ON (upper(COALESCE(NULLIF(real_sku,''),item_sku)))
+                   upper(COALESCE(NULLIF(real_sku,''),item_sku)) AS s, item_img AS u
+            FROM order_management.order_item_info
+            WHERE item_img IS NOT NULL AND item_img <> '' ORDER BY 1, id DESC`,
   // PH = the person who owns a category. ph_category_products.ref_id is a
   // MARKETPLACE reference (ASIN / eBay item id / EAN), never a SKU, so it has to
   // be resolved through the listing tables.
@@ -129,19 +179,49 @@ async function build() {
       const t = (r.title || '').replace(/\s+/g, ' ').trim();
       if (t && t !== 'Combo Default Title.') name.set(r.sku, t);
     }
-    for (const key of ['shopName', 'amzName', 'ebayName']) {
+    // UK listings first, order line last. Each source only fills a gap.
+    for (const key of ['shopName', 'amzName', 'bqName', 'ebayName', 'lineName']) {
       for (const r of await q(SQL[key])) {
-        if (!name.has(r.s)) {
+        if (r.s && !name.has(r.s)) {
           const t = (r.t || '').replace(/\s+/g, ' ').trim();
           if (t) name.set(r.s, t);
         }
       }
     }
 
+    // SOME COMBO IMAGES ARE FILED UNDER A FILENAME NAMING A DIFFERENT SKU — 38 of the
+    // 156 comboproducts rows. The join is correct; the stored file is simply wrong.
+    // Putting another product's photo beside this SKU on a disposal report is worse
+    // than showing nothing, so a candidate whose filename names a different SKU is
+    // dropped. Only these URLs can be checked — they are the ones carrying a SKU.
+    const namesAnother = (sku, url) => {
+      if (!/comboproducts\//i.test(url || '')) return false;
+      let f = String(url).split('/').pop().replace(/\.(jpg|jpeg|png|webp)$/i, '');
+      try { f = decodeURIComponent(f); } catch { /* leave it encoded */ }
+      return f.toUpperCase() !== String(sku).toUpperCase();
+    };
+
     const img = new Map();
     for (const r of await q(SQL.images)) {
       const sku = byPid.get(r.pid);
-      if (sku) img.set(sku, r.u || r.p);
+      // THE CATALOGUE'S OWN IMAGES NEED THE GUARD TOO. This source was trusted
+      // unconditionally, so six rows carried a photo whose filename names a different
+      // SKU — CRSF1208WH+…+SPSPWH8PK showing …+SPUSWH8PK.jpg.
+      if (!sku) continue;
+      const u = r.u || r.p;
+      if (namesAnother(sku, r.u)) continue;
+      img.set(sku, u);
+    }
+    for (const key of ['shopImg', 'amzImg', 'bqImg', 'ebayImg', 'lineImg']) {
+      for (const r of await q(SQL[key])) {
+        const u = String(r.u || '').trim();
+        // order lines carry keys that are not catalogue SKUs at all — free text and
+        // internal codes — so they are dropped before the guard, not counted as
+        // mismatches.
+        if (!r.s || !u || !bySku.has(r.s)) continue;
+        if (img.has(r.s) || namesAnother(r.s, u)) continue;
+        img.set(r.s, u.replace(/^http:\/\//i, 'https://'));
+      }
     }
 
     const ph = new Map();
