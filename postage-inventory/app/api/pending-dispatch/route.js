@@ -1,4 +1,5 @@
 import { withClient } from '@/lib/db';
+import { ymd } from '@/lib/dates';
 
 // MISSING SHIPMENTS — PENDING DISPATCH.
 // SQL ported from ../sql/refresh/extract/pending-dispatch.js, which carries the
@@ -98,7 +99,9 @@ export async function GET() {
         const li = lines[r.id] || [];
         rows.push({
           o: r.order_id,
-          date: r.order_date ? new Date(r.order_date).toISOString().slice(0, 10) : null,
+          // ymd, not toISOString — see lib/dates.js. An order placed before 05:30
+          // was being shown on the previous day.
+          date: ymd(r.order_date),
           k: [...new Set(li.map(x => x.s).filter(Boolean))].join(', '),
           l: li.length,
           p: (r.payment_status || '').trim(),      // '' renders as "-", never invented

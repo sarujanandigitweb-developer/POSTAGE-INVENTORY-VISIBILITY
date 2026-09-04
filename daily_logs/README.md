@@ -30,6 +30,14 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | REQ-03-D01 | Derived + declared-prefix classifier, six new sections, incoming stock, pagination, schema review | 2026-08-25 |
 | REQ-04 | Stock audit trail, live postage data, and correctness repairs to price and container | 2026-08-26 |
 | REQ-04-D01 | product_history parsed to a movement log, listing_data prices, UK Unit 5, order-date containers, live Google Sheet view | 2026-08-26 |
+| REQ-07 | SKU Fixed Price tab | 2026-08-31 |
+| REQ-07-D01 | Fixed selling price across four marketplaces, coverage strip, absent channels declared | 2026-08-31 |
+| REQ-08 | Missing Shipments (Pending Dispatch) and a responsive dashboard | 2026-09-01 |
+| REQ-08-D01 | Open-order queue, four measured breakpoints, small-screen tab menu | 2026-09-01 |
+| REQ-09 | A second dashboard in Next.js, reading PostgreSQL directly | 2026-09-02 |
+| REQ-09-D01 | App bootstrapped, UI ported verbatim, tab list moved to a sidebar, Inventory tab live | 2026-09-02 |
+| REQ-10 | Container Details, Recently Dispatched, the new postage workbook, and the date-conversion repair | 2026-09-03 |
+| REQ-10-D01 | Two new tabs, dispatch views grouped, six postage sections from two workbooks, seven date call sites fixed, five Next.js tabs ported | 2026-09-03 |
 
 ## Index
 
@@ -39,3 +47,9 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | 2026-08-24 | Monday | REQ-02-D01 | [2026-08-24__sarujanan__inv-piv__REQ-02-D01.md](2026-08-24/2026-08-24__sarujanan__inv-piv__REQ-02-D01.md) |
 | 2026-08-25 | Tuesday | REQ-03-D01 | [2026-08-25__sarujanan__inv-piv__REQ-03-D01.md](2026-08-25/2026-08-25__sarujanan__inv-piv__REQ-03-D01.md) |
 | 2026-08-26 | Wednesday | REQ-04-D01 | [2026-08-26__sarujanan__inv-piv__REQ-04-D01.md](2026-08-26/2026-08-26__sarujanan__inv-piv__REQ-04-D01.md) |
+| 2026-08-27 | Thursday | REQ-05-D01 | [2026-08-27__sarujanan__inv-piv__REQ-05-D01.md](2026-08-27/) |
+| 2026-08-28 | Friday | REQ-06-D01 | [2026-08-28__sarujanan__inv-piv__REQ-06-D01.md](2026-08-28/) |
+| 2026-08-31 | Monday | REQ-07-D01 | [2026-08-31__sarujanan__inv-piv__REQ-07-D01.md](2026-08-31/2026-08-31__sarujanan__inv-piv__REQ-07-D01.md) |
+| 2026-09-01 | Tuesday | REQ-08-D01 | [2026-09-01__sarujanan__inv-piv__REQ-08-D01.md](2026-09-01/2026-09-01__sarujanan__inv-piv__REQ-08-D01.md) |
+| 2026-09-02 | Wednesday | REQ-09-D01 | [2026-09-02__sarujanan__inv-piv__REQ-09-D01.md](2026-09-02/2026-09-02__sarujanan__inv-piv__REQ-09-D01.md) |
+| 2026-09-03 | Thursday | REQ-10-D01 | [2026-09-03__sarujanan__inv-piv__REQ-10-D01.md](2026-09-03/2026-09-03__sarujanan__inv-piv__REQ-10-D01.md) |

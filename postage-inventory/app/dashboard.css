@@ -331,8 +331,14 @@ input[type=search]:focus,select:focus{outline:2px solid var(--accent);outline-of
   padding:var(--cpy) var(--cpx);border-bottom:1px solid var(--line);background:var(--head2)}
 .tbar .status{padding:0;margin-right:auto;gap:14px}
 .tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
-.tools input[type=search]{min-width:250px}
-.tools select{min-width:145px}
+/* A select with no max-width grows to its LONGEST OPTION. "All PH categories" carries
+   51 category names, so it was rendering ~270px wide and pushing Sort and Clear onto a
+   second row. The published page caps every filter at 152px for exactly this reason.
+   The search gives way first — it is the one control that reads fine when narrower. */
+.tools input[type=search]{flex:0 1 240px;min-width:170px}
+.tools select{min-width:118px;max-width:150px}
+/* an option list may be wider than the closed control; only the closed box is capped */
+.tools select option{max-width:none}
 .tools input[type=search],.tools select,.tools .btn{padding:var(--cpy) 9px;font-size:var(--fs)}
 .scroll{overflow:auto;flex:none;height:calc(100vh - 62px);min-height:200px}
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:12.5px}
@@ -491,17 +497,17 @@ td:has(> img.thumb){padding-top:5px;padding-bottom:5px}
 .fxtog[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
 
 /* price coverage strip */
-.fxcov{display:flex;align-items:center;gap:16px;background:var(--panel);
+.fxcov{display:flex;align-items:center;gap:12px;flex-wrap:nowrap;overflow-x:auto;background:var(--panel);
   border:1px solid var(--line);border-radius:12px;padding:8px 16px}
 .fxcovlab{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
   color:var(--ink);line-height:1.3;flex:none;padding-right:16px;border-right:1px solid var(--line);
   align-self:stretch;display:flex;flex-direction:column;justify-content:center}
 .fxcovlab span{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:10.5px}
-.fxtiles{display:flex;flex:1;gap:14px;flex-wrap:wrap;min-width:0}
-.fxtile{display:flex;align-items:center;gap:9px;flex:1 1 132px;min-width:124px}
-.fxlogo{width:32px;height:32px;border-radius:8px;flex:none;display:flex;align-items:center;
+.fxtiles{display:flex;flex:1 1 auto;gap:12px;flex-wrap:nowrap;min-width:min-content}
+.fxtile{display:flex;align-items:center;gap:7px;flex:1 1 104px;min-width:104px}
+.fxlogo{width:24px;height:24px;border-radius:6px;flex:none;display:flex;align-items:center;
   justify-content:center;background:#fff;border:1px solid var(--line);overflow:hidden}
-.fxlogo svg{width:19px;height:19px;display:block}
+.fxlogo svg{width:15px;height:15px;display:block}
 .fxlogo img{width:100%;height:100%;object-fit:cover;display:block}
 .fxtile .t{display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .fxtile .t b{font-size:12px;font-weight:700;color:var(--ink)}
@@ -512,8 +518,10 @@ td:has(> img.thumb){padding-top:5px;padding-bottom:5px}
 .fxtot{flex:none;text-align:right;padding-left:16px;border-left:1px solid var(--line);
   align-self:stretch;display:flex;flex-direction:column;justify-content:center;max-width:210px}
 .fxtot .l{font-size:11px;color:var(--muted)}
-.fxtot .n{font-size:21px;font-weight:800;color:var(--accent);line-height:1.1}
-.fxtot .cap{font-size:10px;color:var(--muted);line-height:1.25;margin-top:1px;max-width:170px}
+.fxtot .n{font-size:17px;font-weight:800;color:var(--accent);line-height:1.1}
+/* The caption repeated the PRICE COVERAGE label a few inches to its left and cost
+   170px — enough on its own to push the sixth marketplace onto a second line. */
+.fxtot .cap{display:none}
 
 .fxbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .fxcount{color:var(--muted);font-size:var(--fs)}
@@ -526,7 +534,7 @@ td:has(> img.thumb){padding-top:5px;padding-bottom:5px}
 table.fxtab{border-collapse:separate;border-spacing:0;width:100%;min-width:1160px;
   table-layout:fixed;font-size:var(--fs)}
 table.fxtab.fit{min-width:0}
-col.c-sku{width:150px} col.c-img{width:68px}  col.c-name{width:30%} col.c-type{width:88px}
+col.c-sku{width:150px} col.c-img{width:94px}  col.c-name{width:30%} col.c-type{width:88px}
 col.c-p{width:104px}   col.c-na{width:88px}   col.c-upd{width:112px}
 table.fxtab th,table.fxtab td{padding:calc(var(--cpy) + 1px) var(--cpx);border-bottom:1px solid var(--line);text-align:left;
   white-space:nowrap;vertical-align:middle}
@@ -552,7 +560,12 @@ table.fxtab td.fxsku{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;fon
 .fxcopy:hover{color:var(--accent);background:var(--accent-soft)}
 .fxcopy.done{color:#166534}
 table.fxtab td.fximg{text-align:center;padding:4px}
-.fxfr{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;
+/* Pinned square. A filled cell is a <button> and an empty one a <span>: two element
+   types with different UA defaults, so width/height alone did not land the same on
+   both and the empty frame read as a tall rectangle beside its neighbours. */
+.fxfr{display:inline-flex;align-items:center;justify-content:center;
+  width:46px;height:46px;min-width:46px;min-height:46px;max-height:46px;
+  flex:none;vertical-align:middle;font:inherit;line-height:0;
   padding:2px;border:2px solid var(--fx-frame);border-radius:9px;background:#fff;
   box-shadow:0 1px 2px rgba(16,24,40,.06);transition:border-color .12s,box-shadow .12s,transform .12s}
 .fxfr:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(31,79,216,.18);transform:translateY(-1px)}
@@ -651,7 +664,7 @@ table.fxtab td.fxdate{color:var(--muted);font-size:12px;font-variant-numeric:tab
 .pddet{border:1px solid var(--line);background:var(--panel);color:var(--accent);font:inherit;
   font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}
 .pddet:hover{background:var(--accent-soft);border-color:var(--accent)}
-table.pdtab td.pd-to{white-space:normal;line-height:1.3;font-size:12px}
+table.pdtab td.pd-to,table.rdtab td.pd-to{white-space:normal;line-height:1.3;font-size:11.5px}
 .pdmgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 18px;
   margin:0 0 14px}
 .pdmgrid .f{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
@@ -678,18 +691,21 @@ table.pdlines td.sku{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;fon
 :root[data-theme=dark] .pdlow{color:#fca5a5}
 
 /* ---- Pending Dispatch ------------------------------------------------------ */
-table.pdtab{min-width:1560px}
+/* 158+98+200+96+150+118+104+220+88+96+88+88+88 = 1592, the 13 columns this table
+   actually renders. table-layout:fixed divides the width EQUALLY when no widths are
+   declared, which is what pushed every long value over the column beside it. */
+table.pdtab{min-width:1592px}
 col.p-ord{width:158px}  col.p-date{width:98px}  col.p-sku{width:200px} col.p-mkt{width:96px}
 col.p-to{width:150px}   col.p-wh{width:118px}   col.p-pay{width:104px}
-col.p-disp{width:168px} col.p-days{width:88px}  col.p-pend{width:120px} col.p-age{width:96px}
+col.p-disp{width:220px} col.p-days{width:88px}  col.p-age{width:96px}
 col.p-pri{width:88px}   col.p-sla{width:88px}   col.p-det{width:88px}
-table.pdtab td.pd-ord{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+table.pdtab td.pd-ord,table.rdtab td.pd-ord{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
   font-weight:700;white-space:normal;overflow-wrap:anywhere}
-table.pdtab td.pd-sku{white-space:normal;line-height:1.35;overflow-wrap:anywhere;
+table.pdtab td.pd-sku,table.rdtab td.pd-sku{white-space:normal;line-height:1.35;overflow-wrap:anywhere;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
 table.pdtab td.pd-days{text-align:right;font-variant-numeric:tabular-nums;font-weight:800;font-size:14px}
 table.pdtab thead th.pd-days{text-align:right}
-table.pdtab td.pd-none{color:var(--muted);opacity:.45;text-align:center}
+table.pdtab td.pd-none,table.rdtab td.pd-none{color:var(--muted);opacity:.45;text-align:center}
 /* The small grey note under a table cell — the tracking number, or "2 lines". It used to
    be called .pdlines, the same name as the order-lines TABLE in the dialog, and
    display:block turned that table into a block box: its cells shrank to content width and
@@ -714,8 +730,10 @@ table.pdtab td.pd-none{color:var(--muted);opacity:.45;text-align:center}
    the px columns alone already exceeded the table's min-width, and each character wrapped
    onto its own line. The six columns the database cannot fill are kept narrow — they hold
    a dash, so giving them 110px each spent 622px on nothing. */
-table.smtab{min-width:1918px}
-col.s-sku{width:132px} col.s-img{width:64px}  col.s-name{width:250px} col.s-type{width:92px}
+/* 132+94+250+92+158+86+196+104+84+84+78+92+150+88+88+84+88 = 1948, the 17 columns this
+   table renders — the same set the published dashboard carries. */
+table.smtab{min-width:1948px}
+col.s-sku{width:132px} col.s-img{width:94px}  col.s-name{width:250px} col.s-type{width:92px}
 col.s-par{width:158px} col.s-qty{width:86px}  col.s-loc{width:196px}  col.s-date{width:104px}
 col.s-days{width:84px} col.s-act{width:84px}  col.s-aq{width:78px}    col.s-pri{width:92px}
 col.s-ph{width:150px}  col.s-asg{width:88px}  col.s-tgt{width:88px}   col.s-st{width:84px}
@@ -930,3 +948,35 @@ table.smtab td.sm-none{color:var(--muted);opacity:.42;text-align:center}
   .wrap{margin:0 14px 8px}
   .fxwrap,.smwrap{padding:8px 16px 8px}
 }
+
+/* ---- column widths for the two tables that never had any ------------------- */
+/* table-layout:fixed with NO declared widths divides the table equally between the
+   columns, and every cell here is white-space:nowrap with no overflow rule — so a long
+   value paints straight over its neighbour. The CSS carried col.p-* and col.s-* across
+   from the HTML page, but no component ever rendered a <colgroup> for them to match.
+
+   Recently Dispatched: 165+92+190+108+150+120+180+158+204+96+136+84 = 1683 */
+table.rdtab{min-width:1683px}
+col.r-ord{width:165px}  col.r-date{width:92px}  col.r-sku{width:190px}
+col.r-mkt{width:108px}  col.r-to{width:150px}   col.r-wh{width:120px}
+col.r-cour{width:180px} col.r-trk{width:158px}  col.r-disp{width:204px}
+col.r-turn{width:96px}  col.r-pri{width:136px}  col.r-det{width:84px}
+
+/* Container Details: 190+74+132+140+96*4+196+112*2+104 = 1444 */
+/* Re-cut for nine columns. table-layout:fixed hands leftover width to every column
+   EQUALLY, so a low declared total inflates all of them: at 1056px each of the nine grew
+   ~82px on a 1790px screen and the Manifest button sat adrift in half an empty cell.
+   1240 shared out where the content is keeps the slack to ~61px. */
+table.cdtab{min-width:1240px}
+col.cc-name{width:260px} col.cc-rg{width:84px}  col.cc-st{width:168px}
+col.cc-sg{width:168px}   col.cc-n{width:100px}
+col.cc-d{width:124px}    col.cc-act{width:112px}
+table.cdtab td.cd-name{white-space:normal;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+table.cdtab td.cd-num,table.cdtab th.cd-num{text-align:right;font-variant-numeric:tabular-nums}
+table.cdtab td.cdsup{white-space:normal;line-height:1.3;font-size:11.5px;color:var(--muted)}
+
+/* An order can list every SKU on it. Two lines, then an ellipsis; the full list is on
+   the row's Detail dialog and in the hover title. The clamp goes on a SPAN, never the
+   cell: display:-webkit-box on a <td> takes it out of table layout entirely. */
+table.rdtab td .rdclip,table.pdtab td .rdclip{display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}

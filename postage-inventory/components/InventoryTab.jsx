@@ -1,4 +1,5 @@
 'use client';
+import ImageZoom from './ImageZoom';
 import { useEffect, useMemo, useState } from 'react';
 import { matches, extraOptions } from '@/lib/filter';
 import { IconSearch, IconReset } from './Icons';
@@ -118,9 +119,7 @@ export default function InventoryTab({ data, st, set, loading }) {
                 <td className="sku">{r.s}</td>
                 <td>{r.t || dash()}</td>
                 <td style={{ textAlign: 'center' }}>
-                  {r.i ? <img src={r.i} alt="" width={34} height={34} loading="lazy"
-                              style={{ objectFit: 'contain', borderRadius: 4 }} />
-                       : <span style={{ opacity: .4 }}>—</span>}
+                  <ImageZoom src={r.i} caption={r.s} />
                 </td>
                 <td className="num">{n(r.a)}</td><td>{loc(r.al)}</td>
                 <td className="num">{n(r.b)}</td><td>{loc(r.bl)}</td>

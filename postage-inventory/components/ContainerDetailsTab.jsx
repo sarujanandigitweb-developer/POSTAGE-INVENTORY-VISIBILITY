@@ -1,8 +1,10 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { perPage, useFitRows } from '@/lib/rows';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
 import Loading from './Loading';
+import Segmented from './Segmented';
 
 const n = v => (v === null || v === undefined ? '—' : Number(v).toLocaleString());
 const STATUS = ['Upcoming', 'Part received', 'Received'];
@@ -19,9 +21,15 @@ export default function ContainerDetailsTab() {
   const [stage, setStage] = useState('');
   const [sort, setSort] = useState('date');
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState('15');
-  const [open, setOpen] = useState(null);      // the container whose manifest is showing
+  // Auto, so the page fills the window. A fixed 15 left a 230px empty band under the
+  // last row on a tall screen and hid rows that would have fitted.
+  const [size, setSize] = useState('auto');
+  const [open, setOpen] = useState(null);
+  // measured off this table's own scroll box, not guessed from the window
+  const scrollRef = useRef(null);
+  const autoRows = useFitRows(scrollRef, null, d ? d.rows.length : 0);
   const [mq, setMq] = useState('');            // manifest search
+  const [mtab, setMtab] = useState('items');   // 'summary' | 'items'
   const [mpage, setMpage] = useState(1);
   const msize = 12;
 
@@ -48,7 +56,7 @@ export default function ContainerDetailsTab() {
   if (err) return <div className="empty">{err}</div>;
   if (!d) return <Loading what="containers" cols={12} rows={8} />;
 
-  const per = size === 'all' ? (d.rows.length || 1) : Number(size);
+  const per = perPage(size, d.rows.length, autoRows);
   const pages = Math.max(1, Math.ceil(d.rows.length / per));
   const cur = Math.min(page, pages);
   const shown = size === 'all' ? d.rows : d.rows.slice((cur - 1) * per, cur * per);
@@ -70,10 +78,9 @@ export default function ContainerDetailsTab() {
                    placeholder="Search container, SKU or supplier…" aria-label="Search containers" />
             <span className="tsearch-ic"><IconSearch size={15} /></span>
           </span>
-          <select value={status} onChange={e => setStatus(e.target.value)} aria-label="Status">
-            <option value="">All ({d.total})</option>
-            {STATUS.map(s => <option key={s} value={s}>{s} ({d.counts[s] || 0})</option>)}
-          </select>
+          <Segmented label="Status" value={status} onChange={setStatus}
+                     options={[{ value: '', label: 'All', n: d.total },
+                               ...STATUS.map(x => ({ value: x, label: x, n: d.counts[x] || 0 }))]} />
           <select value={region} onChange={e => setRegion(e.target.value)} aria-label="Region">
             <option value="">All regions</option>
             {d.regions.map(r => <option key={r} value={r}>{r}</option>)}
@@ -96,14 +103,20 @@ export default function ContainerDetailsTab() {
         </div>
       </div>
 
-      <div className="scroll">
+      <div className="scroll" ref={scrollRef}>
         <table className="fxtab cdtab">
+          {/* Cartons, CBM and Suppliers come off the summary table — all three are on
+              the container's Manifest, and the CSV still carries them. */}
+          <colgroup>
+            <col className="cc-name" /><col className="cc-rg" /><col className="cc-st" />
+            <col className="cc-sg" /><col className="cc-n" /><col className="cc-n" />
+            <col className="cc-d" /><col className="cc-d" /><col className="cc-act" />
+          </colgroup>
           <thead>
             <tr>
               <th>Container</th><th>Region</th><th>Status</th><th>Stage</th>
-              <th className="cd-num">SKUs</th><th className="cd-num">Cartons</th>
-              <th className="cd-num">Pieces</th><th className="cd-num">CBM</th>
-              <th>Suppliers</th><th>Ordered</th><th>Expected</th><th>Manifest</th>
+              <th className="cd-num">SKUs</th><th className="cd-num">Pieces</th>
+              <th>Ordered</th><th>Expected</th><th>Manifest</th>
             </tr>
           </thead>
           <tbody>
@@ -118,15 +131,11 @@ export default function ContainerDetailsTab() {
                 </td>
                 <td>{r.sg || '—'}</td>
                 <td className="cd-num">{n(r.k)}</td>
-                <td className="cd-num">{n(r.c)}</td>
                 <td className="cd-num"><b>{n(r.q)}</b></td>
-                <td className="cd-num">{r.v ? r.v.toFixed(1) : '—'}</td>
-                <td className="csup" title={r.sp.join(', ')}>
-                  {r.sp.length ? (r.sp.length <= 2 ? r.sp.join(', ') : r.sp[0] + ' +' + (r.sp.length - 1) + ' more') : '—'}
-                </td>
                 <td className="fxdate">{r.d2 || '—'}</td>
                 <td className="fxdate">{r.ex || '—'}</td>
-                <td><button className="btn cdopen" type="button" onClick={() => setOpen(r)}>Manifest</button></td>
+                <td><button className="btn cdopen" type="button"
+                        onClick={() => { setOpen(r); setMq(''); setMpage(1); setMtab('items'); }}>Manifest</button></td>
               </tr>
             ))}
           </tbody>
@@ -149,17 +158,35 @@ export default function ContainerDetailsTab() {
                   {open.st === 'Part received' && ` · ${open.ar} of ${open.o} orders arrived`}
                 </p>
               </div>
-              <button className="cdx" type="button" onClick={() => setOpen(null)} aria-label="Close">×</button>
+              <div className="cdhead-a">
+                <button className="cdmbtn" type="button" onClick={() => window.print()}>Print</button>
+                <button className="cdx" type="button" onClick={() => setOpen(null)} aria-label="Close">×</button>
+              </div>
             </div>
 
             <div className="cdstats">
-              {[['Region', open.rg || '—'], ['Stage', open.sg || '—'], ['SKUs', n(open.k)],
-                ['Cartons', n(open.c)], ['Pieces', n(open.q)], ['CBM', open.v ? open.v.toFixed(1) : '—'],
-                ['Orders', `${open.o}`], ['Suppliers', `${open.sp.length}`]].map(([k, v]) => (
+              {[['Region', open.rg || '—'], ['Status', open.st], ['Stage', open.sg || '—'],
+                ['SKUs', n(open.k)], ['Cartons', n(open.c)], ['Pieces', n(open.q)],
+                ['Ordered', open.d2 || open.d1 || '—']].map(([k, v]) => (
                 <div className="cdstat" key={k}><i>{k}</i><b>{v}</b></div>
               ))}
             </div>
 
+            {/* Two panes, as on the published page. The manifest opens first — it is what
+                the button promises — and the summary is a click away rather than a wall of
+                figures in front of it. */}
+            <div className="cdtabs" role="tablist" aria-label="Container detail">
+              <button type="button" role="tab" aria-selected={mtab === 'summary'}
+                      className={'cdswitch' + (mtab === 'summary' ? ' on' : '')}
+                      onClick={() => setMtab('summary')}>Container Summary</button>
+              <button type="button" role="tab" aria-selected={mtab === 'items'}
+                      className={'cdswitch' + (mtab === 'items' ? ' on' : '')}
+                      onClick={() => setMtab('items')}>Items / Products ({n(open.it.length)})</button>
+            </div>
+
+            {mtab === 'summary' && <ManifestSummary r={open} n={n} />}
+
+            <div className="cdpane" hidden={mtab !== 'items'}>
             <div className="cdmtools">
               <span className="tsearch cdmsearch">
                 <input type="search" value={mq} onChange={e => { setMq(e.target.value); setMpage(1); }}
@@ -179,7 +206,7 @@ export default function ContainerDetailsTab() {
                 <thead>
                   <tr><th>SKU</th><th>Product</th><th className="cd-num">Cartons</th>
                       <th className="cd-num">Pcs / Carton</th><th className="cd-num">Pieces</th>
-                      <th className="cd-num">CBM</th><th>Supplier</th><th>Stage</th></tr>
+                      <th>Supplier</th><th>Stage</th></tr>
                 </thead>
                 <tbody>
                   {mshown.map(i => (
@@ -189,14 +216,15 @@ export default function ContainerDetailsTab() {
                       <td className="cd-num">{n(i.c)}</td>
                       <td className="cd-num">{i.cp ? n(i.cp) : '—'}</td>
                       <td className="cd-num"><b>{n(i.q)}</b></td>
-                      <td className="cd-num">{i.v ? i.v.toFixed(2) : '—'}</td>
                       <td>{i.sp || '—'}</td>
                       <td><span className={'cpill ' + (STAGE_CLS[(i.st || '').split(',')[0].trim()] || 'cst-ord')}>{i.st || '—'}</span></td>
                     </tr>
                   ))}
-                  {!mshown.length && <tr><td colSpan={8}>No line matches that search.</td></tr>}
+                  {!mshown.length && <tr><td colSpan={7}>No line matches that search.</td></tr>}
                 </tbody>
               </table>
+            </div>
+
             </div>
 
             <div className="cdmfoot">
@@ -213,5 +241,41 @@ export default function ContainerDetailsTab() {
         </div>
       )}
     </>
+  );
+}
+
+// Everything here is a stored figure or a count of stored figures. Nothing is estimated —
+// in particular there is NO arrival date, which is why the note below says so rather than
+// leaving a reader to assume the order dates are delivery dates.
+function ManifestSummary({ r, n }) {
+  const top = r.it[0];
+  const perCarton = r.c ? Math.round(r.q / r.c) : null;
+  const named = r.it.filter(i => i.d).length;
+  const cell = (label, value, note) => (
+    <div className="cdsum-c" key={label}>
+      <i>{label}</i><b>{value}</b>{note ? <span>{note}</span> : null}
+    </div>
+  );
+  return (
+    <div className="cdpane">
+      <div className="cdsum">
+        {cell('Orders on this container', n(r.o),
+              r.st === 'Part received' ? `${r.ar} arrived · ${r.op} still open`
+                                       : (r.ar ? `${r.ar} arrived` : `${r.op} still open`))}
+        {cell('Suppliers', n((r.sp || []).length))}
+        {cell('Distinct SKUs', n(r.k), `${named} with a product name`)}
+        {cell('Cartons', n(r.c), perCarton ? `≈ ${n(perCarton)} pieces per carton` : '')}
+        {cell('Pieces', n(r.q))}
+        {cell('Largest line', top ? top.s : '—', top ? `${n(top.q)} pieces` : '')}
+        {cell('Ordered', r.d1 && r.d2 && r.d1 !== r.d2 ? `${r.d1} → ${r.d2}` : (r.d2 || r.d1 || '—'),
+              'when the supplier order was placed')}
+        {cell('Expected completion', r.ex || '—', r.ex ? 'supplier estimate' : 'not recorded')}
+      </div>
+      <p className="cdnote">
+        No goods-receipt date exists in this database — arrival is recorded only as a flag
+        on each supplier order, so there is no date to show for when this container landed.
+        The dates above are the order dates.
+      </p>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { perPage, useAutoRows } from '@/lib/rows';
 
 // The live dashboard's pager, ported. It shows numbered pages, first and last
 // always, the current page and its neighbours, and an ellipsis where it skipped —
@@ -45,7 +46,8 @@ export default function Pager({ total, page, pages, size, onPage, onSize, label 
     return () => window.removeEventListener('resize', fit);
   }, []);
 
-  const per = size === 'all' ? total : Number(size);
+  const auto = useAutoRows();
+  const per = perPage(size, total, auto);
   const from = total === 0 ? 0 : (page - 1) * per + 1;
   const to = size === 'all' ? total : Math.min(page * per, total);
   const nums = size === 'all' ? [] : pageList(page, pages, room);
@@ -60,6 +62,9 @@ export default function Pager({ total, page, pages, size, onPage, onSize, label 
       <div className="fxpagebar">
         <label className="fxrpp" htmlFor="psize">Rows per page</label>
         <select id="psize" value={String(size)} onChange={e => { onSize(e.target.value); onPage(1); }}>
+          {/* Auto is what the published dashboard defaults to: as many rows as the
+              box can show without the page itself scrolling. */}
+          <option value="auto">Auto</option>
           <option value="15">15</option><option value="25">25</option>
           <option value="100">100</option><option value="500">500</option>
           <option value="all">All</option>

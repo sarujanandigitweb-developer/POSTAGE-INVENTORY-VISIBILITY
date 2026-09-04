@@ -9,6 +9,8 @@ import CategoryBar from './CategoryBar';
 import FixedPriceTab from './FixedPriceTab';
 import SlowMovingTab from './SlowMovingTab';
 import PendingDispatchTab from './PendingDispatchTab';
+import RecentlyDispatchedTab from './RecentlyDispatchedTab';
+import PostageTab from './PostageTab';
 import ContainerDetailsTab from './ContainerDetailsTab';
 import Loading from './Loading';
 
@@ -151,15 +153,9 @@ export default function Shell() {
           {view === 'fx' && <div className="card grow"><FixedPriceTab /></div>}
           {view === 'sm' && <div className="card grow"><SlowMovingTab /></div>}
           {view === 'pd' && <div className="card grow"><PendingDispatchTab /></div>}
+          {view === 'rd' && <div className="card grow"><RecentlyDispatchedTab /></div>}
           {view === 'cd' && <div className="card grow"><ContainerDetailsTab /></div>}
-          {view === 'postage' && (
-            <div className="card grow">
-              <div className="empty">
-                Postage Information is fetched live from the team's Google Sheet on the
-                original dashboard, not from PostgreSQL. Not ported yet.
-              </div>
-            </div>
-          )}
+          {view === 'postage' && <div className="card grow"><PostageTab /></div>}
         </div>
       </div>
     </div>

@@ -11,7 +11,15 @@ export const IconPrice     = p => wrap(<><path d="M20.5 13.5 13 21a2 2 0 0 1-2.8
 export const IconSlow      = p => wrap(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>, p?.size);
 export const IconDispatch  = p => wrap(<><path d="M2.5 7.5h11v9h-11z" /><path d="M13.5 10.5h4l3 3v3h-7z" /><circle cx="6.5" cy="18" r="1.6" /><circle cx="16.5" cy="18" r="1.6" /></>, p?.size);
 
+// The two views under Dispatch. A queue still waiting to be packed, and a parcel that
+// has gone — told apart at a glance rather than by reading the label.
+export const IconQueue    = p => wrap(<><path d="M3.5 7.5h11v9h-11z" /><path d="M13.5 10.5h4l3 3v3h-7z" /><circle cx="7" cy="18" r="1.6" /><circle cx="17" cy="18" r="1.6" /><path d="M6 11h5M6 13.6h3" /></>, p?.size ?? 17);
+export const IconSent     = p => wrap(<><path d="M21 8.5 12 13 3 8.5 12 4l9 4.5Z" /><path d="M3 8.5v7L12 20l9-4.5v-7" /><path d="m8.8 13.6 2 2 4.2-4.2" /></>, p?.size ?? 17);
+
 export const IconContainer = p => wrap(<><rect x="2.5" y="6" width="19" height="12" rx="1.5" /><path d="M6.5 6v12M10.5 6v12M14.5 6v12M18.5 6v12" /></>, p?.size);
+
+export const IconZoom   = p => wrap(<><circle cx="10.5" cy="10.5" r="6.5" /><path d="m20 20-4.9-4.9M10.5 8v5M8 10.5h5" /></>, p?.size ?? 15);
+export const IconClose  = p => wrap(<path d="M6 6l12 12M18 6 6 18" />, p?.size ?? 18);
 
 export const IconMenu   = p => wrap(<path d="M4 7h16M4 12h16M4 17h16" />, p?.size ?? 19);
 export const IconSearch = p => wrap(<><circle cx="11" cy="11" r="7" /><path d="m20 20-3.6-3.6" /></>, p?.size);
@@ -26,4 +34,6 @@ export const IconBox    = p => wrap(<><path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.
 export const TAB_ICON = {
   inv: IconInventory, postage: IconPostage, fx: IconPrice, sm: IconSlow,
   pd: IconDispatch, cd: IconContainer,
+  // the group that holds the two dispatch views, and each view within it
+  dispatch: IconDispatch, rd: IconSent,
 };

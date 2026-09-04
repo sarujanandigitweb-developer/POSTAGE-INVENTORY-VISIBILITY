@@ -1,4 +1,5 @@
 'use client';
+import { perPage, useAutoRows } from '@/lib/rows';
 import { useEffect, useMemo, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
@@ -13,9 +14,11 @@ export default function PendingDispatchTab() {
   const [q, setQ] = useState('');
   const [band, setBand] = useState('');
   const [dis, setDis] = useState('');
+  const [wh, setWh] = useState('');
   const [page, setPage] = useState(1);
   const [size, setSize] = useState('25');
   const [open, setOpen] = useState(null);
+  const autoRows = useAutoRows();
 
   useEffect(() => {
     let live = true;
@@ -29,6 +32,7 @@ export default function PendingDispatchTab() {
     if (!d) return [];
     let r = d.rows;
     if (band) r = r.filter(x => x.band === band);
+    if (wh) r = r.filter(x => x.w === wh);
     if (dis) r = r.filter(x => x.s === dis);
     if (q) {
       const t = q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -36,18 +40,20 @@ export default function PendingDispatchTab() {
         (x.o + ' ' + x.k + ' ' + x.m + ' ' + x.c + ' ' + x.li.map(l => l.n).join(' ')).toLowerCase().includes(k)));
     }
     return r;
-  }, [d, band, dis, q]);
+  }, [d, band, wh, dis, q]);
 
-  useEffect(() => { setPage(1); }, [q, band, dis]);
+  useEffect(() => { setPage(1); }, [q, band, wh, dis]);
 
   if (err) return <div className="empty">{err}</div>;
   if (!d) return <Loading what="open orders" cols={13} rows={9} />;
 
-  const per = size === 'all' ? rows.length || 1 : Number(size);
+  const per = perPage(size, rows.length, autoRows);
   const pages = Math.max(1, Math.ceil(rows.length / per));
   const cur = Math.min(page, pages);
   const shown = size === 'all' ? rows : rows.slice((cur - 1) * per, cur * per);
   const states = [...new Set(d.rows.map(r => r.s))].sort();
+  // warehouse decides who packs the order, and it is recorded on every row
+  const whs = [...new Set(d.rows.map(r => r.w).filter(Boolean))].sort();
 
   return (
     <>
@@ -67,11 +73,15 @@ export default function PendingDispatchTab() {
             {['4+ days', '2-3 days', '0-1 days'].map(b =>
               <option key={b} value={b}>{b} ({(d.bands[b] || 0).toLocaleString()})</option>)}
           </select>
+          <select value={wh} onChange={e => setWh(e.target.value)} aria-label="Warehouse">
+            <option value="">All warehouses</option>
+            {whs.map(w => <option key={w} value={w}>{w}</option>)}
+          </select>
           <select value={dis} onChange={e => setDis(e.target.value)} aria-label="Dispatch state">
             <option value="">All dispatch states</option>
             {states.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button className="btn" type="button" onClick={() => { setQ(''); setBand(''); setDis(''); }}>
+          <button className="btn" type="button" onClick={() => { setQ(''); setBand(''); setWh(''); setDis(''); }}>
             <IconReset size={14} />Reset
           </button>
         </div>
@@ -79,6 +89,13 @@ export default function PendingDispatchTab() {
 
       <div className="scroll">
         <table className="fxtab pdtab">
+          <colgroup>
+            <col className="p-ord" /><col className="p-date" /><col className="p-sku" />
+            <col className="p-mkt" /><col className="p-to" /><col className="p-wh" />
+            <col className="p-pay" /><col className="p-disp" /><col className="p-days" />
+            <col className="p-age" /><col className="p-pri" /><col className="p-sla" />
+            <col className="p-det" />
+          </colgroup>
           <thead>
             <tr>
               <th>Order ID</th><th>Order Date</th><th>SKU</th><th>Marketplace</th>
@@ -90,12 +107,14 @@ export default function PendingDispatchTab() {
           <tbody>
             {shown.map(r => (
               <tr key={r.o}>
-                <td className="fxsku">{r.o}</td>
+                <td className="pd-ord">{r.o}</td>
                 <td className="fxdate">{r.date || <span className="fxnone">—</span>}</td>
-                <td className="fxname">{r.k || <span className="fxnone">—</span>}</td>
+                <td className="pd-sku">{r.k
+                  ? <span className="rdclip" title={r.k}>{r.k}</span>
+                  : <span className="fxnone">—</span>}</td>
                 <td>{r.m || <span className="fxnone">—</span>}</td>
-                <td>{r.c || <span className="fxnone">—</span>}</td>
-                <td>{r.w || <span className="fxnone">—</span>}</td>
+                <td className="pd-to">{r.c || <span className="fxnone">—</span>}</td>
+                <td className="pd-to">{r.w || <span className="fxnone">—</span>}</td>
                 <td>{r.p || <span className="fxnone">—</span>}</td>
                 <td>
                   {r.s}

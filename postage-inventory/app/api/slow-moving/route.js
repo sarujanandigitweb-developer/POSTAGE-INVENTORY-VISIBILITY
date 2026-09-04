@@ -1,4 +1,5 @@
 import { withClient } from '@/lib/db';
+import { ymd } from '@/lib/dates';
 import { getOrBuild, builtAt, page as slice } from '@/lib/dataset';
 
 // SLOW-MOVING PRODUCTS & COMPONENTS.
@@ -151,6 +152,21 @@ async function build() {
     const now = new Date();
     const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 
+    // PARENT PRODUCTS: which combos consume this SKU. There is no bill-of-materials
+    // table — suppliers.child_item_products holds 119 rows — but a combo SKU spells out
+    // its own components, "A+B+C", so the parents of a component are the combos that
+    // name it. Derived, and reported as derived.
+    const parents = new Map();
+    for (const sku of bySku.keys()) {
+      if (!sku.includes('+')) continue;
+      for (const part of sku.split('+')) {
+        const k = part.trim().toUpperCase();
+        if (!k || !bySku.has(k)) continue;
+        if (!parents.has(k)) parents.set(k, []);
+        parents.get(k).push(sku);
+      }
+    }
+
     const rows = [];
     for (const sku of [...bySku.keys()].sort()) {
       const o = bySku.get(sku);
@@ -179,10 +195,18 @@ async function build() {
         s: sku, n: name.get(sku) || null,
         i: !u ? null : /^https?:\/\//i.test(u) ? u : IMG_BASE + u,
         days, band: BAND[pr], pr,
+        // inventory_bool is the authority on single vs combo, not counting '+' in the
+        // SKU — that heuristic split 15,768/14,453 where the truth is 4,771/25,450.
+        t: o.single ? 1 : 0,
+        pa: (parents.get(sku) || []).slice(0, 2),
+        pn: (parents.get(sku) || []).length,
         never: last ? 0 : 1,           // aged from created_at, flagged not dropped
         units: st.units, locs: st.locs.slice(0, 3),
+        z: st.units > 0 ? 0 : 1,       // holds no stock: flagged, never dropped
         phc: p ? p.c : null, php: p ? p.p : null,
-        last: last ? new Date(last).toISOString().slice(0, 10) : null,
+        // ymd, not toISOString — see lib/dates.js. A sale before 05:30 was reported on
+        // the previous day.
+        last: ymd(last),
       });
     }
     // worst first: never sold, then longest since a sale
@@ -196,29 +220,92 @@ export async function GET(request) {
     const sp = new URL(request.url).searchParams;
     const all = await getOrBuild('slow-moving', build);
 
-    const q = (sp.get('q') || '').trim().toLowerCase();
-    const band = sp.get('band') || '';
-    const php = sp.get('ph') || '';
-    const held = sp.get('held') === '1';
-    let rows = all;
-    if (band) rows = rows.filter(r => r.band === band);
-    if (php) rows = rows.filter(r => r.php === php);
-    if (held) rows = rows.filter(r => r.units > 0);
-    if (q) {
-      const t = q.split(/\s+/).filter(Boolean);
-      rows = rows.filter(r => t.every(x => (r.s + ' ' + (r.n || '')).toLowerCase().includes(x)));
-    }
+    // Ported from the published page's smPass(). `skip` is what makes the counts on the
+    // controls mean anything: each control is counted with ITSELF excluded, so a band
+    // chip says how many rows it would show given every OTHER filter, not how many are
+    // on screen now.
+    const f = {
+      q:     (sp.get('q') || '').trim().toLowerCase(),
+      stock: sp.get('stock') || 'h',       // h holding · z zero only · a both
+      pri:   sp.get('pri') || '',
+      type:  sp.get('type') || '',         // '' · 1 single · 0 combo · c inside a combo
+      ph:    sp.get('ph') || '',           // PH category, '!' = not assigned
+      php:   sp.get('php') || '',          // PH person,   '!' = not assigned
+      sort:  sp.get('sort') || 'p',
+    };
+    const pass = (r, skip) => {
+      if (skip !== 'stock') {
+        if (f.stock === 'h' && r.z) return false;
+        if (f.stock === 'z' && !r.z) return false;
+      }
+      if (skip !== 'pri' && f.pri && r.pr !== Number(f.pri)) return false;
+      if (skip !== 'type') {
+        if (f.type === '1' && r.t !== 1) return false;
+        if (f.type === '0' && r.t !== 0) return false;
+        // "inside a combo" is a component: something else names it among its parts
+        if (f.type === 'c' && !(r.pa || []).length) return false;
+      }
+      if (skip !== 'ph') {
+        if (f.ph === '!' && r.phc) return false;
+        if (f.ph && f.ph !== '!' && r.phc !== f.ph) return false;
+      }
+      if (skip !== 'php') {
+        if (f.php === '!' && r.php) return false;
+        if (f.php && f.php !== '!' && r.php !== f.php) return false;
+      }
+      if (skip !== 'q' && f.q) {
+        const t = f.q.split(/\s+/).filter(Boolean);
+        const hay = (r.s + ' ' + (r.n || '') + ' ' + (r.pa || []).join(' ')).toLowerCase();
+        if (!t.every(x => hay.includes(x))) return false;
+      }
+      return true;
+    };
+
+    let rows = all.filter(r => pass(r, null));
+
+    // Sorted here, not in the browser: the browser only ever holds one page, so sorting
+    // there would reorder 25 rows and call it a ranking.
+    const SORT = {
+      p: (a, b) => (b.pr - a.pr) || (b.days - a.days),   // worst first
+      d: (a, b) => b.days - a.days,
+      q: (a, b) => b.units - a.units,
+      n: (a, b) => (a.n || a.s).localeCompare(b.n || b.s),
+      s: (a, b) => a.s.localeCompare(b.s),
+    };
+    rows = [...rows].sort(SORT[f.sort] || SORT.p);
+
+    // Band counts with the band filter itself skipped.
+    const bandRows = all.filter(r => pass(r, 'pri'));
+    const bands = { All: bandRows.length, Critical: 0, High: 0, Medium: 0 };
+    for (const r of bandRows) if (bands[r.band] !== undefined) bands[r.band]++;
+
+    // Each PH list counted with its own filter skipped, plus the "not assigned" tally.
+    const optCounts = (key, skip) => {
+      const n = {}; let none = 0;
+      for (const r of all) {
+        if (!pass(r, skip)) continue;
+        if (r[key]) n[r[key]] = (n[r[key]] || 0) + 1; else none++;
+      }
+      return { n, none };
+    };
+    const cats = optCounts('phc', 'ph');
+    const people = optCounts('php', 'php');
 
     const p = slice(rows, { page: sp.get('page'), size: sp.get('size') || 25 });
     return Response.json({
       ok: true, builtAt: builtAt('slow-moving'),
+      // ...p FIRST: slice() carries its own `total`, meaning the filtered count. Spread
+      // last it overwrote the dataset total and the "filtered from" note showed the same
+      // number twice — which reads as no filter being applied at all.
+      ...p,
       total: all.length,
-      holding: all.filter(r => r.units > 0).length,
+      filtered: rows.length,
+      holding: all.filter(r => !r.z).length,
       never: all.filter(r => r.never).length,
       units: all.reduce((n, r) => n + (r.units > 0 ? r.units : 0), 0),
-      bands: all.reduce((a, r) => ((a[r.band] = (a[r.band] || 0) + 1), a), {}),
-      owners: [...new Set(all.map(r => r.php).filter(Boolean))].sort(),
-      ...p,
+      bands,
+      phCats:   { list: Object.keys(cats.n).sort(),   counts: cats.n,   none: cats.none },
+      phPeople: { list: Object.keys(people.n).sort(), counts: people.n, none: people.none },
     });
   } catch (e) {
     console.error('[api/slow-moving]', e.message);

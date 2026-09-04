@@ -1,5 +1,5 @@
 'use client';
-import { TABS } from './Sidebar';
+import { tabLabel } from './Sidebar';
 import { IconMenu, IconWarn, IconExport, IconMoon, IconDown } from './Icons';
 
 // The header names the tab, lets you jump straight to a category, says when the
@@ -8,7 +8,7 @@ export default function Header({
   view, asOf, order, sections, cat, onCat,
   out, low, stockFilter, onStockFilter, onExport, onTheme, onMenu,
 }) {
-  const tab = (TABS.find(t => t.id === view) || {}).label || '';
+  const tab = tabLabel(view);
   const when = asOf
     ? new Date(asOf).toUTCString().replace(/^\w+, /, '').replace(' GMT', ' UTC')
     : 'loading…';

@@ -1,4 +1,5 @@
 import { withClient } from '@/lib/db';
+import { ymd } from '@/lib/dates';
 import { getOrBuild, builtAt, page as slice } from '@/lib/dataset';
 
 // SKU FIXED PRICE — the fixed selling price (no shipping) on every marketplace
@@ -97,20 +98,6 @@ async function build() {
 
     // a date PER marketplace: one max() across all four says "updated today" on a
     // row whose Shopify price has not moved in a year
-    // DATE, NOT INSTANT. `updated_at` is `timestamp without time zone`: node-postgres
-    // builds the Date from the stored wall clock in THIS process's timezone, and this
-    // host runs UTC+5:30. toISOString() then shifts it back across midnight, so a row
-    // written at 02:00 reports the previous day. The listing sync runs in the small
-    // hours, so that was 100% of Amazon rows, 99.9% of eBay and 83% of Shopify.
-    // Reading the calendar fields back returns exactly what was stored, whatever the
-    // server's timezone.
-    const ymd = v => {
-      const d = v instanceof Date ? v : new Date(v);
-      if (!isFinite(d.getTime())) return null;
-      const p = n => String(n).padStart(2, '0');
-      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
-    };
-
     const px = new Map();
     for (const { key } of MARKETS) {
       for (const r of await q(SQL[key])) {
@@ -126,21 +113,52 @@ async function build() {
     // variant labels ("Green / Without Bulb"), not product names. 52 products are
     // flagged single yet carry the placeholder title, so the title is only trusted
     // when the row is flagged single AND the title is not the placeholder.
+    // A title is only trusted when the row is flagged SINGLE and the title is not the
+    // placeholder — 52 products are flagged single yet carry the combo placeholder.
+    // A pack variant falls back to the product it is a pack of.
+    const titleOf = k => {
+      const kk = String(k || '').toUpperCase();
+      if (!kk) return null;
+      if (isSingle.get(kk) && title.get(kk)) return title.get(kk);
+      const base = stripPack(kk);
+      return base !== kk && isSingle.get(base) ? (title.get(base) || null) : null;
+    };
+
     const nameFor = sku => {
       const own = isSingle.get(sku) ? title.get(sku) : null;
       if (own) return own;
-      if (!sku.includes('+')) {
-        const m = /^(.*?)([0-9]{1,3}|[A-Z])PK$/i.exec(sku);
-        if (m) {
-          const base = title.get(m[1]);
-          const qty = /^\d+$/.test(m[2]) ? Number(m[2]) : packQty[m[2].toUpperCase()];
-          if (base && qty) return base + ' — ' + qty + ' Pack';
+
+      // A+B+C — an unnamed component contributes its own code rather than voiding the
+      // whole name. Requiring EVERY part to be named is what left 12B0182PK and its
+      // neighbours reading "Not recorded" when the published page names them.
+      if (sku.includes('+'))
+        return sku.split('+').map(p => {
+          const k = p.trim().toUpperCase();
+          return titleOf(k) || k;
+        }).join(' + ');
+
+      // "12B01002PK" splits as 12B0100 + 2PK, NOT 12B01 + 002PK. A regex cannot know
+      // which — a lazy prefix takes the shortest match and picks the wrong one every
+      // time, which is how "12B0182PK" became a "182 Pack" of a product that does not
+      // exist. The catalogue decides: try each split and take the first that names a
+      // real product.
+      if (/PK$/i.test(sku)) {
+        const body = sku.slice(0, -2);
+        // a single letter pack code first: …APK -> 10 Pack
+        const L = body.slice(-1).toUpperCase();
+        if (packQty[L] !== undefined && !/\d/.test(L)) {
+          const base = titleOf(body.slice(0, -1));
+          if (base) return base + ' — ' + packQty[L] + ' Pack';
         }
-        return null;
+        for (let d = 1; d <= 3 && d < body.length; d++) {
+          const n = body.slice(-d);
+          if (!/^\d+$/.test(n)) break;
+          const base = titleOf(body.slice(0, -d));
+          if (base) return base + ' — ' + Number(n) + ' Pack';
+        }
       }
-      const parts = sku.split('+').map(p => p.trim()).filter(Boolean);
-      const named = parts.map(p => title.get(p) || title.get(stripPack(p)) || null);
-      return named.every(Boolean) ? named.join(' + ') : null;
+      // last resort is the SKU itself, as on the published page — never nothing
+      return titleOf(sku) || sku;
     };
 
     const rows = [];
@@ -190,10 +208,16 @@ export async function GET(request) {
     return Response.json({
       ok: true, builtAt: builtAt('fixed-price'),
       markets: MARKETS, absent: ABSENT,
+      // ...p first — see the note in slow-moving/route.js: slice()'s own `total` is the
+      // filtered count and would otherwise replace the catalogue total.
+      ...p,
       total: all.length, single: all.filter(r => !r.combo).length,
       combo: all.filter(r => r.combo).length,
-      coverage: MARKETS.reduce((a, m) => ((a[m.key] = all.filter(r => r[m.key] != null).length), a), {}),
-      ...p,
+      // Coverage answers "how much of WHAT I AM LOOKING AT is priced" — so it counts
+      // the filtered set, not the whole catalogue. Filter to Single and the denominator
+      // becomes the singles; a fixed global number would answer a question nobody asked.
+      filtered: rows.length,
+      coverage: MARKETS.reduce((a, m) => ((a[m.key] = rows.filter(r => r[m.key] != null).length), a), {}),
     });
   } catch (e) {
     console.error('[api/fixed-price]', e.message);
