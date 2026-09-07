@@ -7,14 +7,28 @@ const NUM = /^[£$€]?\s*-?[\d,]+(\.\d+)?\s*%?$/;
 const isNum = v => NUM.test(String(v ?? '').trim());
 const LINK = /^https?:\/\//i;
 
+// A purchase link is a full marketplace URL and Amazon's run past 600 characters. Printed
+// in full, one of them wrapped to thirty lines and took the whole ROW's height with it —
+// the Purchases Link column was taller than the fifteen rows around it put together.
+// The cell says where the link GOES, which is the part anyone reads; the address itself is
+// on the anchor's title and one click away. Search still matches the full URL, because it
+// runs against the row data and not against this label.
+function linkLabel(u) {
+  try {
+    const h = new URL(u).hostname.replace(/^www\./i, '');
+    if (h) return h;
+  } catch { /* not a URL the browser can parse: fall through and shorten it by hand */ }
+  return u.length > 36 ? u.slice(0, 33) + '…' : u;
+}
+
 // A cell is right-aligned when it holds a number, so a price column lines up on the
-// decimal without anyone having to declare which columns are prices — these sheets are
-// hand-edited and their shapes differ from tab to tab.
+// decimal without anyone having to declare which columns are prices.
 function Cell({ v }) {
   const t = String(v ?? '').trim();
   if (!t) return <td className="pg-e">—</td>;
   if (LINK.test(t)) return (
-    <td><a href={t} target="_blank" rel="noopener noreferrer" className="pg-a">{t}</a></td>);
+    <td><a href={t} target="_blank" rel="noopener noreferrer" className="pg-a"
+           title={t}>{linkLabel(t)}<span className="pg-ext" aria-hidden="true">↗</span></a></td>);
   return <td className={isNum(t) ? 'pg-n' : undefined}>{t}</td>;
 }
 

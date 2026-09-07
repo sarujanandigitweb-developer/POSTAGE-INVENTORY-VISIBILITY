@@ -1,12 +1,14 @@
 // Reading the team's postage workbooks. Every rule here was established against the real
 // sheets on the HTML dashboard; the reasoning is kept because none of it is guessable.
 
-// TWO WORKBOOKS, because no single one holds everything. The prices moved to a new
-// workbook with a tab per table; postage Dimensions, Contact Details, Box Sizes and Box
-// Purchase History were never carried over and still live only in the original.
+// THREE WORKBOOKS, because no single one holds everything. The prices moved to a new
+// workbook with a tab per table; postage Dimensions, Contact Details and Box Sizes were
+// never carried over and still live only in the original. Box purchases then moved AGAIN,
+// into a workbook of their own — see the note on the purchases tab below.
 export const BOOKS = {
-  live:   '1o66uEfGhqlgKQZO5MXkzsRLRWTyAnq-niloNBhcx99g',
-  legacy: '1-4AnU5osx50_LRwwBPXwtVYWG_dk09psx8Jgsd3mYHI',
+  live:      '1o66uEfGhqlgKQZO5MXkzsRLRWTyAnq-niloNBhcx99g',
+  legacy:    '1-4AnU5osx50_LRwwBPXwtVYWG_dk09psx8Jgsd3mYHI',
+  purchases: '1Z2xMcHfe9tVEXAAIGWRHddxtpBwKjoSP0WVwmAs4Am8',
 };
 
 // what counts as a number in these sheets — declared above its first use
@@ -44,7 +46,19 @@ export const TABS = [
   // and deliberately NOT taken, or every price would be listed twice from two sources
   // that can disagree.
   { book: 'legacy', gid: '1966712240',
-    take: ['postage Dimensions', 'Contact Details', 'Box Sizes', 'Box Purchase History'] },
+    take: ['postage Dimensions', 'Contact Details', 'Box Sizes'] },
+  // BOX PURCHASE HISTORY LIVES IN ITS OWN WORKBOOK NOW. The legacy tab still carries a
+  // copy under its "6. Box Purchase History" heading, and that copy is DEAD: it stops at
+  // 20/06/2025, while the team kept buying. The legacy section itself links out to this
+  // workbook, which is the sheet the team actually maintains — 560 rows reaching
+  // 03/09/2026. It is taken from here and NO LONGER from the legacy tab, so the stale
+  // copy cannot be shown beside the live one.
+  { book: 'purchases', gid: '856208634', title: 'Box Purchase History', cols: 12,
+    // The `Delivered` checkbox column was dragged to the bottom of the sheet, so 2,080 of
+    // the 2,086 rows are non-blank while only ~560 are real. A blank-row test would take
+    // the lot. A real row is a PURCHASE (it has an order date) or one of the thirteen
+    // MONTH TOTAL rows, which carry no date and only a figure in `Monthly total`.
+    last: r => String(r[3] ?? '').trim() !== '' || String(r[8] ?? '').trim() !== '' },
 ];
 
 // A real CSV reader: quoted fields, embedded commas and newlines, doubled quotes,

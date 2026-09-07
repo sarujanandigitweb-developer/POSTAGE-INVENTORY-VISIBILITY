@@ -19,7 +19,8 @@ const html=fs.readFileSync(process.env.DASHBOARD||
 // noticed rather than silently absorbed.
 const FIX={ '33893969':'fixture-postage-prices.csv',
             '1953526121':'fixture-international-prices.csv',
-            '1966712240':'fixture-legacy-workbook.csv' };
+            '1966712240':'fixture-legacy-workbook.csv',
+            '856208634':'fixture-box-purchase-history.csv' };
 const above=html.slice(0,html.indexOf('<script>'));const IDS=new Set();
 above.replace(/id="([^"]+)"/g,(m,i)=>{IDS.add(i);return m;});
 const els={};
@@ -46,9 +47,10 @@ let fail=0;
 const chk=(n,ok,note)=>{console.log('  '+(ok?'OK  ':'*** ')+n+(note!==undefined?'  — '+note:'')); if(!ok)fail++;};
 
 console.log('=== the workbook and its tabs ===');
-chk('both workbooks are configured',
-  !!O.PG_BOOKS && !!O.PG_BOOKS.live && !!O.PG_BOOKS.legacy,
-  'live ' + String(O.PG_BOOKS.live).slice(0,12) + '… · legacy ' + String(O.PG_BOOKS.legacy).slice(0,12) + '…');
+chk('all three workbooks are configured',
+  !!O.PG_BOOKS && !!O.PG_BOOKS.live && !!O.PG_BOOKS.legacy && !!O.PG_BOOKS.purchases,
+  'live ' + String(O.PG_BOOKS.live).slice(0,12) + '… · legacy ' + String(O.PG_BOOKS.legacy).slice(0,12) +
+  '… · purchases ' + String(O.PG_BOOKS.purchases).slice(0,12) + '…');
 chk('the export URL is the direct-fetch CSV endpoint',
   /\/export\?format=csv&gid=33893969$/.test(O.pgUrl('33893969','live')),O.pgUrl('33893969','live'));
 chk('each entry points at a workbook',O.PG_TABS.every(t=>O.PG_BOOKS[t.book]),
@@ -67,7 +69,9 @@ O.PG_TABS.forEach(tab=>{
 O.pg.secs=secs;
 
 console.log('\n=== the tables that exist only in the original workbook ===');
-['postage Dimensions','Contact Details','Box Sizes','Box Purchase History'].forEach(want=>{
+// Box Purchase History is NOT in this list any more: it moved to a workbook of its own,
+// and the legacy copy of it stops at 20/06/2025. It is checked in its own section below.
+['postage Dimensions','Contact Details','Box Sizes'].forEach(want=>{
   const s=secs.find(x=>x.title===want);
   chk(want+' was found and carried over',!!s&&!s.missing&&s.rows.length>0,
     s?s.rows.length+' rows':'*** missing');
@@ -79,6 +83,43 @@ chk('the legacy copies of the two price tables are NOT taken',
 chk('no section appears twice',
   new Set(secs.map(x=>x.title.toLowerCase())).size===secs.length,
   secs.length+' sections: '+secs.map(x=>x.title).join(' · '));
+
+// ---------------------------------------------------------------------------
+// BOX PURCHASE HISTORY moved to a workbook of its own. Two things can silently undo
+// that: the legacy copy being taken again (it stops at 20/06/2025, so the page would
+// show a year-old table), and the clip test being relaxed (the `Delivered` checkbox
+// column runs to row 2,086 while only ~560 rows are real, so a blank-row test takes
+// 1,500 empty rows). Both are checked against the fixture, not asserted in prose.
+console.log('\n=== Box Purchase History ===');
+{
+  const bph=O.PG_TABS.find(t=>t.title==='Box Purchase History');
+  chk('it is read from its own workbook, not the legacy tab',
+    !!bph && bph.book==='purchases' && bph.gid==='856208634',
+    bph ? 'book='+bph.book+' gid='+bph.gid : '*** no such tab');
+  chk('the legacy tab no longer offers its stale copy',
+    O.PG_TABS.filter(t=>t.take).every(t=>t.take.every(n=>!/box purchase/i.test(n))),
+    'the legacy copy ends 20/06/2025 and its own section links out to this workbook');
+  const sec=secs.find(x=>x.title==='Box Purchase History');
+  const a=sec?O.pgAnalyse(sec):null;
+  const body=[]; if(a)a.groups.forEach(g=>g.rows.forEach(r=>body.push(r)));
+  chk('the section has rows',body.length>0,body.length+' rows');
+  chk('the checkbox tail is clipped, not carried',
+    body.length>400 && body.length<800, body.length+' of 2,086 raw rows kept');
+  chk('the sheet\u2019s own headers are used verbatim',
+    a && O.pgCells(a.head[0]).join('|')==='ns|Product|Size|Order date|Received date|'+
+      'Quantity|Cost|Delivered|Monthly total|Warehouse|Notes|purchases Link',
+    a?O.pgCells(a.head[0]).join(' | '):'no header');
+  chk('it reaches past the date the legacy copy died',
+    body.some(r=>/\/2026$/.test(String(r[3]||'').trim())),
+    'newest order date '+body.map(r=>String(r[3]||'').trim()).filter(Boolean).slice(-1)[0]);
+  chk('the month-total rows survive the clip',
+    body.filter(r=>String(r[8]||'').trim()&&!String(r[0]||'').trim()).length>=13,
+    body.filter(r=>String(r[8]||'').trim()&&!String(r[0]||'').trim()).length+' month totals');
+  chk('the Open-sheet link points at the workbook the team maintains',
+    O.pgEdit(bph.gid,bph.book)==='https://docs.google.com/spreadsheets/d/'+
+      '1Z2xMcHfe9tVEXAAIGWRHddxtpBwKjoSP0WVwmAs4Am8/edit?gid=856208634#gid=856208634',
+    O.pgEdit(bph.gid,bph.book));
+}
 
 secs.slice(0,2).forEach((sec,n)=>{
   console.log('\n=== '+sec.title+' ===');

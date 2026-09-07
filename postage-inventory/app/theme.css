@@ -748,7 +748,15 @@ table.fxtab td.fxprice.fx-hi{color:#c81e1e}
 .pgtab td.pg-n,.pgtab th.pg-n{text-align:right;font-variant-numeric:tabular-nums;
   white-space:nowrap}
 .pgtab td.pg-e{color:var(--muted);opacity:.4;text-align:center}
-.pgtab td .pg-a{color:var(--accent);word-break:break-all}
+/* The link cell shows a hostname, not the address. `word-break:break-all` was here for
+   the days when it printed the whole URL; against a 600-character Amazon link it did not
+   save the row, it wrapped it to thirty lines and set the height of every cell beside it.
+   The label is short by construction now, so it is kept on one line and the cell is
+   allowed to stay the height of its neighbours. */
+.pgtab td .pg-a{color:var(--accent);white-space:nowrap;text-decoration:underline;
+  text-underline-offset:2px}
+.pgtab td .pg-ext{margin-left:4px;opacity:.65;font-size:11px;text-decoration:none;
+  display:inline-block}
 .pgtab tbody tr:nth-child(even) td{background:var(--head2)}
 .pgtab tbody tr:hover td{background:var(--accent-soft)}
 /* a Monthly Total row is a summary, not another line item */
