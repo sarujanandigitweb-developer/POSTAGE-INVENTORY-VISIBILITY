@@ -1,5 +1,6 @@
 import { withClient } from '@/lib/db';
 import { ymd } from '@/lib/dates';
+import { skuCategory, CATEGORIES } from '@/lib/sku-category';
 import { getOrBuild, builtAt, page as slice } from '@/lib/dataset';
 
 // SLOW-MOVING PRODUCTS & COMPONENTS.
@@ -309,8 +310,8 @@ export async function GET(request) {
       stock: sp.get('stock') || 'h',       // h holding · z zero only · a both
       pri:   sp.get('pri') || '',
       type:  sp.get('type') || '',         // '' · 1 single · 0 combo · c inside a combo
-      ph:    sp.get('ph') || '',           // PH category, '!' = not assigned
       php:   sp.get('php') || '',          // PH person,   '!' = not assigned
+      cat:   sp.get('cat') || '',          // main category, by SKU prefix
       sort:  sp.get('sort') || 'p',
     };
     const pass = (r, skip) => {
@@ -325,14 +326,14 @@ export async function GET(request) {
         // "inside a combo" is a component: something else names it among its parts
         if (f.type === 'c' && !(r.pa || []).length) return false;
       }
-      if (skip !== 'ph') {
-        if (f.ph === '!' && r.phc) return false;
-        if (f.ph && f.ph !== '!' && r.phc !== f.ph) return false;
-      }
+      // The PH CATEGORY filter is gone — the tab no longer offers it. The PH column
+      // still shows r.phc; only the filter went. Assigned Person (php) stays.
       if (skip !== 'php') {
         if (f.php === '!' && r.php) return false;
         if (f.php && f.php !== '!' && r.php !== f.php) return false;
       }
+      // main category from the SKU prefix — the team's own grouping, see lib/sku-category
+      if (skip !== 'cat' && f.cat && skuCategory(r.s) !== f.cat) return false;
       if (skip !== 'q' && f.q) {
         const t = f.q.split(/\s+/).filter(Boolean);
         const hay = (r.s + ' ' + (r.n || '') + ' ' + (r.pa || []).join(' ')).toLowerCase();
@@ -368,7 +369,6 @@ export async function GET(request) {
       }
       return { n, none };
     };
-    const cats = optCounts('phc', 'ph');
     const people = optCounts('php', 'php');
 
     const p = slice(rows, { page: sp.get('page'), size: sp.get('size') || 25 });
@@ -380,11 +380,17 @@ export async function GET(request) {
       ...p,
       total: all.length,
       filtered: rows.length,
+      categories: CATEGORIES,
+      // each option counts what it would show given the OTHER filters, so the number
+      // describes the choice on offer rather than the page already on screen
+      catCounts: all.reduce((a, r) => {
+        if (!pass(r, 'cat')) return a;
+        const c = skuCategory(r.s); a[c] = (a[c] || 0) + 1; return a;
+      }, {}),
       holding: all.filter(r => !r.z).length,
       never: all.filter(r => r.never).length,
       units: all.reduce((n, r) => n + (r.units > 0 ? r.units : 0), 0),
       bands,
-      phCats:   { list: Object.keys(cats.n).sort(),   counts: cats.n,   none: cats.none },
       phPeople: { list: Object.keys(people.n).sort(), counts: people.n, none: people.none },
     });
   } catch (e) {

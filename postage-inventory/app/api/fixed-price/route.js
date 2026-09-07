@@ -1,5 +1,6 @@
 import { withClient } from '@/lib/db';
 import { ymd } from '@/lib/dates';
+import { skuCategory, CATEGORIES } from '@/lib/sku-category';
 import { getOrBuild, builtAt, page as slice } from '@/lib/dataset';
 
 // SKU FIXED PRICE — the fixed selling price (no shipping) on every marketplace
@@ -46,14 +47,28 @@ const SQL = {
   images: `
     SELECT DISTINCT ON (product_id) product_id AS pid, image_path AS p, image_url AS u
     FROM inventory.product_images ORDER BY product_id, image_ordering, id`,
+  // UK FIRST, ALWAYS. Then, only when the SKU has no UK listing at all, whatever
+  // market does have one — carrying its own site so the row can say so.
+  //
+  // The previous version had NO site filter and relied on `JOIN ch` to exclude the
+  // rest, because the channel names happen to be per-site: LEDSone is UK, "LEDSone DE"
+  // is Germany, "LED Sone FR" is France, Relicelectrical is Canada. That worked by
+  // accident and cost 9,587 SKUs their price — every one whose only Shopify listing is
+  // outside the UK was dropped entirely. The preference is stated now, and the join is
+  // a LEFT JOIN so a non-UK channel is ranked rather than discarded.
+  //
+  // shopify_listings.currency is NULL on every row, so the currency follows from the
+  // site. A euro price is a DIFFERENT number, not a cheaper one.
   sh: `
     WITH ch(name, ord) AS (VALUES ('LEDSone',1),('Electricalsone',2),('Vintagelite',3),
                                   ('BesBet',4),('Dcvoltage',5),('dcvoltage',5))
     SELECT DISTINCT ON (upper(COALESCE(NULLIF(l.mapped_sku,''),l.sku)))
-           upper(COALESCE(NULLIF(l.mapped_sku,''),l.sku)) AS sku, l.price AS p, l.updated_at AS u
-    FROM listings.shopify_listings l JOIN ch ON ch.name = l.channel
+           upper(COALESCE(NULLIF(l.mapped_sku,''),l.sku)) AS sku, l.price AS p,
+           l.updated_at AS u, l.site AS site
+    FROM listings.shopify_listings l
+    LEFT JOIN ch ON ch.name = l.channel
     WHERE COALESCE(l.wrong_sku,0)=0 AND l.all_list=1 AND l.price>0
-    ORDER BY 1, ch.ord, l.price, l.updated_at DESC`,
+    ORDER BY 1, (l.site <> 'UK'), COALESCE(ch.ord, 99), l.price, l.updated_at DESC`,
   eb: `
     SELECT DISTINCT ON (upper(sku)) upper(sku) AS sku, price AS p, updated_at AS u
     FROM listings.ebay_listings
@@ -71,7 +86,7 @@ const SQL = {
     SELECT DISTINCT ON (upper(COALESCE(NULLIF(mapped_sku,''),sku)))
            upper(COALESCE(NULLIF(mapped_sku,''),sku)) AS sku, price AS p, updated_at AS u
     FROM listings.bandq_listings
-    WHERE COALESCE(wrong_sku,0)=0 AND all_list=1 AND price>0
+    WHERE COALESCE(wrong_sku,0)=0 AND site='UK' AND all_list=1 AND price>0
     ORDER BY 1, price, updated_at DESC`,
 };
 
@@ -102,8 +117,11 @@ async function build() {
     for (const { key } of MARKETS) {
       for (const r of await q(SQL[key])) {
         const e = px.get(r.sku) || { d: {} };
-        e[key] = Math.round(Number(r.p) * 100);       // pence, so no float noise
+        e[key] = Math.round(Number(r.p) * 100);       // minor units, so no float noise
         if (r.u) e.d[key] = ymd(r.u);
+        // A price from outside the UK is not sterling. The site is recorded so the row
+        // can show the right symbol instead of quietly relabelling euros as pounds.
+        if (r.site && r.site !== 'UK') (e.site ||= {})[key] = r.site;
         px.set(r.sku, e);
       }
     }
@@ -173,6 +191,8 @@ async function build() {
         n: nameFor(sku),                    // null renders as "-", never invented
         i: url && !namesAnother(sku, url) ? url : null,
         sh: p.sh ?? null, eb: p.eb ?? null, am: p.am ?? null, bq: p.bq ?? null,
+        // present only where a price came from outside the UK: { sh: 'Germany' }
+        site: p.site || null,
         d: p.d,
       });
     }
@@ -188,10 +208,15 @@ export async function GET(request) {
     const q = (sp.get('q') || '').trim().toLowerCase();
     const type = sp.get('type') || '';         // '' | single | combo
     const mk = sp.get('mk') || '';             // listed on this marketplace
+    const cat = sp.get('cat') || '';           // main category, by SKU prefix
     let rows = all;
     if (type === 'single') rows = rows.filter(r => !r.combo);
     if (type === 'combo') rows = rows.filter(r => r.combo);
     if (mk) rows = rows.filter(r => r[mk] != null);
+    // MAIN CATEGORY, from the SKU prefix. Filtered here rather than in the browser
+    // because this route paginates server-side — filtering after the slice would show
+    // "page 1 of 1,256" and then five rows on it.
+    if (cat) rows = rows.filter(r => skuCategory(r.s) === cat);
     if (q) {
       const t = q.split(/\s+/).filter(Boolean);
       rows = rows.filter(r => {
@@ -204,10 +229,23 @@ export async function GET(request) {
       rows = [...rows].sort((a, b) => (a[sort] ?? Infinity) - (b[sort] ?? Infinity));
     }
 
+    // Counts for the category select, taken against everything ELSE that is filtered,
+    // so each option says how many it would actually show.
+    const catCounts = {};
+    for (const r of all) {
+      if (type === 'single' && r.combo) continue;
+      if (type === 'combo' && !r.combo) continue;
+      if (mk && r[mk] == null) continue;
+      if (q && !(r.s + ' ' + (r.n || '')).toLowerCase().includes(q)) continue;
+      const c = skuCategory(r.s);
+      catCounts[c] = (catCounts[c] || 0) + 1;
+    }
+
     const p = slice(rows, { page: sp.get('page'), size: sp.get('size') || 25 });
     return Response.json({
       ok: true, builtAt: builtAt('fixed-price'),
       markets: MARKETS, absent: ABSENT,
+      categories: CATEGORIES, catCounts,
       // ...p first — see the note in slow-moving/route.js: slice()'s own `total` is the
       // filtered count and would otherwise replace the catalogue total.
       ...p,

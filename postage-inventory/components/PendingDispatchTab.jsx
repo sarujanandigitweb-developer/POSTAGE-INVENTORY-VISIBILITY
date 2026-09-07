@@ -7,8 +7,15 @@ import DispatchDialog, { Section, Field, Chip } from './DispatchDialog';
 import { exportOrder } from '@/lib/export-order';
 import Loading from './Loading';
 
-const PRI = { 3: 'Critical', 2: 'High', 1: 'Normal' };
-const priCls = p => (p === 3 ? 'cr' : p === 2 ? 'hi' : 'me');
+// The dashboard's own vocabulary. .smpri and .pdsla were already ported into the CSS;
+// the table just never used them, so Priority and SLA Breach rendered as bare bold text
+// while every other column carried a badge.
+const PRI = { 3: ['Critical', 'p3'], 2: ['High', 'p2'], 1: ['Normal', 'p1'] };
+// Processing is the ordinary case and takes no tone — colouring 80% of the rows leaves
+// nothing to signal the exceptions with.
+const stCls = st => /hold/i.test(st) ? 'bad'
+  : /awaiting courier/i.test(st) ? 'go'
+  : /not dispatched/i.test(st) ? 'warn' : '';
 
 export default function PendingDispatchTab() {
   const [d, setD] = useState(null);
@@ -119,15 +126,21 @@ export default function PendingDispatchTab() {
                 <td className="pd-to">{r.w || <span className="fxnone">—</span>}</td>
                 <td>{r.p || <span className="fxnone">—</span>}</td>
                 <td>
-                  {r.s}
-                  {r.e && <span className="smnever" style={{ display: 'block' }}>{r.e}</span>}
+                  <span className={'bdg' + (stCls(r.s) ? ' ' + stCls(r.s) : '')}>{r.s}</span>
+                  {/* The shipping error is a NOTE under the status, not part of it.
+                      Inline it ran into the badge and, on a long B&Q message, pushed
+                      the column wide enough to shove Days Pending off the row. */}
+                  {r.e && <span className="pderr" title={r.e}>{r.e}</span>}
                 </td>
                 <td className="pd-days">{r.dy}</td>
                 <td>{r.band}</td>
-                <td><b className={priCls(r.pr)}>{PRI[r.pr]}</b></td>
-                <td>{r.b ? <b className="cr">Breached</b> : 'Within'}</td>
+                <td>{PRI[r.pr]
+                  ? <span className={'smpri ' + PRI[r.pr][1]}>{PRI[r.pr][0]}</span>
+                  : <span className="pd-none">—</span>}</td>
+                <td><span className={'pdsla ' + (r.b ? 'yes' : 'no')}>
+                  {r.b ? 'Breached' : 'Within'}</span></td>
                 <td>
-                  <button className="pbtn" type="button" onClick={() => setOpen(r)}>Detail</button>
+                  <button className="pddet" type="button" onClick={() => setOpen(r)}>Detail</button>
                 </td>
               </tr>
             ))}

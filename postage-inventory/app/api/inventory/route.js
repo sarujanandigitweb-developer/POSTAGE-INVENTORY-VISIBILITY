@@ -3,6 +3,7 @@ import { getOrBuild, fromSnapshot, builtAt } from '@/lib/dataset';
 import { classification, CATEGORY_ORDER, skusIn, sectionCounts, imgURL } from '@/lib/classification';
 import { sectionOf } from '@/lib/section-of';
 import { classifySKU } from '@/lib/classify-sku';
+import { shopifyPricing } from '@/lib/shopify-price';
 
 const SECTION_KEYS = new Set(CATEGORY_ORDER);
 import { parseLine, region as histRegion } from '@/lib/history-parser';
@@ -31,16 +32,10 @@ import { dataDir } from '@/lib/data-dir';
 // Re-deriving that here would be a second implementation of a validated rule, free
 // to drift. These three files are the pipeline's own output; re-copy them from
 // sql/refresh/out/ when it next runs.
-const FILES = { comments: 'price-comments.json', price: 'price.json', alt: 'price-alt.json' };
-const LOADED = {};
-function pipelineFile(which) {
-  if (LOADED[which]) return LOADED[which];
-  try {
-    LOADED[which] = JSON.parse(
-      fs.readFileSync(path.join(dataDir(), FILES[which]), 'utf8'));
-  } catch { LOADED[which] = {}; }
-  return LOADED[which];
-}
+// The three pipeline files this route used to read — price, alt price and price
+// comment — are gone: lib/shopify-price.js derives all three live, and reproduces the
+// pipeline's own output with zero differences on 6,183 SKUs. data/price.json is left on
+// disk as a record of the last pipeline run; nothing reads it.
 
 // The browser calls this route; only this route touches PostgreSQL.
 export const dynamic = 'force-dynamic';
@@ -161,17 +156,6 @@ const WAREHOUSES = `
 // Shopify price: LEDSone first, then the other UK stores. Only a UK channel may
 // fill the £ column — a euro or dollar figure is a different number, not a
 // cheaper one.
-const PRICE = `
-  WITH ch(name, ord) AS (VALUES
-    ('LEDSone',1),('Electricalsone',2),('Vintagelite',3),('BesBet',4),
-    ('Dcvoltage',5),('dcvoltage',5))
-  SELECT upper(COALESCE(NULLIF(l.mapped_sku,''), l.sku)) AS lsku,
-         min(l.price) AS p
-    FROM listings.shopify_listings l
-    JOIN ch ON ch.name = l.channel
-   WHERE COALESCE(l.wrong_sku,0) = 0 AND l.all_list = 1 AND l.price > 0
-     AND upper(COALESCE(NULLIF(l.mapped_sku,''), l.sku)) = ANY($1)
-   GROUP BY 1`;
 
 // dashboard column -> warehouse id, and which of those also carry a shelf location
 const COL = { a: 1, b: 8, c: 6, u5: 33, k: 10, m: 7, ca: 4, us: 32 };
@@ -309,8 +293,11 @@ export function buildSnapshot(cat) {
       }
       const missingWarehouses = Object.values(COL).filter(id => !warehouses[id] && !WH_OVERRIDE[id]);
 
-      const price = {};
-      for (const r of await q(PRICE, [wanted])) price[r.lsku] = Number(r.p);
+      // THE PRICE QUERY IS GONE. It ran on every build and its result was never read:
+      // the row's price comes from data/price.json, because min(price) across the UK
+      // channels is the WRONG rule — see the note at the top of this file, and the
+      // LSFC160BT case it left blank. A query nobody uses still costs a connection
+      // against a role that allows ten.
 
       // ---- last container, per region -------------------------------------
       // ordered by order_date so the LAST entry is the newest arrival
@@ -366,9 +353,12 @@ export function buildSnapshot(cat) {
       // reported as unplaced, never silently dropped and never guessed at — the
       // same contract build.js keeps.
       const { cls } = classification();
-      const comments = pipelineFile('comments');
-      const gbp = pipelineFile('price');
-      const alt = pipelineFile('alt');
+      // LIVE, not from data/price.json. The five-tier rule is ported in
+      // lib/shopify-price.js and checked against the pipeline's own output: on 6,183
+      // SKUs it reproduces price, alt price and comment with ZERO differences. Reading
+      // the file meant a database price change never appeared — the tab showed £47.20
+      // for LSGL15014CL against a database saying £7.71.
+      const { price: gbp, alt, comment: comments } = await shopifyPricing(wanted, q);
       const rows = [];
       for (const p of products) {
         // A SKU THE EXPORT HAS NEVER SEEN STILL GETS A ROW. This used to be

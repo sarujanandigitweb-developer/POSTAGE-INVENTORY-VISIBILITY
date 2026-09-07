@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { matches } from '@/lib/filter';
 import { stockLevel } from '@/lib/stock';
-import Sidebar, { TABS } from './Sidebar';
+import Sidebar, { ALL_VIEWS } from './Sidebar';
 import Header from './Header';
 import InventoryTab from './InventoryTab';
 import CategoryBar from './CategoryBar';
@@ -85,12 +85,31 @@ export default function Shell() {
     return () => {};
   }, [data]);
 
-  // remember the tab across a reload, as the live dashboard does
+  // RESOLVE THE TAB BEFORE ANYTHING PAINTS. useState('inv') is what the server renders
+  // and what the client hydrates, so restoring the saved tab in an effect means render 1
+  // shows Inventory — and starts its ~5s query — before render 2 switches to the tab you
+  // were actually on. That flash is what a refresh on SKU Fixed Price looked like.
+  //
+  // `booted` gates the body: nothing paints until the saved tab is known. It cannot be a
+  // lazy useState initialiser instead, because reading localStorage during render would
+  // make the client's first render disagree with the server's and break hydration.
+  const [booted, setBooted] = useState(false);
   useEffect(() => {
     const saved = typeof localStorage !== 'undefined' && localStorage.getItem('piv.view');
-    if (saved && TABS.some(t => t.id === saved)) setView(saved);
+    // ALL_VIEWS, NOT TABS. TABS holds the six top-level entries; the two dispatch
+    // views live inside Dispatch's `kids` as 'pd' and 'rd'. Checking against TABS meant
+    // a saved 'pd' failed the guard and was silently dropped — so refreshing on
+    // Dispatch Queue always landed you back on Inventory. ALL_VIEWS is the flattened
+    // list and was already exported for exactly this.
+    if (saved && ALL_VIEWS.includes(saved)) setView(saved);
+    setBooted(true);
   }, []);
-  useEffect(() => { try { localStorage.setItem('piv.view', view); } catch {} }, [view]);
+  // Only after the restore has run. On mount this effect fires with view still at its
+  // default, so without the guard it writes 'inv' over the tab that was saved.
+  useEffect(() => {
+    if (!booted) return;
+    try { localStorage.setItem('piv.view', view); } catch {}
+  }, [view, booted]);
 
   // The header alerts count the ACTIVE category's whole population, not the
   // catalogue and not the filtered view — the same scope the live page uses, and
@@ -138,10 +157,13 @@ export default function Shell() {
 
   return (
     <div className="app">
-      <Sidebar view={view} onChange={setView} collapsed={collapsed}
+      {/* Until `booted`, NOTHING may claim a tab. Gating only the body left the header
+          printing "Inventory" and the sidebar highlighting it for the same frame — which
+          is the whole flash the gate was meant to remove. */}
+      <Sidebar view={booted ? view : null} onChange={setView} collapsed={collapsed}
                onCollapse={() => setCollapsed(c => !c)} />
       <div className="main">
-        <Header view={view} asOf={data?.asOf} out={alerts.out} low={alerts.low}
+        <Header view={booted ? view : null} asOf={booted ? data?.asOf : null} out={alerts.out} low={alerts.low}
                 order={data?.order} sections={data?.sections || {}}
                 cat={st.cat} onCat={k => setSt(s => ({ ...s, cat: k, fam: '', sub2: '', attr: '' }))}
                 stockFilter={st.st} onStockFilter={v => set({ st: v })}
@@ -149,6 +171,9 @@ export default function Shell() {
                 onMenu={() => setCollapsed(c => !c)} />
 
         <div className="body">
+          {/* Nothing until the saved tab is known — see `booted` above. One skeleton
+              beats painting Inventory and then replacing it. */}
+          {!booted ? <div className="card grow"><Loading what="your last view" cols={16} rows={9} /></div> : <>
           {view === 'inv' && (
             err ? <div className="card"><div className="empty">{err}</div></div>
             // NEVER RENDER ONE CATEGORY'S ROWS UNDER ANOTHER'S HEADING. While a
@@ -174,6 +199,7 @@ export default function Shell() {
           {view === 'rd' && <div className="card grow"><RecentlyDispatchedTab /></div>}
           {view === 'cd' && <div className="card grow"><ContainerDetailsTab /></div>}
           {view === 'postage' && <div className="card grow"><PostageTab /></div>}
+          </>}
         </div>
       </div>
     </div>

@@ -10,6 +10,16 @@ import Segmented from './Segmented';
 
 const gbp = p => (p == null ? null : '£' + (p / 100).toFixed(2));
 
+// shopify_listings.currency is NULL on every row, so the currency follows from the site.
+// A euro price shown as "£19.89" is not a cheaper product, it is a WRONG NUMBER — the
+// symbol has to change with the market.
+const CUR = { Germany: ['€', 'EUR'], France: ['€', 'EUR'], US: ['$', 'USD'], Canada: ['$', 'CAD'] };
+const money = (p, site) => {
+  if (p == null) return null;
+  const c = site && CUR[site];
+  return (c ? c[0] : '£') + (p / 100).toFixed(2);
+};
+
 // WITHIN a row the same SKU is priced across every marketplace, so the comparison that
 // matters is horizontal: which channel is cheapest for this product, which dearest.
 // Comparing DOWN a column would be meaningless — it would just rank unrelated products.
@@ -34,6 +44,7 @@ export default function FixedPriceTab() {
   // the 4,770 rows this tab exists for.
   const [type, setType] = useState('single');
   const [mk, setMk] = useState('');
+  const [cat, setCat] = useState('');
   const [page, setPage] = useState(1);
   const [size, setSize] = useState('25');
   const autoRows = useAutoRows();
@@ -43,13 +54,13 @@ export default function FixedPriceTab() {
 
   useEffect(() => {
     let live = true; setBusy(true);
-    const p = new URLSearchParams({ q, type, mk, page: String(page), size: String(per) });
+    const p = new URLSearchParams({ q, type, mk, cat, page: String(page), size: String(per) });
     fetch('/api/fixed-price?' + p)
       .then(r => r.json())
       .then(j => { if (!live) return; j.ok ? (setD(j), setErr(null)) : setErr(j.error); setBusy(false); })
       .catch(e => { if (live) { setErr(String(e.message || e)); setBusy(false); } });
     return () => { live = false; };
-  }, [q, type, mk, page, size, autoRows]);
+  }, [q, type, mk, cat, page, size, autoRows]);
 
   useEffect(() => { setPage(1); }, [q, type, mk]);
 
@@ -78,11 +89,21 @@ export default function FixedPriceTab() {
                      options={[{ value: '', label: 'All', n: d.total },
                                { value: 'single', label: 'Single', n: d.single },
                                { value: 'combo', label: 'Combo', n: d.combo }]} />
+          {/* Main category, from the SKU prefix — the team's own grouping. Each option
+              carries what it would show given the other filters. */}
+          <select value={cat} onChange={e => { setCat(e.target.value); setPage(1); }}
+                  aria-label="Main category">
+            <option value="">All categories</option>
+            {(d.categories || []).map(c => (
+              <option key={c} value={c}>{c} ({(d.catCounts?.[c] || 0).toLocaleString()})</option>
+            ))}
+          </select>
           <select value={mk} onChange={e => setMk(e.target.value)} aria-label="Listed on">
             <option value="">Listed anywhere</option>
             {d.markets.map(m => <option key={m.key} value={m.key}>Listed on {m.name}</option>)}
           </select>
-          <button className="btn" type="button" onClick={() => { setQ(''); setType(''); setMk(''); }}>
+          <button className="btn" type="button"
+                  onClick={() => { setQ(''); setType(''); setMk(''); setCat(''); setPage(1); }}>
             <IconReset size={14} />Clear
           </button>
         </div>
@@ -162,13 +183,20 @@ export default function FixedPriceTab() {
                 <td>{r.combo ? 'Combo' : 'Single'}</td>
                 {d.markets.map(m => {
                   const v = r[m.key];
-                  const tone = !sp || v == null ? ''
+                  // where this price came from, when that is not the UK
+                  const site = r.site && r.site[m.key];
+                  // A NON-UK PRICE IS NOT COMPARABLE. It is a different currency, so it
+                  // must not join the cheapest/dearest comparison that tints this row —
+                  // €19.89 is not "cheaper than" £23.12.
+                  const tone = !sp || v == null || site ? ''
                     : v === sp.lo ? ' fx-lo' : v === sp.hi ? ' fx-hi' : '';
                   return (
-                    <td key={m.key} className={'fxprice' + tone}
-                        title={tone === ' fx-lo' ? 'Cheapest channel for this SKU'
+                    <td key={m.key} className={'fxprice' + tone + (site ? ' fx-alt' : '')}
+                        title={site ? `No UK listing — this is the ${site} price`
+                             : tone === ' fx-lo' ? 'Cheapest channel for this SKU'
                              : tone === ' fx-hi' ? 'Dearest channel for this SKU' : undefined}>
-                      {gbp(v) || <span className="fxnone">—</span>}
+                      {money(v, site) || <span className="fxnone">—</span>}
+                      {site && <span className="fxcur">{(CUR[site] || [, site])[1]}</span>}
                     </td>
                   );
                 })}

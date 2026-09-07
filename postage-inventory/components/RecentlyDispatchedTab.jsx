@@ -147,7 +147,7 @@ export default function RecentlyDispatchedTab() {
                 <td>{r.pr
                   ? <span className={'bdg ' + priCls(r.pr)}>{r.pr}</span>
                   : <span className="fxnone">—</span>}</td>
-                <td><button className="pbtn" type="button" onClick={() => setOpen(r)}>Detail</button></td>
+                <td><button className="pddet" type="button" onClick={() => setOpen(r)}>Detail</button></td>
               </tr>
             ))}
           </tbody>

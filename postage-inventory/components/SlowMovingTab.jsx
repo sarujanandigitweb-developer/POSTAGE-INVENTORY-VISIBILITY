@@ -21,8 +21,8 @@ export default function SlowMovingTab() {
   const [q, setQ] = useState('');
   const [pri, setPri] = useState('');
   const [php, setPhp] = useState('');      // PH person
-  const [ph, setPh] = useState('');        // PH category
   const [type, setType] = useState('');
+  const [cat, setCat] = useState('');      // main category, by SKU prefix
   const [sort, setSort] = useState('p');
   // The published page opens on Holding stock: 16,453 rows include 13,987 that hold
   // nothing, and a picking list of things there are none of is not the first view.
@@ -36,20 +36,20 @@ export default function SlowMovingTab() {
 
   useEffect(() => {
     let live = true; setBusy(true);
-    const p = new URLSearchParams({ q, pri, stock, type, ph, php, sort, page: String(page), size: String(per) });
+    const p = new URLSearchParams({ q, pri, stock, type, php, cat, sort, page: String(page), size: String(per) });
     fetch('/api/slow-moving?' + p)
       .then(r => r.json())
       .then(j => { if (!live) return; j.ok ? (setD(j), setErr(null)) : setErr(j.error); setBusy(false); })
       .catch(e => { if (live) { setErr(String(e.message || e)); setBusy(false); } });
     return () => { live = false; };
-  }, [q, pri, stock, type, ph, php, sort, page, size, autoRows]);
+  }, [q, pri, stock, type, php, cat, sort, page, size, autoRows]);
 
-  useEffect(() => { setPage(1); }, [q, pri, stock, type, ph, php, sort]);
+  useEffect(() => { setPage(1); }, [q, pri, stock, type, php, cat, sort]);
 
   // Clear returns to the view the tab OPENS on — Holding stock, worst first — not to
   // an empty filter set. "Stock and zero" is a deliberate choice, not the resting state.
   const reset = () => {
-    setQ(''); setPri(''); setStock('h'); setType(''); setPh(''); setPhp(''); setSort('p');
+    setQ(''); setPri(''); setStock('h'); setType(''); setPhp(''); setCat(''); setSort('p');
   };
 
   if (err) return <div className="empty">{err}</div>;
@@ -86,6 +86,15 @@ export default function SlowMovingTab() {
           {/* Zero stock is kept and FLAGGED rather than dropped, so it needs its own
               choice: a slow-mover holding nothing is a different problem from one
               holding 500. */}
+          {/* Main category, from the SKU prefix — the team's own grouping, the same one
+              the Fixed Price tab filters by. Each option carries what it would show
+              given the other filters. */}
+          <select value={cat} onChange={e => setCat(e.target.value)} aria-label="Main category">
+            <option value="">All categories</option>
+            {(d.categories || []).map(c => (
+              <option key={c} value={c}>{c} ({(d.catCounts?.[c] || 0).toLocaleString()})</option>
+            ))}
+          </select>
           <select value={stock} onChange={e => setStock(e.target.value)} aria-label="Filter by stock held">
             <option value="h">Holding stock</option>
             <option value="z">Zero stock only</option>
@@ -102,13 +111,6 @@ export default function SlowMovingTab() {
             <option value="!">Not assigned ({d.phPeople.none.toLocaleString()})</option>
             {d.phPeople.list.map(p => (
               <option key={p} value={p}>{p} ({(d.phPeople.counts[p] || 0).toLocaleString()})</option>
-            ))}
-          </select>
-          <select value={ph} onChange={e => setPh(e.target.value)} aria-label="Filter by PH category">
-            <option value="">All PH categories</option>
-            <option value="!">Not assigned ({d.phCats.none.toLocaleString()})</option>
-            {d.phCats.list.map(c => (
-              <option key={c} value={c}>{c} ({(d.phCats.counts[c] || 0).toLocaleString()})</option>
             ))}
           </select>
           <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort by">

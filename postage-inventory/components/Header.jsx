@@ -8,7 +8,9 @@ export default function Header({
   view, asOf, order, sections, cat, onCat,
   out, low, stockFilter, onStockFilter, onExport, onTheme, onMenu,
 }) {
-  const tab = tabLabel(view);
+  // view is null until Shell has read the saved tab — see `booted` there. A blank
+  // title for one frame is honest; printing "Inventory" and then changing it is not.
+  const tab = view ? tabLabel(view) : '';
   const when = asOf
     ? new Date(asOf).toUTCString().replace(/^\w+, /, '').replace(' GMT', ' UTC')
     : 'loading…';
