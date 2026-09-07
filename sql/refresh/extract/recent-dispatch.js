@@ -1,5 +1,5 @@
 'use strict';
-// RECENTLY DISPATCHED — orders the Postage Team FINISHED in the last 3 days.
+// RECENTLY DISPATCHED — orders the Postage Team FINISHED in the last 7 days.
 // The exact complement of Pending Dispatch: that tab is the queue, this one is the
 // output. Same row grain (one row per ORDER) so the two read the same way.
 //
@@ -37,9 +37,11 @@
 const { q } = require('../db.js');
 const { dayNum, hoursBetween } = require('../daynum.js');
 
-const WINDOW_DAYS = 3;          // "completed within the last 3 days", from the requirement
-// Completions never reach back far: the oldest ORDER completed in the last 3 days was
-// placed 20 days ago. 90 days is a generous guard that keeps the scan bounded.
+const WINDOW_DAYS = 7;          // "completed within the last 7 days", widened from 3 on request
+// Completions never reach back far. The guard was re-measured when the window widened
+// rather than carried over: the oldest ORDER completed inside the last 3 days had been
+// placed 6 days earlier, and inside the last 7 days, 24 days earlier. 90 days still
+// clears that by a wide margin and keeps the scan bounded.
 const LOOKBACK_DAYS = 90;
 
 // source.source_name is stored upper case and abbreviated. SHOPIFY is the LEDSone

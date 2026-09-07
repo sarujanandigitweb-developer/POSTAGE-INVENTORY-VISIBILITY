@@ -1,0 +1,110 @@
+[
+ {
+  "label": "catalogue: products",
+  "ms": 1880,
+  "rows": 44429,
+  "kb": 7816
+ },
+ {
+  "label": "catalogue: images",
+  "ms": 825,
+  "rows": 36550,
+  "kb": 6037
+ },
+ {
+  "label": "stock",
+  "ms": 213,
+  "rows": 11683,
+  "kb": 731
+ },
+ {
+  "label": "warehouses",
+  "ms": 167,
+  "rows": 10,
+  "kb": 0
+ },
+ {
+  "label": "name: shopName",
+  "ms": 333,
+  "rows": 17421,
+  "kb": 797
+ },
+ {
+  "label": "name: amzName",
+  "ms": 664,
+  "rows": 20030,
+  "kb": 3684
+ },
+ {
+  "label": "name: bqName",
+  "ms": 223,
+  "rows": 4126,
+  "kb": 544
+ },
+ {
+  "label": "name: ebayName",
+  "ms": 286,
+  "rows": 3549,
+  "kb": 408
+ },
+ {
+  "label": "name: lineName (narrowed)",
+  "ms": 2288,
+  "rows": 5958,
+  "kb": 744
+ },
+ {
+  "label": "img: shopImg",
+  "ms": 610,
+  "rows": 17368,
+  "kb": 2308
+ },
+ {
+  "label": "img: amzImg",
+  "ms": 438,
+  "rows": 19911,
+  "kb": 1651
+ },
+ {
+  "label": "img: bqImg",
+  "ms": 212,
+  "rows": 4123,
+  "kb": 422
+ },
+ {
+  "label": "img: ebayImg",
+  "ms": 687,
+  "rows": 26358,
+  "kb": 3012
+ },
+ {
+  "label": "img: lineImg (narrowed)",
+  "ms": 961,
+  "rows": 557,
+  "kb": 59
+ },
+ {
+  "label": "ph categories",
+  "ms": 2237,
+  "rows": 29908,
+  "kb": 2616
+ },
+ {
+  "label": "movement: direct",
+  "ms": 2297,
+  "rows": 46085,
+  "kb": 2774
+ },
+ {
+  "label": "movement: combo",
+  "ms": 1576,
+  "rows": 6828,
+  "kb": 341
+ },
+ {
+  "label": "movement: adhoc",
+  "ms": 1156,
+  "rows": 22112,
+  "kb": 1545
+ }
+]

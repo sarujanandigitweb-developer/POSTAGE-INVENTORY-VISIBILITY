@@ -1,6 +1,7 @@
 import { withClient } from '@/lib/db';
 import { ymd } from '@/lib/dates';
 import { skuCategory, CATEGORIES } from '@/lib/sku-category';
+import { catalogue } from '@/lib/catalogue';
 import { getOrBuild, builtAt, page as slice } from '@/lib/dataset';
 
 // SLOW-MOVING PRODUCTS & COMPONENTS.
@@ -92,10 +93,19 @@ const SQL = {
   // text a customer actually saw. Ordered by id, not order_date: ids are issued in
   // insertion order, and joining for the date costs ~110s on the refresh for the
   // same answer.
+  // NARROWED TO THE SKUs THAT ACTUALLY REACH THIS FALLBACK. It is the LAST link in the
+  // name chain, so by the time it runs the gap is known exactly: 18,127 of 44,429. The
+  // unnarrowed form returned 46,301 rows and 6.6 MB to fill 18,127 possible gaps.
+  //
+  // DISTINCT ON and ORDER BY are untouched, and the filter is on the SAME expression the
+  // DISTINCT ON groups by — so for every SKU asked for, the row that wins is the row that
+  // won before. Precedence is unchanged: this still runs last and still only fills gaps.
   lineName: `SELECT DISTINCT ON (upper(COALESCE(NULLIF(real_sku,''),item_sku)))
                     upper(COALESCE(NULLIF(real_sku,''),item_sku)) AS s, item_title AS t
              FROM order_management.order_item_info
-             WHERE item_title IS NOT NULL AND item_title <> '' ORDER BY 1, id DESC`,
+             WHERE item_title IS NOT NULL AND item_title <> ''
+               AND upper(COALESCE(NULLIF(real_sku,''),item_sku)) = ANY($1)
+             ORDER BY 1, id DESC`,
 
   // THE SAME CHAIN FOR IMAGES. This route read inventory.product_images and stopped;
   // ~3,200 SKUs have no row there at all, and the picture usually exists on a listing
@@ -113,10 +123,14 @@ const SQL = {
             FROM listings.ebay_listings
             WHERE site='UK' AND main_image_url IS NOT NULL AND main_image_url <> ''
               AND COALESCE(wrong_sku,0)=0 GROUP BY 1`,
+  // Same treatment, and a larger gain: only 2,967 of 44,429 SKUs reach this fallback,
+  // against 43,989 rows and 4.4 MB fetched to serve them.
   lineImg: `SELECT DISTINCT ON (upper(COALESCE(NULLIF(real_sku,''),item_sku)))
                    upper(COALESCE(NULLIF(real_sku,''),item_sku)) AS s, item_img AS u
             FROM order_management.order_item_info
-            WHERE item_img IS NOT NULL AND item_img <> '' ORDER BY 1, id DESC`,
+            WHERE item_img IS NOT NULL AND item_img <> ''
+              AND upper(COALESCE(NULLIF(real_sku,''),item_sku)) = ANY($1)
+            ORDER BY 1, id DESC`,
   // PH = the person who owns a category. ph_category_products.ref_id is a
   // MARKETPLACE reference (ASIN / eBay item id / EAN), never a SKU, so it has to
   // be resolved through the listing tables.
@@ -141,7 +155,10 @@ const SQL = {
 
 async function build() {
   return withClient(async q => {
-    const prods = await q(SQL.products);
+    // Shared with SKU Fixed Price and Container Details — same SQL, same rows, fetched
+    // once. See lib/catalogue.js.
+    const cat = await catalogue(q);
+    const prods = cat.products;
     const bySku = new Map(prods.map(r => [r.sku, r]));
     const byPid = new Map(prods.map(r => [r.id, r.sku]));
 
@@ -181,14 +198,21 @@ async function build() {
       if (t && t !== 'Combo Default Title.') name.set(r.sku, t);
     }
     // UK listings first, order line last. Each source only fills a gap.
-    for (const key of ['shopName', 'amzName', 'bqName', 'ebayName', 'lineName']) {
-      for (const r of await q(SQL[key])) {
+    const fillName = rows => {
+      for (const r of rows) {
         if (r.s && !name.has(r.s)) {
           const t = (r.t || '').replace(/\s+/g, ' ').trim();
           if (t) name.set(r.s, t);
         }
       }
-    }
+    };
+    for (const key of ['shopName', 'amzName', 'bqName', 'ebayName']) fillName(await q(SQL[key]));
+    // The order line is the LAST source, so the gap it has to fill is now known. Asking
+    // for those SKUs alone, rather than for all 46,301 lines, changes nothing about which
+    // name a SKU ends up with — every row this drops was one the loop above would have
+    // discarded on `!name.has(r.s)`.
+    const needName = [...bySku.keys()].filter(k => !name.has(k));
+    if (needName.length) fillName(await q(SQL.lineName, [needName]));
 
     // SOME COMBO IMAGES ARE FILED UNDER A FILENAME NAMING A DIFFERENT SKU — 38 of the
     // 156 comboproducts rows. The join is correct; the stored file is simply wrong.
@@ -203,7 +227,7 @@ async function build() {
     };
 
     const img = new Map();
-    for (const r of await q(SQL.images)) {
+    for (const r of cat.images) {
       const sku = byPid.get(r.pid);
       // THE CATALOGUE'S OWN IMAGES NEED THE GUARD TOO. This source was trusted
       // unconditionally, so six rows carried a photo whose filename names a different
@@ -213,8 +237,8 @@ async function build() {
       if (namesAnother(sku, r.u)) continue;
       img.set(sku, u);
     }
-    for (const key of ['shopImg', 'amzImg', 'bqImg', 'ebayImg', 'lineImg']) {
-      for (const r of await q(SQL[key])) {
+    const fillImg = rows => {
+      for (const r of rows) {
         const u = String(r.u || '').trim();
         // order lines carry keys that are not catalogue SKUs at all — free text and
         // internal codes — so they are dropped before the guard, not counted as
@@ -223,7 +247,13 @@ async function build() {
         if (img.has(r.s) || namesAnother(r.s, u)) continue;
         img.set(r.s, u.replace(/^http:\/\//i, 'https://'));
       }
-    }
+    };
+    for (const key of ['shopImg', 'amzImg', 'bqImg', 'ebayImg']) fillImg(await q(SQL[key]));
+    // Only 2,967 catalogue SKUs still lack an image at this point; the unnarrowed query
+    // fetched 43,989 rows to serve them. Same last-in-the-chain position, same guards,
+    // including namesAnother() — nothing about which image wins has moved.
+    const needImg = [...bySku.keys()].filter(k => !img.has(k));
+    if (needImg.length) fillImg(await q(SQL.lineImg, [needImg]));
 
     const ph = new Map();
     for (const r of await q(SQL.ph)) if (!ph.has(r.sku)) ph.set(r.sku, { c: r.category_name, p: r.person });
@@ -295,6 +325,14 @@ async function build() {
     return rows;
   });
 }
+
+
+// BATCHING THESE QUERIES WAS TRIED AND MEASURED, AND IT DOES NOTHING. withClient()
+// hands one CLIENT, not the pool, and node-postgres queues queries on a client — so
+// Promise.all over `q` serialises exactly as the awaits already did. Measured: 22,647ms
+// before, 23,277ms after. Real overlap would need separate connections, which raises the
+// per-instance ceiling against a role that allows ten in total and is pinned to one on
+// serverless. Recorded here so nobody spends the afternoon on it again.
 
 export async function GET(request) {
   try {

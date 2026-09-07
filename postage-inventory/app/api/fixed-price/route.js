@@ -1,6 +1,7 @@
 import { withClient } from '@/lib/db';
 import { ymd } from '@/lib/dates';
 import { skuCategory, CATEGORIES } from '@/lib/sku-category';
+import { catalogue } from '@/lib/catalogue';
 import { getOrBuild, builtAt, page as slice } from '@/lib/dataset';
 
 // SKU FIXED PRICE — the fixed selling price (no shipping) on every marketplace
@@ -95,7 +96,9 @@ async function build() {
     const packQty = {};
     for (const r of await q(SQL.packs)) packQty[String(r.pack_char).toUpperCase()] = Number(r.pack_qty);
 
-    const prods = await q(SQL.products);
+    // Shared with Slow-Moving and Container Details — see lib/catalogue.js
+    const cat = await catalogue(q);
+    const prods = cat.products;
     const bySku = new Map(), title = new Map(), pid = new Map(), isSingle = new Map();
     for (const r of prods) {
       bySku.set(r.sku, r);
@@ -109,7 +112,7 @@ async function build() {
     }
 
     const img = new Map();
-    for (const r of await q(SQL.images)) img.set(r.pid, r.u || r.p);
+    for (const r of cat.images) img.set(r.pid, r.u || r.p);
 
     // a date PER marketplace: one max() across all four says "updated today" on a
     // row whose Shopify price has not moved in a year

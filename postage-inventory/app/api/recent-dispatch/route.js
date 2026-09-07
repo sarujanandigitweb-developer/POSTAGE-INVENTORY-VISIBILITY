@@ -2,7 +2,7 @@ import { withClient } from '@/lib/db';
 import { getOrBuild, builtAt } from '@/lib/dataset';
 import { ymd, hoursBetween } from '@/lib/dates';
 
-// RECENTLY DISPATCHED — orders the Postage Team FINISHED in the last 3 days.
+// RECENTLY DISPATCHED — orders the Postage Team FINISHED in the last 7 days.
 // The exact complement of the Dispatch Queue: that tab is the queue, this is the output.
 // SQL ported from ../sql/refresh/extract/recent-dispatch.js, which carries the reasoning
 // in full. The three decisions that matter:
@@ -24,9 +24,11 @@ import { ymd, hoursBetween } from '@/lib/dates';
 //     to what the shipment itself proves. Nothing is inferred from the order status.
 export const dynamic = 'force-dynamic';
 
-const WINDOW_DAYS = 3;
-// Completions never reach back far: the oldest ORDER completed in the last 3 days was
-// placed 20 days ago. 90 days is a generous guard that keeps the scan bounded.
+const WINDOW_DAYS = 7;
+// Completions never reach back far. The guard was re-measured when the window widened
+// rather than carried over: the oldest ORDER completed inside the last 3 days had been
+// placed 6 days earlier, and inside the last 7 days, 24 days earlier. 90 days still
+// clears that by a wide margin and keeps the scan bounded.
 const LOOKBACK_DAYS = 90;
 
 // source.source_name is upper case and abbreviated. SHOPIFY is the LEDSone website.

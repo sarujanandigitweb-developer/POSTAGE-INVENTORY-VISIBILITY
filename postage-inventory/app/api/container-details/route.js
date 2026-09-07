@@ -1,5 +1,6 @@
 import { withClient } from '@/lib/db';
 import { getOrBuild, builtAt } from '@/lib/dataset';
+import { catalogue } from '@/lib/catalogue';
 
 // CONTAINER DETAILS — upcoming and received containers, and what came on each.
 // SQL lifted verbatim from ../sql/refresh/extract/container-details.js so this app
@@ -61,7 +62,10 @@ async function build() {
   return withClient(async q => {
     const lines = await q(LINES);
     const names = {};
-    for (const r of await q(NAMES)) if (r.title && r.title !== PLACEHOLDER) names[r.sku] = r.title;
+    // title_norm IS the NAMES column — the same SQL expression, carried on the shared
+    // catalogue row instead of re-reading 44,429 products for this route alone.
+    const cat = await catalogue(q);
+    for (const r of cat.products) if (r.title_norm && r.title_norm !== PLACEHOLDER) names[r.sku] = r.title_norm;
 
     const box = new Map();
     for (const r of lines) {

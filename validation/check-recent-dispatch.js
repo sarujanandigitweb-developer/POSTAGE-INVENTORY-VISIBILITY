@@ -40,7 +40,14 @@ console.log('ids looked up but absent from markup:',missing.length,
 console.log('\n=== data ===');
 const R=RECENT_DISPATCH.r;
 chk('RECENT_DISPATCH is populated',R.length>0,R.length.toLocaleString()+' dispatched orders');
-chk('the window is stated',RECENT_DISPATCH.days===3,RECENT_DISPATCH.days+' days');
+// The window is a requirement value, not a constant of this check: assert the payload
+// agrees with the extractor that produced it, so widening it there needs no edit here.
+// Read as text — requiring the extractor would pull in pg, which this check does not need.
+var WINDOW_DAYS=Number(/const WINDOW_DAYS = (\d+)/.exec(
+  require('fs').readFileSync(require('path').join(__dirname,'..','sql','refresh','extract',
+    'recent-dispatch.js'),'utf8'))[1]);
+chk('the window is stated',RECENT_DISPATCH.days===WINDOW_DAYS,
+  RECENT_DISPATCH.days+' days (extractor says '+WINDOW_DAYS+')');
 chk('no duplicate order id',new Set(R.map(r=>r.o)).size===R.length);
 chk('every row has an order id, a dispatch date and a turnaround',
   R.every(r=>r.o&&typeof r.x==='number'&&typeof r.th==='number'&&r.th>=0));
