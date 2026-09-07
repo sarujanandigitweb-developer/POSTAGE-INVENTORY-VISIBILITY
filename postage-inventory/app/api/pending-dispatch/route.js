@@ -1,5 +1,5 @@
 import { withClient } from '@/lib/db';
-import { getOrBuild } from '@/lib/dataset';
+import { getOrBuild, builtAt } from '@/lib/dataset';
 import { ymd } from '@/lib/dates';
 
 // MISSING SHIPMENTS — PENDING DISPATCH.
@@ -74,7 +74,8 @@ export async function GET() {
     // development, where there is no snapshot and the database is next door.
     const out = await getOrBuild('pending-dispatch', buildSnapshot);
     return Response.json({
-      ok: true, asOf: new Date().toISOString(), sla: SLA_DAYS,
+      // when the data was read, not when the request arrived
+      ok: true, asOf: builtAt('pending-dispatch') || new Date().toISOString(), sla: SLA_DAYS,
       count: out.length,
       breached: out.filter(r => r.b).length,
       bands: out.reduce((a, r) => ((a[r.band] = (a[r.band] || 0) + 1), a), {}),

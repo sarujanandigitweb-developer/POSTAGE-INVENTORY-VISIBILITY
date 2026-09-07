@@ -120,9 +120,12 @@ bounds.forEach(([key, at], i) => {
     // them and silently produced zero families for exactly those four sections, so
     // their dropdowns offered nothing but "All ...". Anything after the third
     // string is consumed up to the closing bracket and ignored.
-    const fre = /\[\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*(?:,[^\]]*)?\]/g;
+    const fre = /\[\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*(?:,\s*'((?:[^'\\]|\\.)*)'\s*)?\]/g;
     let f; while ((f = fre.exec(body.slice(start, end)))) {
-      fams.push({ code: f[1], label: decode(f[2]), value: f[3] });
+      // f[4] is the SKU PREFIX, present only on the four prefix-defined sections.
+      // classifySKU builds its PREFIX_RULES from it, so without it a new SKU in
+      // those sections cannot be placed.
+      fams.push({ code: f[1], label: decode(f[2]), value: f[3], prefix: f[4] || null });
     }
   }
   const sub2 = /sub2:\s*\{\s*key:\s*'([^']*)',\s*label:\s*'([^']*)'/.exec(body);
@@ -138,9 +141,74 @@ bounds.forEach(([key, at], i) => {
   };
 });
 
+// ---------------------------------------------------------------------------
+// THE CLASSIFIER, so a SKU THE EXPORT HAS NEVER SEEN can still be placed.
+//
+// classification.json is a list of SKUs that already existed when it was made. A
+// lampshade added to inventory.products tomorrow is not in it, and the Inventory page
+// scopes its query to that list — so the new SKU simply would not appear, and the
+// dashboard would be failing at the one job it has.
+//
+// The published page does not have that problem: it derives rules from the data and
+// classifies any SKU on sight. Those same three indexes are emitted here so the app can
+// do it too, built exactly as the page builds them.
+const PREFIX_DEFINED = { SPR: 1, LGT: 1, LB: 1, CSM: 1, CLO: 1, HAP: 1, RFB: 1 };
+
+// 1. the four-character index, DERIVED FROM THE DATA. Where every SKU sharing a 4-char
+//    prefix agrees on its family, that is a rule; where they disagree it is recorded as
+//    ambiguous and the type is left as "Other" rather than guessed.
+const seen = {};
+for (const sku of Object.keys(cls)) {
+  const e = cls[sku];
+  if (!e.f || PREFIX_DEFINED[e.key]) continue;   // prefix-defined sections are routed by rule, not derived
+  const p4 = sku.slice(0, 4).toUpperCase();
+  if (p4.length < 4) continue;
+  ((seen[p4] ||= {})[e.key + '|' + e.f] ||= 0, seen[p4][e.key + '|' + e.f]++);
+}
+const sub4 = {}, sub4Ambiguous = {};
+for (const p4 of Object.keys(seen)) {
+  const codes = Object.keys(seen[p4]);
+  if (codes.length === 1) {
+    const [key, code] = codes[0].split('|');
+    const fam = (sections[key]?.fams || []).find(f => f.code === code);
+    sub4[p4] = { key, code, label: fam ? fam.label : code };
+  } else {
+    sub4Ambiguous[p4] = { key: codes[0].split('|')[0], codes: codes.map(c => c.split('|')[1]) };
+  }
+}
+
+// 2. prefixes DECLARED by a prefix-defined section, longest first so CTKMP (Pajamas
+//    K.M) is tested before CTMP (Pajamas M) and a kids' SKU is never taken by the
+//    adult type.
+const prefixRules = [];
+for (const key of Object.keys(sections))
+  for (const f of sections[key].fams || [])
+    if (f.prefix) prefixRules.push({ p: String(f.prefix).toUpperCase(), key, code: f.code, label: f.label });
+prefixRules.sort((a, b) => b.p.length - a.p.length);
+
+// 3. the two-character map, read from the page's own CLASSIFY literal
+const classify = {};
+{
+  const [cb, ce] = block(html, html.indexOf('const CLASSIFY = {'));
+  const body = html.slice(cb, ce);
+  const re = /([A-Z0-9]{2,4})\s*:\s*\{([^}]*)\}/g;
+  let m2;
+  while ((m2 = re.exec(body))) {
+    const k = (/key:\s*'([^']*)'/.exec(m2[2]) || [])[1];
+    const name = (/name:\s*'([^']*)'/.exec(m2[2]) || [])[1];
+    const sub = (/sub:\s*'([^']*)'/.exec(m2[2]) || [])[1];
+    const code = (/code:\s*'([^']*)'/.exec(m2[2]) || [])[1];
+    if (k) classify[m2[1]] = { key: k, name: decode(name || k), sub: sub ? decode(sub) : null, code: code || null };
+  }
+}
+const names = {};
+for (const k of Object.keys(sections)) names[k] = sections[k].name;
+
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'classification.json'), JSON.stringify(cls));
 fs.writeFileSync(path.join(OUT, 'sections.json'), JSON.stringify(sections, null, 2));
+fs.writeFileSync(path.join(OUT, 'classifier.json'),
+  JSON.stringify({ names, classify, sub4, sub4Ambiguous, prefixRules, prefixDefined: PREFIX_DEFINED }, null, 2));
 
 const counts = {};
 for (const s of Object.keys(cls)) counts[cls[s].key] = (counts[cls[s].key] || 0) + 1;
@@ -148,6 +216,9 @@ console.log('  transforms  : ' + handles + ' handles HAP->SPR · ' + waCollapsed
             ' Wall Arm codes collapsed · ' + lbRetyped + ' Bulbs re-typed');
 console.log('  classification.json : ' + Object.keys(cls).length.toLocaleString() + ' SKUs');
 console.log('  sections.json       : ' + Object.keys(sections).length + ' sections');
+console.log('  classifier.json     : ' + Object.keys(sub4).length + ' four-char rules, ' +
+            Object.keys(sub4Ambiguous).length + ' ambiguous, ' + prefixRules.length +
+            ' declared prefixes, ' + Object.keys(classify).length + ' two-char rules');
 // What the published dashboard's own category strip shows. Kept in step with it by
 // hand: when the strip moves, this moves. CR and LGT went 383->384 and 563->564 when
 // CRSF100CF and WSSH68YBCF were added to the embedded arrays.

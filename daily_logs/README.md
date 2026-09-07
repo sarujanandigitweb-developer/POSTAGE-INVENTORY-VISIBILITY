@@ -38,6 +38,8 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | REQ-09-D01 | App bootstrapped, UI ported verbatim, tab list moved to a sidebar, Inventory tab live | 2026-09-02 |
 | REQ-10 | Container Details, Recently Dispatched, the new postage workbook, and the date-conversion repair | 2026-09-03 |
 | REQ-10-D01 | Two new tabs, dispatch views grouped, six postage sections from two workbooks, seven date call sites fixed, five Next.js tabs ported | 2026-09-03 |
+| REQ-11 | The Next.js app deployed to Vercel, and a cross-check of its data against the published dashboard | 2026-09-04 |
+| REQ-11-D01 | Deployment made to work, Slow-Moving names and images corrected, four empty category filters restored, dispatch dialogs rebuilt, Postage made scrollable | 2026-09-04 |
 
 ## Index
 
@@ -53,3 +55,4 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | 2026-09-01 | Tuesday | REQ-08-D01 | [2026-09-01__sarujanan__inv-piv__REQ-08-D01.md](2026-09-01/2026-09-01__sarujanan__inv-piv__REQ-08-D01.md) |
 | 2026-09-02 | Wednesday | REQ-09-D01 | [2026-09-02__sarujanan__inv-piv__REQ-09-D01.md](2026-09-02/2026-09-02__sarujanan__inv-piv__REQ-09-D01.md) |
 | 2026-09-03 | Thursday | REQ-10-D01 | [2026-09-03__sarujanan__inv-piv__REQ-10-D01.md](2026-09-03/2026-09-03__sarujanan__inv-piv__REQ-10-D01.md) |
+| 2026-09-04 | Friday | REQ-11-D01 | [2026-09-04__sarujanan__inv-piv__REQ-11-D01.md](2026-09-04/2026-09-04__sarujanan__inv-piv__REQ-11-D01.md) |

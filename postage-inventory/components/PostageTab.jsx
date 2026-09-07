@@ -131,6 +131,13 @@ export default function PostageTab() {
               dashboard does it. A carrier band inside a shared table looked tidy and was
               wrong: by the time you have scrolled to SMART TRACK the column names are
               gone, and these tables have five stacked header levels. */}
+          {/* ONE SCROLL REGION FOR THE WHOLE SECTION. Every other tab puts its table
+              inside .scroll; this one had none, and it sits in .card.grow, which is
+              overflow:hidden. Postage Prices renders ELEVEN stacked tables and Box Sizes
+              five, so everything past the first was clipped by the card with no way to
+              reach it. That is the scroll problem: not a scrollbar in the wrong place,
+              a section you could not get to. */}
+          <div className="pgbody">
           {groups.map((g, gi) => (
             <div className="pggrpblk" key={gi}>
               {/* when the table has no header of its own the title moves INTO the
@@ -178,6 +185,7 @@ export default function PostageTab() {
               )}
             </div>
           ))}
+          </div>
 
           {shown === 0 && (
             <div className="empty">Nothing in {sec.title} matches “{q}”.</div>

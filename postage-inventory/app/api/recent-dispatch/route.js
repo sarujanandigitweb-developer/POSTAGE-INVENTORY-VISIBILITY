@@ -1,5 +1,5 @@
 import { withClient } from '@/lib/db';
-import { getOrBuild } from '@/lib/dataset';
+import { getOrBuild, builtAt } from '@/lib/dataset';
 import { ymd, hoursBetween } from '@/lib/dates';
 
 // RECENTLY DISPATCHED — orders the Postage Team FINISHED in the last 3 days.
@@ -105,7 +105,8 @@ export async function GET() {
     // development, where there is no snapshot and the database is next door.
     const out = await getOrBuild('recent-dispatch', buildSnapshot);
     return Response.json({
-      ok: true, asOf: new Date().toISOString(), days: WINDOW_DAYS,
+      // when the data was read, not when the request arrived
+      ok: true, asOf: builtAt('recent-dispatch') || new Date().toISOString(), days: WINDOW_DAYS,
       count: out.length,
       sameDay: out.filter(r => r.th <= 24).length,
       bands: out.reduce((a, r) => ((a[r.band] = (a[r.band] || 0) + 1), a), {}),

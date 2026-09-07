@@ -638,6 +638,19 @@ table.fxtab td.fxdate{color:var(--muted);font-size:12px;font-variant-numeric:tab
 .pdmbtn:hover{background:var(--head2);border-color:var(--accent);color:var(--accent)}
 .pdmcard{background:var(--head2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
   margin:0 0 16px}
+/* The two rules the port was missing. A named block, and a rule that runs the title
+   out to the edge of the card, so the four sections read as four blocks rather than as
+   one long list of labels. */
+.pdmsec + .pdmsec{margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.pdmsec > h5{display:flex;align-items:center;gap:10px;margin:0 0 9px;
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent)}
+.pdmsec > h5::after{content:"";flex:1;height:1px;background:var(--line)}
+.pdmtitle{display:flex;align-items:center;gap:10px;margin:0 0 4px}
+/* The queue's shipping-error line, under the order lines. The label reuses .pdbad
+   rather than a new token: that class already carries both the light and the dark
+   value, and a second definition would be one more thing to keep in step. */
+.pdmerr{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
 .pdmgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px 24px}
 .pdmgrid .f{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
   display:flex;align-items:center;gap:6px;margin-bottom:3px}

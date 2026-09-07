@@ -1,6 +1,10 @@
 import { withClient, query } from '@/lib/db';
-import { getOrBuild, shippedAt } from '@/lib/dataset';
+import { getOrBuild, fromSnapshot, builtAt } from '@/lib/dataset';
 import { classification, CATEGORY_ORDER, skusIn, sectionCounts, imgURL } from '@/lib/classification';
+import { sectionOf } from '@/lib/section-of';
+import { classifySKU } from '@/lib/classify-sku';
+
+const SECTION_KEYS = new Set(CATEGORY_ORDER);
 import { parseLine, region as histRegion } from '@/lib/history-parser';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -49,6 +53,20 @@ export const revalidate = 0;
 // described "Combo Default Title." and all inventory_bool = false. 479 of them
 // even carry stock mirrored from their components, so filtering on stock would
 // not catch them.
+// EVERY CATALOGUE SKU, so a product added since the last export still appears.
+// FILTERED EXACTLY AS PRODUCTS IS, all four conditions. The first version carried only
+// inventory_bool, so this list offered SKUs the row query then dropped — packs, combos
+// and two DUMMY test rows — and the "placed by rule" count overstated by 275. The two
+// must agree on what counts as a product or the section's list and its rows disagree.
+const ALL_SKUS_LIVE = `
+  SELECT DISTINCT upper(pr.sku) AS sku
+    FROM inventory.products pr
+   WHERE pr.inventory_bool
+     AND pr.sku IS NOT NULL AND pr.sku <> ''
+     AND pr.sku NOT LIKE '%+%'
+     AND pr.sku !~ '[0-9A-Z]PK$'
+     AND upper(pr.sku) NOT LIKE '%DUMMY%'`;
+
 const PRODUCTS = `
   SELECT DISTINCT ON (upper(pr.sku))
          upper(pr.sku) AS sku,
@@ -187,14 +205,23 @@ function unplacedSkus(fromSnapshot) {
   return unplacedCache ? unplacedCache.list : null;
 }
 
+// The classifier's answer in the shape a curated entry has, so the row builder does
+// not care which of the two it got.
+function derive(sku) {
+  const g = classifySKU(sku);
+  if (!g.key) return null;
+  return { key: g.key, f: g.famCode ?? null, t: g.subCategory || 'Other' };
+}
+
 export async function GET(request) {
   // One category per request. The whole catalogue is 6,181 SKUs and reading it
   // took ~6s before anything appeared; a section is 124–1,487, so the first paint
   // is a fraction of that. Which SKUs are in a section is known locally from the
   // curated classification, so no query is needed to work it out.
   const key = new URL(request.url).searchParams.get('cat') || CATEGORY_ORDER[0];
-  const wanted = skusIn(key);
-  if (!wanted.length) {
+  // the category must EXIST; whether it has any curated SKU is no longer the test,
+  // since the rows now come from the catalogue
+  if (!SECTION_KEYS.has(key)) {
     return Response.json({ ok: false, error: 'Unknown category: ' + key }, { status: 400 });
   }
   try {
@@ -211,11 +238,18 @@ export async function GET(request) {
     return Response.json({
       ok: true,
       cat: key,
-      asOf: new Date().toISOString(),
+      // WHEN THE DATA WAS READ, not when this request arrived. It used to be the
+      // request time, so the header's "read …" chip always looked current no matter
+      // how old the rows were — the staleness had nothing showing it.
+      asOf: builtAt('inventory-' + key) || new Date().toISOString(),
       count: data.rows.length,
-      unplaced: unplacedSkus(shippedAt('inventory-' + key) !== null),          // null until the background check lands
+      // WAS: shippedAt(...) !== null — true whenever a snapshot FILE existed, even a
+      // stale one, which is why this said "served from a snapshot" on a build whose
+      // data was days old. It now asks whether the row set actually came from one.
+      unplaced: unplacedSkus(fromSnapshot('inventory-' + key)),
       order: CATEGORY_ORDER,
       sections, counts: sectionCounts(),
+      uncatalogued: data.uncatalogued ?? 0,   // catalogue SKUs no rule could place
       warehouses: data.warehouses,
       missingWarehouses: data.missingWarehouses,
       rows: data.rows,
@@ -232,10 +266,32 @@ export async function GET(request) {
 // would be 6,181 rows to load for a section of 124, which is the cost the route was
 // written to avoid. The route calls this same function.
 export function buildSnapshot(cat) {
-  const wanted = skusIn(cat);
-  if (!wanted.length) throw new Error('Unknown category: ' + cat);
+  if (!SECTION_KEYS.has(cat)) throw new Error('Unknown category: ' + cat);
   const key = cat;
   return withClient(async q => {
+      // THE SECTION'S SKU LIST COMES FROM THE DATABASE, NOT FROM THE EXPORT.
+      //
+      // This used to be skusIn(cat) — the curated file alone — so a SKU added to
+      // inventory.products after the last export was invisible: add a lampshade
+      // today and Lampshade would not show it, however fresh the query. The
+      // catalogue is asked instead, and each SKU is placed by sectionOf(): its
+      // curated section if it has one, else a 4-char prefix that the whole
+      // catalogue uses for exactly one section, else the page's own classifier.
+      // Anything none of those can place is counted and reported, never filed
+      // somewhere plausible.
+      const all = await q(ALL_SKUS_LIVE);
+      const wanted = [];
+      let added = 0, uncatalogued = 0;
+      for (const r of all) {
+        const { key: sec, how } = sectionOf(r.sku);
+        if (how === 'unplaced') { uncatalogued++; continue; }
+        if (sec !== cat) continue;
+        wanted.push(r.sku);
+        if (how !== 'curated') added++;
+      }
+      if (added) console.log(`[inventory] ${cat}: ${added} SKU(s) not in the export, placed by rule`);
+      if (!wanted.length) return { rows: [], warehouses: {}, missingWarehouses: [], uncatalogued };
+
       const products = await q(PRODUCTS, [wanted]);
       const pids = products.map(p => p.pid);
 
@@ -315,8 +371,14 @@ export function buildSnapshot(cat) {
       const alt = pipelineFile('alt');
       const rows = [];
       for (const p of products) {
-        const c = cls[p.sku];
-        if (!c) continue;              // not in this section's curated list
+        // A SKU THE EXPORT HAS NEVER SEEN STILL GETS A ROW. This used to be
+        // `if (!c) continue` — so a lampshade added after the last export was
+        // fetched, then dropped here, and the section quietly showed the old list.
+        // The curated entry stays the authority where it exists; where it does not,
+        // the page's own classifier supplies the section and the type, and a type it
+        // cannot name reads "Other" rather than being invented.
+        const c = cls[p.sku] || derive(p.sku);
+        if (!c || c.key !== key) continue;
         const s = stock[p.pid] || {};
         // £ only from a UK channel; anything else keeps its own currency
         const g = gbp[p.sku];
@@ -350,7 +412,10 @@ export function buildSnapshot(cat) {
         rows.push(row);
       }
 
-      return { rows, warehouses, missingWarehouses };
+      // How many catalogue SKUs no rule could place. Reported, not hidden: they are
+      // free-text keys like "2 PIN CLIP TO CLIP" that are not really SKUs, and if that
+      // number starts climbing it means a new prefix needs adding to the registry.
+      return { rows, warehouses, missingWarehouses, uncatalogued };
   });
 }
 

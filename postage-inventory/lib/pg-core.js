@@ -84,7 +84,12 @@ function getPool() {
     // holding 9. Three leaves room for the 2-hourly refresh, which must never be
     // starved by this app. Requests past three QUEUE in the pool rather than
     // opening a socket the server will refuse.
-    max: 3,
+    // ON A SERVERLESS HOST EACH CONCURRENT REQUEST IS ITS OWN INSTANCE with its own
+    // pool, so `max` multiplies by the number of live instances rather than capping
+    // anything globally. Four instances at three each is twelve against a role that
+    // allows ten. One apiece keeps the ceiling equal to the concurrency, and the
+    // dataset TTL is what actually keeps the query count down.
+    max: process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME ? 1 : 3,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
     statement_timeout: 120000,

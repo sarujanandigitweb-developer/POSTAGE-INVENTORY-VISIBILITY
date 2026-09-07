@@ -3,6 +3,8 @@ import { perPage, useAutoRows } from '@/lib/rows';
 import { useEffect, useMemo, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import DispatchDialog, { Section, Field, Chip } from './DispatchDialog';
+import { exportOrder } from '@/lib/export-order';
 import Loading from './Loading';
 
 const PRI = { 3: 'Critical', 2: 'High', 1: 'Normal' };
@@ -137,35 +139,56 @@ export default function PendingDispatchTab() {
       <Pager total={rows.length} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="orders" />
 
-      {open && (
-        <div className="pdmodal" role="dialog" aria-modal="true" onClick={() => setOpen(null)}>
-          <div className="pdbox" onClick={e => e.stopPropagation()}>
-            <h3>Order {open.o}</h3>
-            <div className="pdmeta">
-              <span><i>Marketplace</i>{open.m || '—'}</span>
-              <span><i>Warehouse</i>{open.w || '—'}</span>
-              <span><i>Ship to</i>{open.c || '—'}{open.rg ? ', ' + open.rg : ''}</span>
-              <span><i>Courier</i>{open.cr || '—'}</span>
-              <span><i>Tracking</i>{open.t || '—'}</span>
-              <span><i>Days pending</i>{open.dy}</span>
-            </div>
-            <table className="pdlines">
-              <thead><tr><th>SKU</th><th>Product Name</th><th>Qty</th><th>Stock</th></tr></thead>
-              <tbody>
-                {open.li.length ? open.li.map((l, i) => (
-                  <tr key={i}>
-                    <td className="fxsku">{l.s || '—'}</td>
-                    <td>{l.n || '—'}</td>
-                    <td>{l.q}</td>
-                    <td>{l.k === null ? '—' : l.k}</td>
-                  </tr>
-                )) : <tr><td colSpan={4}>No lines recorded for this order.</td></tr>}
-              </tbody>
-            </table>
-            <button className="gbtn" type="button" onClick={() => setOpen(null)}>Close</button>
-          </div>
-        </div>
-      )}
+      {open && (() => {
+        // The same tones the dashboard uses, so the two tabs read as one system.
+        const stCls = /hold/i.test(open.s) ? 'bad'
+          : /awaiting courier/i.test(open.s) ? 'go'
+          : /not dispatched/i.test(open.s) ? 'warn' : '';
+        const ageCls = open.pr === 3 ? 'bad' : open.pr === 2 ? 'warn' : 'ok';
+        const payCls = /paid|complete/i.test(open.p || '') ? 'ok' : 'warn';
+        const PRI = { 3: ['Critical', 'p3'], 2: ['High', 'p2'], 1: ['Normal', 'p1'] };
+        const [plabel, pcls] = PRI[open.pr] || ['', ''];
+        return (
+        <DispatchDialog
+          title={open.o} pill="Pending Dispatch" state={open.s}
+          meta={<>Ordered {open.date} · {open.dy} day{open.dy === 1 ? '' : 's'} pending
+                 {open.b && <> · <span className="pdbad">Past the {d.sla}-day SLA</span></>}</>}
+          onExport={() => exportOrder(open)}
+          onClose={() => setOpen(null)}
+          lines={open.li}
+          error={open.e || null}
+          sections={<>
+            <Section title="The order">
+              <Field icon="order" label="Order ID" value={open.o} copy />
+              <Field icon="globe" label="Marketplace" value={open.m} />
+              <Field icon="card" label="Payment Status"
+                     value={open.p ? <Chip cls={payCls}>{open.p}</Chip> : ''} />
+            </Section>
+            <Section title="How long it has waited">
+              <Field icon="date" label="Order Date" value={open.date} />
+              <Field icon="clock" label="Days Pending" value={String(open.dy)} />
+              <Field icon="tag" label="Order Age Category"
+                     value={<Chip cls={ageCls}>{open.band}</Chip>} />
+              <Field icon="alert" label="Priority"
+                     value={plabel ? <span className={'smpri ' + pcls}>{plabel}</span> : ''} />
+              {/* the SLA is a stated assumption, not a value read from the database */}
+              <Field icon="alert" label="SLA Breach"
+                     value={open.b ? <span className="pdbad">Breached (over {d.sla} days)</span>
+                                   : <Chip cls="ok">Within {d.sla} days</Chip>} />
+            </Section>
+            <Section title="Where it is going">
+              <Field icon="home" label="Warehouse" value={open.w} />
+              <Field icon="pin" label="Ship To" value={open.c} sub={open.rg} />
+            </Section>
+            <Section title="Carriage">
+              <Field icon="truck" label="Dispatch Status" value={<Chip cls={stCls}>{open.s}</Chip>} />
+              <Field icon="flag" label="Pending Status" value="Pending Dispatch" />
+              <Field icon="truck" label="Courier" value={open.cr} />
+              <Field icon="box" label="Tracking Number" value={open.t} copy />
+            </Section>
+          </>}
+        />);
+      })()}
     </>
   );
 }

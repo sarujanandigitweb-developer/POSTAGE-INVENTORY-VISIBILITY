@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
+import DispatchDialog, { Section, Field, Chip } from './DispatchDialog';
+import { exportOrder } from '@/lib/export-order';
 import Loading from './Loading';
 import { perPage, useAutoRows } from '@/lib/rows';
 import { turnaround } from '@/lib/dates';
@@ -156,40 +158,52 @@ export default function RecentlyDispatchedTab() {
       <Pager total={rows.length} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="orders" />
 
-      {open && (
-        <div className="pdmodal" role="dialog" aria-modal="true" onClick={() => setOpen(null)}>
-          <div className="pdbox" onClick={e => e.stopPropagation()}>
-            <h3>Order {open.o}</h3>
-            <div className="pdmeta">
-              {/* Dispatched is off the table — too many columns — but it is the axis this
-                  tab is built on, so it stays here, in the filter and in the sort. */}
-              <span><i>Dispatched</i>{open.x} ({open.band})</span>
-              <span><i>Turnaround</i>{turnaround(open.th)}</span>
-              <span><i>Marketplace</i>{open.m || '—'}</span>
-              <span><i>Warehouse</i>{open.w || '—'}</span>
-              <span><i>Ship to</i>{open.c || '—'}{open.rg ? ', ' + open.rg : ''}</span>
-              <span><i>Courier</i>{open.cr || '—'}</span>
-              <span><i>Tracking</i>{open.t || '—'}</span>
-              <span><i>Priority</i>{open.pr || '—'}</span>
-              {open.ev && <span><i>Last carrier event</i>{open.ev}</span>}
-            </div>
-            <table className="pdlines">
-              <thead><tr><th>SKU</th><th>Product Name</th><th>Qty</th><th>Stock</th></tr></thead>
-              <tbody>
-                {open.li.length ? open.li.map((l, i) => (
-                  <tr key={i}>
-                    <td className="fxsku">{l.s || '—'}</td>
-                    <td>{l.n || '—'}</td>
-                    <td>{l.q}</td>
-                    <td>{l.k === null ? '—' : l.k}</td>
-                  </tr>
-                )) : <tr><td colSpan={4}>No lines recorded for this order.</td></tr>}
-              </tbody>
-            </table>
-            <button className="gbtn" type="button" onClick={() => setOpen(null)}>Close</button>
-          </div>
-        </div>
-      )}
+      {open && (() => {
+        const stCls = /deliver/i.test(open.s) ? 'ok'
+          : /transit|out for/i.test(open.s) ? 'go'
+          : /problem|return|delet|fail|cancel/i.test(open.s) ? 'bad'
+          : /no tracking/i.test(open.s) ? 'dash' : '';       // nothing to follow up, not a fault
+        const turnCls = open.th <= 24 ? 'ok' : open.th <= 72 ? 'warn' : 'bad';
+        const CH = { Amazon: 'a', eBay: 'e', Website: 'w', 'B&Q': 'b', Wayfair: 'y' };
+        return (
+        <DispatchDialog
+          title={open.o} pill="Dispatched" state={open.s}
+          meta={<>Ordered {open.date} · Dispatched {open.x} ({turnaround(open.th)})</>}
+          onExport={() => exportOrder(open)}
+          onClose={() => setOpen(null)}
+          lines={open.li}
+          sections={<>
+            <Section title="The order">
+              <Field icon="order" label="Order ID" value={open.o} copy />
+              <Field icon="globe" label="Marketplace"
+                     value={open.m ? <span className={'bdg ch ch-' + (CH[open.m] || 'x')}>{open.m}</span> : ''} />
+              {/* Prime is the only service here with a marketplace-enforced deadline */}
+              <Field icon="flag" label="Priority"
+                     value={open.pr ? <Chip cls={/prime/i.test(open.pr) ? 'go' : ''}>{open.pr}</Chip> : ''} />
+            </Section>
+            <Section title="Timing">
+              <Field icon="date" label="Order Date" value={open.date} />
+              <Field icon="date" label="Dispatched" value={open.x} sub={open.band} />
+              <Field icon="clock" label="Turnaround"
+                     value={<Chip cls={turnCls}>{turnaround(open.th)}</Chip>}
+                     sub={open.th <= 24 ? 'within 24 hours' : 'over a day on the floor'} />
+            </Section>
+            <Section title="Where it went">
+              <Field icon="home" label="Warehouse" value={open.w} />
+              {/* Customer Country cannot be resolved: shipping_address.country_id has no
+                  lookup table anywhere in the database, so the real address text is shown
+                  rather than a guessed country name. */}
+              <Field icon="pin" label="Ship To" value={open.c} sub={open.rg} />
+            </Section>
+            <Section title="Carriage">
+              <Field icon="truck" label="Courier" value={open.cr} />
+              <Field icon="box" label="Tracking Number" value={open.t} copy />
+              <Field icon="truck" label="Dispatch Status" value={<Chip cls={stCls}>{open.s}</Chip>} />
+              <Field icon="alert" label="Last Carrier Event" value={open.ev} />
+            </Section>
+          </>}
+        />);
+      })()}
     </>
   );
 }

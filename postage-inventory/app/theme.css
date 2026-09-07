@@ -407,12 +407,28 @@ table.cdmtab td.fxname { white-space: normal; line-height: 1.35; }
 }
 .sktext b { color: var(--ink-1); font-variant-numeric: tabular-nums; margin-left: 2px; }
 .sknote { color: var(--ink-2); font-size: 12px; opacity: .85; }
-.skspin {
-  width: 15px; height: 15px; border-radius: 50%; flex: none;
-  border: 2px solid var(--edge); border-top-color: var(--brand);
-  animation: skspin .8s linear infinite;
+/* The mark assembles: each face fades up in turn, then the whole thing breathes.
+   Three faces at 1.5s means a full cycle is short enough to feel alive and long
+   enough not to fidget. */
+.skmark { flex: none; display: inline-flex; color: var(--brand); line-height: 0; }
+.skmark svg path { opacity: .18; animation: skface 1.5s ease-in-out infinite; }
+.skmark svg .f1 { animation-delay: 0s; }
+.skmark svg .f2 { animation-delay: .18s; }
+.skmark svg .f3 { animation-delay: .36s; }
+@keyframes skface { 0%, 70%, 100% { opacity: .18; } 22%, 46% { opacity: 1; } }
+
+/* An indeterminate bar under the line. It does not claim a percentage — nothing here
+   knows one — it just shows the request is still moving. */
+.skprog {
+  flex: 1 1 120px; min-width: 90px; height: 3px; border-radius: 999px;
+  background: var(--edge); overflow: hidden; position: relative;
 }
-@keyframes skspin { to { transform: rotate(360deg); } }
+.skprog i {
+  position: absolute; inset: 0 auto 0 0; width: 38%; border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+  animation: skslide 1.25s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+@keyframes skslide { 0% { transform: translateX(-100%); } 100% { transform: translateX(360%); } }
 
 .sktable { padding: 10px 16px 16px; overflow: hidden; }
 .skhead, .skrow { display: flex; gap: 12px; align-items: center; padding: 11px 0; }
@@ -430,7 +446,8 @@ table.cdmtab td.fxname { white-space: normal; line-height: 1.35; }
 
 /* someone who prefers less motion still gets the shape, without the movement */
 @media (prefers-reduced-motion: reduce) {
-  .skspin, .skrow, .skcell { animation: none; }
+  .skmark svg path, .skprog i, .skrow, .skcell { animation: none; }
+  .skmark svg path { opacity: 1; }  .skprog i { transform: none; width: 100%; }
   .skcell { background: var(--edge); }
 }
 
@@ -697,6 +714,14 @@ table.fxtab td.fxprice.fx-hi{color:#c81e1e}
   font-weight:700;letter-spacing:.01em;color:var(--ink)}
 .pggrp::after{content:"";flex:1;height:1px;background:var(--line)}
 .pggrpblk:first-child .pggrp{margin-top:12px}
+/* The section's single scroll region. .card.grow is overflow:hidden and this tab had
+   no scroller of its own, so everything past the first table was unreachable. */
+.pgbody{flex:1 1 auto;min-height:0;overflow:auto}
+/* Inside it the individual tables must NOT scroll as well: two nested scrollbars on a
+   page of eleven tables is worse than the clipping it replaces. They size to content
+   and the region above does the scrolling — which also lets the sticky header rows
+   stick to the section rather than to their own little box. */
+.pgbody .pgscroll{max-height:none;overflow:visible}
 .pgscroll{overflow:auto;max-height:calc(100vh - 300px);border:1px solid var(--line);
   border-radius:10px;background:var(--panel)}
 .pgtab{border-collapse:separate;border-spacing:0;font-size:var(--fs);width:auto}

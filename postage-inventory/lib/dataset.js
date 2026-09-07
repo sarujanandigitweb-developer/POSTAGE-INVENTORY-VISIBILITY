@@ -11,7 +11,15 @@ import { snapshotDir } from './data-dir.js';
 // it. The first caller pays for the build; everyone after gets a slice.
 //
 // Concurrent callers share one build rather than each starting their own.
-const TTL = 10 * 60 * 1000;
+// How long any held copy — in memory, on disk, or shipped with the build — may be
+// served before the database is asked again. LEDSONE_DATA_TTL is in SECONDS.
+//
+// This is the knob that decides "live" versus "stale". It is deliberately not zero:
+// tech_user allows TEN connections in total and shares them with pgAdmin and the
+// 2-hourly refresh, so a page with six tables must not open six queries per viewer.
+// Five minutes means a warm instance queries once per dataset per five minutes and
+// every reader sees data no older than that.
+const TTL = Math.max(0, Number(process.env.LEDSONE_DATA_TTL ?? 300)) * 1000;
 
 // On globalThis, for the same reason the pool is: Next bundles each route handler
 // separately and dev HMR re-evaluates modules, so a plain module-level Map is not
@@ -51,9 +59,9 @@ function writeDisk(key, at, data) {
 
 // A SNAPSHOT SHIPPED WITH THE DEPLOYMENT. Built before the app is packaged — by the
 // build, or by the machine that already runs the 2-hourly refresh — and read instead of
-// the database. It carries NO TTL: it is not a cache of a live source, it IS the source
-// in a deployment, exactly as the published HTML dashboard is a 2-hourly snapshot rather
-// than a live page.
+// the database, while it is still inside the TTL. It is a HEAD START, not the source:
+// it spares the first reader of a fresh deployment a cold query, and once it ages out
+// the database is read like anywhere else.
 //
 // This is what makes the app hostable. Serverless gives every concurrent request its own
 // instance and its own pool, against a role that allows TEN connections in total and
@@ -68,10 +76,17 @@ function readShipped(key) {
   } catch { return null; }        // no snapshot: fall through and query
 }
 
-/** Was this dataset shipped, rather than queried? */
+/** When was this dataset actually read from the database? */
 export function shippedAt(key) {
   const s = readShipped(key);
   return s ? s.at : null;
+}
+
+/** Is this dataset currently being SERVED from a shipped snapshot — that is, does one
+ *  exist AND is it still inside the TTL? A stale file on disk is not a snapshot in use. */
+export function fromSnapshot(key) {
+  const s = readShipped(key);
+  return !!s && Date.now() - s.at < TTL;
 }
 
 export async function getOrBuild(key, build) {
@@ -79,9 +94,19 @@ export async function getOrBuild(key, build) {
   if (hit && Date.now() - hit.at < TTL) return hit.data;
   if (inflight.has(key)) return inflight.get(key);
 
-  // shipped first, and it never expires — see the note above
+  // A SHIPPED SNAPSHOT IS A CACHE, NOT THE SOURCE. It used to be preferred over
+  // everything and to never expire, which meant a deployed build served the data it was
+  // built with FOREVER — the site showed the deploy day's figures three days later and
+  // would never have moved on its own.
+  //
+  // It is now judged by the same TTL as everything else: inside the window it saves a
+  // cold start a query, outside it the database is asked. Its OWN timestamp is kept, so
+  // builtAt() reports when the data was read, not when this process happened to load it.
   const shipped = readShipped(key);
-  if (shipped) { cache.set(key, { at: Date.now(), data: shipped.data }); return shipped.data; }
+  if (shipped && Date.now() - shipped.at < TTL) {
+    cache.set(key, { at: shipped.at, data: shipped.data });
+    return shipped.data;
+  }
 
   const onDisk = readDisk(key);
   if (onDisk) { cache.set(key, onDisk); return onDisk.data; }

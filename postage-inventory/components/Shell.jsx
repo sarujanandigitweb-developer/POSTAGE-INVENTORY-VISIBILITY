@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { matches } from '@/lib/filter';
 import { stockLevel } from '@/lib/stock';
 import Sidebar, { TABS } from './Sidebar';
@@ -42,11 +42,20 @@ export default function Shell() {
   // appeared. A section is 124–1,487 rows, so the first paint is quick, and each
   // section is cached after its first visit so going back is instant.
   const [cache, setCache] = useState({});
+  // the same map, reachable from the effect without making it a dependency
+  const cacheRef = useRef(cache);
+  useEffect(() => { cacheRef.current = cache; }, [cache]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (cache[st.cat]) { setData(cache[st.cat]); setLoading(false); return; }
+    // A CACHED SECTION IS SHOWN, THEN RE-CHECKED. Keeping it for the whole session
+    // made going back instant and also meant a tab left open all morning never saw a
+    // new figure. The held copy paints immediately — no spinner, no flicker — and the
+    // request still goes out behind it, so the next render is current.
+    const held = cacheRef.current[st.cat];
+    if (held) { setData(held); setLoading(false); }
     let live = true;
-    setLoading(true); setErr(null);
+    if (!held) setLoading(true);
+    setErr(null);
     fetch('/api/inventory?cat=' + encodeURIComponent(st.cat))
       .then(r => r.json())
       .then(j => {
@@ -57,7 +66,11 @@ export default function Shell() {
       })
       .catch(e => { if (live) { setErr(String(e.message || e)); setLoading(false); } });
     return () => { live = false; };
-  }, [st.cat, cache]);
+    // DEPS ARE THE CATEGORY ALONE. `cache` must NOT be here: this effect now always
+    // fetches and always setCache()s, so listing it would retrigger the effect on its
+    // own result — an endless fetch loop against the database. The held copy is read
+    // through a ref, which does not participate in the dependency check.
+  }, [st.cat]);
 
   // Warm the two heavy datasets in the background once Inventory has painted.
   // Fixed Price (~30k rows) and Slow-Moving (~16k) are built from several
@@ -138,7 +151,12 @@ export default function Shell() {
         <div className="body">
           {view === 'inv' && (
             err ? <div className="card"><div className="empty">{err}</div></div>
-            : !data ? <div className="card grow"><Loading what={(data?.sections?.[st.cat]?.name) || 'inventory'} cols={16} rows={9} /></div>
+            // NEVER RENDER ONE CATEGORY'S ROWS UNDER ANOTHER'S HEADING. While a
+            // switch is in flight `data` still holds the section just left, and the
+            // new section's filters were being applied to it — Clothes selected,
+            // Cosmetics' 124 rows underneath, "Showing 0 of 0 … filtered from 124".
+            : (!data || data.cat !== st.cat)
+              ? <div className="card grow"><Loading what={(data?.sections?.[st.cat]?.name) || 'inventory'} cols={16} rows={9} /></div>
             : <>
                 <div className="card">
                   <CategoryBar order={data.order} sections={data.sections} counts={data.counts}
