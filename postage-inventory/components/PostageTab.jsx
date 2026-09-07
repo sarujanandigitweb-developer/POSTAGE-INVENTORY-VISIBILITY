@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { held, load } from '@/lib/client-datasets';
 import { IconSearch, IconReset } from './Icons';
 import Loading from './Loading';
 
@@ -39,13 +40,17 @@ export default function PostageTab() {
   const [q, setQ] = useState('');
   const [col, setCol] = useState('');   // '' = every column
 
-  const load = () => {
-    setD(null); setErr(null);
-    fetch('/api/postage').then(r => r.json())
+  // `reload` is also the Refresh button, which must always go to the server — so it
+  // clears the held copy first rather than being served the one it is trying to replace.
+  const reload = (fresh = false) => {
+    setErr(null);
+    const h = fresh ? null : held('/api/postage');
+    if (h) setD(h); else setD(null);
+    load('/api/postage')
       .then(j => (j.ok ? setD(j) : setErr(j.error)))
       .catch(e => setErr(String(e.message || e)));
   };
-  useEffect(load, []);
+  useEffect(() => { reload(); }, []);
   // a column index means nothing in the next table, so the scope resets with the section
   useEffect(() => { setQ(''); setCol(''); }, [sel]);
 
@@ -74,7 +79,7 @@ export default function PostageTab() {
   if (err) return (
     <div className="empty">
       <p>{err}</p>
-      <button className="btn" type="button" onClick={load} style={{ marginTop: 12 }}>
+      <button className="btn" type="button" onClick={() => reload(true)} style={{ marginTop: 12 }}>
         <IconReset size={14} />Try again
       </button>
     </div>
@@ -120,7 +125,7 @@ export default function PostageTab() {
                                  onClick={() => { setQ(''); setCol(''); }}>
             <IconReset size={14} />Clear
           </button>}
-          <button className="btn" type="button" onClick={load} title="Read the sheet again">
+          <button className="btn" type="button" onClick={() => reload(true)} title="Read the sheet again">
             <IconReset size={14} />Refresh
           </button>
           {sec && <a className="btn" href={sec.edit} target="_blank" rel="noopener noreferrer">

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { held, load } from '@/lib/client-datasets';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
 import DispatchDialog, { Section, Field, Chip } from './DispatchDialog';
@@ -40,7 +41,9 @@ export default function RecentlyDispatchedTab() {
 
   useEffect(() => {
     let live = true;
-    fetch('/api/recent-dispatch').then(r => r.json())
+    const h = held('/api/recent-dispatch');
+    if (h) setD(h);
+    load('/api/recent-dispatch')
       .then(j => { if (!live) return; j.ok ? setD(j) : setErr(j.error); })
       .catch(e => live && setErr(String(e.message || e)));
     return () => { live = false; };

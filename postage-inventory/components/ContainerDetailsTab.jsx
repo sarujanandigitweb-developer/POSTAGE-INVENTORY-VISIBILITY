@@ -1,6 +1,7 @@
 'use client';
 import { perPage, useFitRows } from '@/lib/rows';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { held, load } from '@/lib/client-datasets';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
 import Loading from './Loading';
@@ -36,7 +37,10 @@ export default function ContainerDetailsTab() {
   useEffect(() => {
     let live = true;
     const p = new URLSearchParams({ q, status, region, stage, sort });
-    fetch('/api/container-details?' + p).then(r => r.json())
+    const url = '/api/container-details?' + p;
+    const h = held(url);
+    if (h) { setD(h); setErr(null); }
+    load(url)
       .then(j => { if (!live) return; j.ok ? (setD(j), setErr(null)) : setErr(j.error); })
       .catch(e => live && setErr(String(e.message || e)));
     return () => { live = false; };

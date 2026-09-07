@@ -2,6 +2,7 @@
 import { perPage, useAutoRows } from '@/lib/rows';
 import ImageZoom from './ImageZoom';
 import { useEffect, useState } from 'react';
+import { held, load } from '@/lib/client-datasets';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
 import Loading from './Loading';
@@ -37,8 +38,14 @@ export default function SlowMovingTab() {
   useEffect(() => {
     let live = true; setBusy(true);
     const p = new URLSearchParams({ q, pri, stock, type, php, cat, sort, page: String(page), size: String(per) });
-    fetch('/api/slow-moving?' + p)
-      .then(r => r.json())
+    // A copy this URL already returned paints now, with no spinner; the request still
+    // goes out behind it. Identical to how Shell has always treated a cached Inventory
+    // section, and it is what makes returning to this tab immediate — leaving it unmounts
+    // the component and destroys `d`, so without this every return refetched 5.8 MB.
+    const url = '/api/slow-moving?' + p;
+    const h = held(url);
+    if (h) { setD(h); setErr(null); setBusy(false); }
+    load(url)
       .then(j => { if (!live) return; j.ok ? (setD(j), setErr(null)) : setErr(j.error); setBusy(false); })
       .catch(e => { if (live) { setErr(String(e.message || e)); setBusy(false); } });
     return () => { live = false; };

@@ -1,0 +1,33 @@
+{
+  "measured_at": "2026-09-07T11:20:00Z",
+  "how": "curl against the running dev server on 127.0.0.1:3020. Cold = the dataset's .cache file (and .cache/catalogue.json where the route shares it) deleted immediately before the call. Warm = the same call repeated inside the 300s TTL.",
+  "caveat": "Measured while the link to the remote database (169.58.91.229, 178ms RTT) was healthy. The same endpoints were observed at 36s and 24s earlier the same day during a transient link degradation; see network_probe below.",
+  "endpoints": {
+    "inventory?cat=CR":  { "cold_s": 4.34, "warm_s": 0.02, "payload": "492 KB", "cache_key": "inventory-CR" },
+    "container-details": { "cold_s": 4.54, "warm_s": 0.02, "payload": "760 KB", "cache_key": "container-details" },
+    "fixed-price":       { "cold_s": 3.16, "warm_s": 0.03, "payload": "12 MB",  "cache_key": "fixed-price" },
+    "slow-moving":       { "cold_s": 13.97, "warm_s": 0.02, "payload": "5.8 MB", "cache_key": "slow-moving" },
+    "pending-dispatch":  { "cold_s": 0.96, "warm_s": 0.02, "payload": "80 KB",  "cache_key": "pending-dispatch" },
+    "recent-dispatch":   { "cold_s": 2.44, "warm_s": 0.04, "payload": "2.4 MB", "cache_key": "recent-dispatch" },
+    "postage":           { "cold_s": 1.43, "warm_s": 0.01, "payload": "96 KB",  "cache_key": "module-level `cache`, 60s, not getOrBuild" }
+  },
+  "shared_catalogue": {
+    "consumers": ["inventory", "fixed-price", "slow-moving", "container-details"],
+    "cache_key": "catalogue",
+    "products_rows": 44430,
+    "products_wire_payload": "5362 kB",
+    "products_server_execution_ms": 150.7,
+    "products_client_elapsed_ms_healthy_link": 1770,
+    "products_client_elapsed_ms_during_degradation": 23948
+  },
+  "network_probe": {
+    "db_host": "169.58.91.229",
+    "port": 5432,
+    "icmp_rtt_ms": { "min": 178.188, "avg": 178.469, "max": 178.579, "mdev": 0.143, "loss_pct": 0 },
+    "sql_round_trip_ms": { "min": 166, "median": 167, "max": 192 },
+    "products_over_12_cold_connections_ms": { "min": 1699, "median": 1770, "max": 1919, "spread": "1.1x" }
+  },
+  "pool": { "max_local": 3, "max_serverless": 1, "connectionTimeoutMillis": 15000, "role_conn_limit": 10 },
+  "ttl_seconds": 300,
+  "ttl_env_var": "LEDSONE_DATA_TTL"
+}

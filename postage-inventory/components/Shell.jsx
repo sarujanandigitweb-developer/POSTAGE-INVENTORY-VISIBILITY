@@ -13,9 +13,28 @@ import RecentlyDispatchedTab from './RecentlyDispatchedTab';
 import PostageTab from './PostageTab';
 import ContainerDetailsTab from './ContainerDetailsTab';
 import Loading from './Loading';
+import { load, warmOthers } from '@/lib/client-datasets';
+
+// One probe per tab, in the order they cost. Postage is a Google Sheets read with its own
+// 60s server cache and no pagination, so it is fetched whole; everything else asks for one
+// row and leaves the payload to the tab itself. Inventory is not here: it is the Shell's
+// own dataset and is keyed per category, so warming one category would guess wrong.
+const WARM = [
+  { view: 'pd',      url: '/api/pending-dispatch' },
+  { view: 'postage', url: '/api/postage' },
+  { view: 'rd',      url: '/api/recent-dispatch' },
+  { view: 'fx',      url: '/api/fixed-price?size=1' },
+  { view: 'cd',      url: '/api/container-details' },
+  { view: 'sm',      url: '/api/slow-moving?size=1' },
+];
 
 export default function Shell() {
   const [view, setView] = useState('inv');
+  // DECLARED HERE, NOT BESIDE THE EFFECT THAT SETS IT. The inventory effect below lists
+  // `booted` in its dependency array, and a dependency array is evaluated during render —
+  // so a `const` declared further down would be in its temporal dead zone and throw before
+  // the component could paint. The reasoning for the flag itself is with that effect.
+  const [booted, setBooted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -47,6 +66,15 @@ export default function Shell() {
   useEffect(() => { cacheRef.current = cache; }, [cache]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
+    // ONLY WHEN INVENTORY IS THE TAB BEING LOOKED AT. This effect used to run on every
+    // open regardless of `view`, so restoring on Slow-Moving started TWO cold builds at
+    // once: inventory-CR, which nobody was going to see, and slow-moving, which the
+    // reader was waiting for. They took two of three pool clients and competed for a
+    // ten-connection role. Measured: 4.34s of work for a tab that was not on screen.
+    //
+    // `booted` is in the test because `view` is 'inv' until the saved tab is restored;
+    // without it the first frame fires the fetch this guard exists to prevent.
+    if (!booted || view !== 'inv') return;
     // A CACHED SECTION IS SHOWN, THEN RE-CHECKED. Keeping it for the whole session
     // made going back instant and also meant a tab left open all morning never saw a
     // new figure. The held copy paints immediately — no spinner, no flicker — and the
@@ -56,8 +84,7 @@ export default function Shell() {
     let live = true;
     if (!held) setLoading(true);
     setErr(null);
-    fetch('/api/inventory?cat=' + encodeURIComponent(st.cat))
-      .then(r => r.json())
+    load('/api/inventory?cat=' + encodeURIComponent(st.cat))
       .then(j => {
         if (!live) return;
         if (!j.ok) { setErr(j.error); setLoading(false); return; }
@@ -66,24 +93,36 @@ export default function Shell() {
       })
       .catch(e => { if (live) { setErr(String(e.message || e)); setLoading(false); } });
     return () => { live = false; };
-    // DEPS ARE THE CATEGORY ALONE. `cache` must NOT be here: this effect now always
-    // fetches and always setCache()s, so listing it would retrigger the effect on its
-    // own result — an endless fetch loop against the database. The held copy is read
-    // through a ref, which does not participate in the dependency check.
-  }, [st.cat]);
+    // DEPS ARE THE CATEGORY, THE TAB, AND THE BOOT GATE. `cache` must NOT be here: this
+    // effect always fetches and always setCache()s, so listing it would retrigger the
+    // effect on its own result — an endless fetch loop against the database. The held
+    // copy is read through a ref, which does not participate in the dependency check.
+  }, [st.cat, view, booted]);
 
-  // Warm the two heavy datasets in the background once Inventory has painted.
-  // Fixed Price (~30k rows) and Slow-Moving (~16k) are built from several
-  // whole-table queries — 4s and 10s cold — so a reader who clicks straight to
-  // them waits. Prefetching means the cache is usually already warm.
+  // WARM THE OTHER TABS, AFTER THE VISIBLE ONE HAS PAINTED — never before.
+  //
+  // The expensive part of opening a tab is the dataset BUILD, not the transfer: cold,
+  // Slow-Moving is 13.97s and Container Details 4.54s; warm, both are 0.02s. So each
+  // entry below is `size=1` — the routes already paginate, so the server builds and
+  // caches the whole dataset and ships one row. That is the same probe
+  // instrumentation.js uses, and it means nothing large is pulled into the browser for
+  // a tab nobody has opened. When the reader does open one, it fetches its own real
+  // page against a server cache that is already warm.
+  //
+  // The delay is not politeness, it is the connection budget. `booted` and the first
+  // payload only tell us the visible tab has its data; the pool is max 3 locally and 1
+  // on a serverless host, against a role that allows ten in total. warmOthers() runs
+  // strictly one at a time for the same reason — see the note in lib/client-datasets.js.
+  //
+  // Anything the reader has already opened is skipped: warmOthers() checks held() and
+  // inFlight() per URL, so a click that lands mid-prefetch attaches to the request in
+  // the air instead of starting a second.
   useEffect(() => {
-    if (!data) return;
-    // Nothing to do here any more: instrumentation.js warms these on the server
-    // before a reader arrives. Warming again from the browser duplicated every
-    // build — the same dataset was being read from Postgres twice, competing for a
-    // role that allows ten connections.
-    return () => {};
-  }, [data]);
+    if (!booted) return;
+    const others = WARM.filter(w => w.view !== view).map(w => w.url);
+    const t = setTimeout(() => { warmOthers(others); }, 1500);
+    return () => clearTimeout(t);
+  }, [booted, view]);
 
   // RESOLVE THE TAB BEFORE ANYTHING PAINTS. useState('inv') is what the server renders
   // and what the client hydrates, so restoring the saved tab in an effect means render 1
@@ -93,7 +132,6 @@ export default function Shell() {
   // `booted` gates the body: nothing paints until the saved tab is known. It cannot be a
   // lazy useState initialiser instead, because reading localStorage during render would
   // make the client's first render disagree with the server's and break hydration.
-  const [booted, setBooted] = useState(false);
   useEffect(() => {
     const saved = typeof localStorage !== 'undefined' && localStorage.getItem('piv.view');
     // ALL_VIEWS, NOT TABS. TABS holds the six top-level entries; the two dispatch

@@ -1,0 +1,36 @@
+{
+  "investigated_at": "2026-09-07T12:00:00Z",
+  "question": "Why does getOrBuild rebuild from PostgreSQL after the in-memory cache is lost, when readDisk() reports a HIT?",
+  "answer": "It does not. readDisk() also returns null. The earlier 'HIT' was measured in a shell where LEDSONE_DATA_TTL is unset (TTL=300s). The running dev server was launched with LEDSONE_DATA_TTL=20 in its process environment, so the same readDisk() call evaluates 20000ms and misses.",
+  "decisive_evidence": {
+    "method": "read /proc/<pid>/environ of the running next dev server",
+    "pid": 53659,
+    "server_started": "Mon Sep  7 15:40:04 2026",
+    "LEDSONE_DATA_TTL": "20",
+    "NODE_ENV": "development",
+    "parent_pid_53647_LEDSONE_DATA_TTL": "20"
+  },
+  "same_file_same_instant_two_environments": {
+    "cache_file": ".cache/pending-dispatch.json",
+    "file_age_ms": 25083,
+    "with_TTL_unset_300000ms": "HIT — returns the cached copy",
+    "with_TTL_20000ms": "MISS — returns null, getOrBuild rebuilds"
+  },
+  "observed_boundary_matches_the_variable": {
+    "gap_2s":  { "response_s": 0.05, "result": "cache hit" },
+    "gap_5s":  { "response_s": 0.04, "result": "cache hit" },
+    "gap_10s": { "response_s": 0.05, "result": "cache hit" },
+    "gap_20s": { "response_s": 2.41, "result": "rebuilt" },
+    "gap_30s": { "response_s": 1.81, "result": "rebuilt" },
+    "note": "The flip sits between 10s and 20s, which is the 20s TTL, not the 300s default."
+  },
+  "where_the_variable_is_NOT_set": [".env", "package.json", "next.config.*", "the investigating shell"],
+  "where_it_IS_set": "only the environment of the already-running `next dev` process",
+  "ttl_is_read_once_at_module_load": "lib/dataset.js:22 — const TTL = Math.max(0, Number(process.env.LEDSONE_DATA_TTL ?? 300)) * 1000",
+  "governed_by_the_same_TTL": ["memory cache (line 94)", "shipped snapshot (line 106)", "disk cache (line 45)", "isReady (line 131)", "fromSnapshot (line 89)"],
+  "directories": {
+    ".cache": { "files": 7, "written_by": "writeDisk()", "read_by": "readDisk()", "purpose": "survive a restart locally" },
+    "data/snapshots": { "files": 0, "exists": false, "written_by": "scripts/build-snapshots.mjs via prebuild", "read_by": "readShipped()", "purpose": "ship data with a deployment" }
+  },
+  "verdict": "PASS — no defect in the cache code. The cache behaved exactly as configured."
+}

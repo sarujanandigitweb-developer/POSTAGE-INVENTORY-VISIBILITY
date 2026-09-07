@@ -3,6 +3,7 @@ import { MARKET_ICON } from '@/lib/marketplace-icons';
 import { perPage, useAutoRows } from '@/lib/rows';
 import ImageZoom from './ImageZoom';
 import { useEffect, useState } from 'react';
+import { held, load } from '@/lib/client-datasets';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
 import Loading from './Loading';
@@ -55,8 +56,12 @@ export default function FixedPriceTab() {
   useEffect(() => {
     let live = true; setBusy(true);
     const p = new URLSearchParams({ q, type, mk, cat, page: String(page), size: String(per) });
-    fetch('/api/fixed-price?' + p)
-      .then(r => r.json())
+    // Paint a copy this URL already returned, then revalidate behind it — see the note in
+    // lib/client-datasets.js. Without it, returning to this tab refetched 12 MB.
+    const url = '/api/fixed-price?' + p;
+    const h = held(url);
+    if (h) { setD(h); setErr(null); setBusy(false); }
+    load(url)
       .then(j => { if (!live) return; j.ok ? (setD(j), setErr(null)) : setErr(j.error); setBusy(false); })
       .catch(e => { if (live) { setErr(String(e.message || e)); setBusy(false); } });
     return () => { live = false; };

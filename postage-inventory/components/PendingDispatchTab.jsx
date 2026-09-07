@@ -1,6 +1,7 @@
 'use client';
 import { perPage, useAutoRows } from '@/lib/rows';
 import { useEffect, useMemo, useState } from 'react';
+import { held, load } from '@/lib/client-datasets';
 import { IconSearch, IconReset } from './Icons';
 import Pager from './Pager';
 import DispatchDialog, { Section, Field, Chip } from './DispatchDialog';
@@ -31,7 +32,9 @@ export default function PendingDispatchTab() {
 
   useEffect(() => {
     let live = true;
-    fetch('/api/pending-dispatch').then(r => r.json())
+    const h = held('/api/pending-dispatch');
+    if (h) setD(h);
+    load('/api/pending-dispatch')
       .then(j => { if (!live) return; j.ok ? setD(j) : setErr(j.error); })
       .catch(e => live && setErr(String(e.message || e)));
     return () => { live = false; };
