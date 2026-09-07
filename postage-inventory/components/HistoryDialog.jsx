@@ -12,6 +12,53 @@ const COLS = [
 ];
 const REGION = { UK: 'UK', DE: 'German' };
 
+// SPEC 8.3 — what the requirement says MUST be logged. Named separately from what the
+// source actually records (Goods received / Manual correction / Stock change), so the
+// two are never confused: this is what SHOULD be there, not what is.
+const SPEC = ['Unit-to-Unit Transfer', 'Manual Stock Correction', 'Stock Increase',
+              'Stock Decrease', 'Goods Received from Container', 'Warehouse Change'];
+
+// The action's tone, and the container reference that rides beside it.
+const ACT = { 'Goods received': 'recv', 'CSV upload': 'csv',
+              'Manual correction': 'man', 'Stock change': 'stk' };
+
+// One cell, ported from the dashboard's histCellHTML. Every class it uses was already
+// in the stylesheet; this component simply printed String(value) for all ten columns,
+// so Qty came out as plain "-100" and Action as plain text where the published page
+// shows a red figure and a toned badge.
+function Cell({ m, k, kind }) {
+  const v = m[k];
+  // A BLANK HERE IS NORMAL, NOT A FAULT. A CSV upload has no informed person and a
+  // goods receipt has no before/after — 40.5% of cells. A quiet dash carrying the
+  // explanation on hover, rather than a loud "Unavailable" chip burying the real values.
+  if (v === null || v === undefined || v === '')
+    return <td><span className="hblank" title="Not recorded for this movement.">—</span></td>;
+
+  if (kind === 'a') return (
+    <td>
+      <span className={'hact ' + (ACT[v] || '')} title={m.sr ? 'Source: ' + m.sr : undefined}>{v}</span>
+      {m.cn && <span className="hcont">{m.cn}</span>}
+    </td>
+  );
+  // The source records a time as well as a date. This column is 9% wide and the spec
+  // calls it "Date", so the time rides in the tooltip rather than widening it.
+  if (kind === 'd') return <td className="dt" title={m.tm ? v + ' ' + m.tm : undefined}>{v}</td>;
+  if (kind === 'r') return <td className="rm">{v}</td>;
+  if (kind === 'n') {
+    // Stock Before/After hold a SHELF CODE on a location move ("L-A-02-A"), so the
+    // numeric style is decided by the value, not by the column.
+    if (!/^-?\d+$/.test(String(v))) return <td>{v}</td>;
+    if (k === 'qt') {
+      const n = Number(v);
+      return <td className="n">
+        <span className={'hqty ' + (n > 0 ? 'up' : n < 0 ? 'dn' : '')}>{n > 0 ? '+' : ''}{v}</span>
+      </td>;
+    }
+    return <td className="n">{v}</td>;
+  }
+  return <td>{v}</td>;
+}
+
 export default function HistoryDialog({ sku, region, data, other, onClose }) {
   useEffect(() => {
     const esc = e => { if (e.key === 'Escape') onClose(); };
@@ -42,12 +89,7 @@ export default function HistoryDialog({ sku, region, data, other, onClose }) {
             <tbody>
               {rows.length ? rows.map((m, i) => (
                 <tr className="hr" key={i}>
-                  {COLS.map(([k, , kind]) => (
-                    <td key={k} className={kind === 'n' ? 'n' : undefined}>
-                      {m[k] === '' || m[k] === null || m[k] === undefined
-                        ? <span className="hdash">—</span> : String(m[k])}
-                    </td>
-                  ))}
+                  {COLS.map(([k, , kind]) => <Cell key={k} m={m} k={k} kind={kind} />)}
                 </tr>
               )) : (
                 <tr className="hr"><td className="hgap" colSpan={COLS.length}>
@@ -67,11 +109,29 @@ export default function HistoryDialog({ sku, region, data, other, onClose }) {
             {other === 1 ? '' : 's'} recorded.
           </p>
         )}
-        {rows.length > 0 && total > rows.length && (
+        {/* WHERE THE ROWS CAME FROM, and what is not on screen. The dashboard says both
+            in one line: how many of how many, that they are PARSED out of a free-text
+            column rather than read from typed fields, and that the other region has its
+            own movements behind its own button. Saying only "12 of 17" leaves a reader
+            wondering where the rest went. */}
+        {rows.length > 0 && (
           <p className="hmnote">
-            Showing the <b>{rows.length}</b> most recent of <b>{total}</b> recorded {name} movements.
+            {total > rows.length
+              ? <>Showing the <b>{rows.length}</b> most recent of <b>{total}</b> recorded {name} movements, </>
+              : <>All <b>{rows.length}</b> recorded {name} movement{rows.length === 1 ? '' : 's'}, </>}
+            parsed from the free-text <code>inventory.product_history</code> log.
+            {other > 0 && <> This SKU also has <b>{other}</b> {REGION[region === 'UK' ? 'DE' : 'UK']} movement
+              {other === 1 ? '' : 's'} recorded.</>}
           </p>
         )}
+        <details className="hmspec">
+          <summary>What must be recorded (spec 8.3)</summary>
+          <ul>
+            {SPEC.map(a => <li key={a}>{a}</li>)}
+            <li><em>Rule: every stock movement, without exception, writes one row.
+              No stock change may occur without a corresponding audit record.</em></li>
+          </ul>
+        </details>
       </div>
     </div>
   );
