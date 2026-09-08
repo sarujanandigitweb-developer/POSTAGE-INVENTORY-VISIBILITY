@@ -70,7 +70,7 @@ export default function FixedPriceTab() {
   useEffect(() => { setPage(1); }, [q, type, mk]);
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <Loading what="fixed prices" cols={11} rows={9} />;
+  if (!d) return <Loading what="fixed prices" cols={11} rows={9} kind="tag" />;
 
   return (
     <>

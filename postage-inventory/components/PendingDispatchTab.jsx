@@ -57,7 +57,7 @@ export default function PendingDispatchTab() {
   useEffect(() => { setPage(1); }, [q, band, wh, dis]);
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <Loading what="open orders" cols={13} rows={9} />;
+  if (!d) return <Loading what="open orders" cols={13} rows={9} kind="truck" />;
 
   const per = perPage(size, rows.length, autoRows);
   const pages = Math.max(1, Math.ceil(rows.length / per));

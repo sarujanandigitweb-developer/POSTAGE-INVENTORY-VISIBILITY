@@ -84,7 +84,7 @@ export default function PostageTab() {
       </button>
     </div>
   );
-  if (!d) return <Loading what="the postage sheet" cols={6} rows={10} />;
+  if (!d) return <Loading what="the postage sheet" cols={6} rows={10} kind="envelope" />;
 
   return (
     <>

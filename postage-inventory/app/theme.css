@@ -417,6 +417,61 @@ table.cdmtab td.fxname { white-space: normal; line-height: 1.35; }
 .skmark svg .f3 { animation-delay: .36s; }
 @keyframes skface { 0%, 70%, 100% { opacity: .18; } 22%, 46% { opacity: 1; } }
 
+/* ONE MARK PER TAB. The mark is read before the sentence beside it, so on a cold open —
+   the only time this component is on screen — it is the fastest way to know which page is
+   assembling. Every scene below shares the app's line weight and colour and is animated
+   here rather than in the SVG, so the reduced-motion rule at the end of this block turns
+   all of them off in one place.
+
+   Each scene moves the way its subject moves, and no faster. The bar beside them is
+   already sliding; a mark that fidgets on top of it makes the wait feel worse, not
+   shorter. So: the van rolls, the ship rocks, the letter rises once, the tag settles. */
+.skmark svg [class] { transform-box: fill-box; transform-origin: center; }
+
+/* DISPATCH — a courier van on the move. The wheels turn at the speed the body bobs, and
+   the speed lines stream past behind it, which is what separates "driving" from "parked".
+   The three lines are deliberately out of phase; in step they read as a flicker. */
+.sk-truck .tkw1, .sk-truck .tkw2 { animation: tkroll 1.1s linear infinite; }
+.sk-truck .tkbody { animation: tkbob 1.1s ease-in-out infinite; }
+.sk-truck .tkl1, .sk-truck .tkl2, .sk-truck .tkl3 {
+  opacity: 0; animation: tkdash 1.1s ease-in infinite;
+}
+.sk-truck .tkl2 { animation-delay: .18s; }
+.sk-truck .tkl3 { animation-delay: .36s; }
+@keyframes tkroll { to { transform: rotate(360deg); } }
+@keyframes tkbob  { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.7px); } }
+@keyframes tkdash { 0% { opacity: 0; transform: translateX(4px); }
+                    35% { opacity: .8; } 100% { opacity: 0; transform: translateX(-5px); } }
+
+/* CONTAINER DETAILS — a container ship. The swell slides beneath a hull that rocks on it,
+   and the boxes it carries land in turn, bottom row first, the way they are stacked. The
+   wave path is drawn wider than the viewBox so it can translate a full period without a
+   seam appearing at either edge. */
+.sk-ship .shhull { animation: shrock 2.6s ease-in-out infinite; transform-origin: 50% 80%; }
+.sk-ship .shwave { animation: shswell 2.2s linear infinite; opacity: .55; }
+.sk-ship .shb1, .sk-ship .shb2, .sk-ship .shb3 { animation: shload 2.6s ease-in-out infinite; }
+.sk-ship .shb2 { animation-delay: .2s; }
+.sk-ship .shb3 { animation-delay: .4s; }
+@keyframes shrock  { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+@keyframes shswell { to { transform: translateX(16px); } }
+@keyframes shload  { 0%, 60%, 100% { opacity: .25; } 12%, 44% { opacity: 1; } }
+
+/* POSTAGE — the letter rises out of the envelope and drops back. This tab is the one
+   thing on the page that is not the database; it is the team's own sheet. */
+.sk-envelope .envletter { animation: envrise 2s ease-in-out infinite; }
+@keyframes envrise { 0%, 100% { transform: translateY(2.5px); opacity: .3; }
+                     45%, 65%  { transform: translateY(-1.5px); opacity: 1; } }
+
+/* SKU FIXED PRICE — a shelf tag, swinging on its hole and settling, not spinning. */
+.sk-tag .tagswing { animation: tagsway 2.4s ease-in-out infinite; transform-origin: 78% 22%; }
+@keyframes tagsway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+
+/* SLOW-MOVING — a clock. The whole tab is elapsed time: days since the last real sale.
+   The hand sweeps once per cycle rather than ticking, so it does not compete with the
+   progress bar beside it. */
+.sk-clock .clkhand { animation: clksweep 2s cubic-bezier(.6, 0, .3, 1) infinite; transform-origin: 20px 12px; }
+@keyframes clksweep { to { transform: rotate(360deg); } }
+
 /* An indeterminate bar under the line. It does not claim a percentage — nothing here
    knows one — it just shows the request is still moving. */
 .skprog {
@@ -449,6 +504,10 @@ table.cdmtab td.fxname { white-space: normal; line-height: 1.35; }
   .skmark svg path, .skprog i, .skrow, .skcell { animation: none; }
   .skmark svg path { opacity: 1; }  .skprog i { transform: none; width: 100%; }
   .skcell { background: var(--edge); }
+  /* the per-tab scenes too — they are still the right picture standing still, which is
+     the whole reason the mark is a picture and not a spinner */
+  .skmark svg *, .skmark svg [class] { animation: none !important; transform: none !important; opacity: 1; }
+  .sk-ship .shwave { opacity: .55; }
 }
 
 /* ---- Inventory: the full 27-column table ------------------------------------ */

@@ -58,7 +58,7 @@ export default function ContainerDetailsTab() {
   }, [open, mq]);
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <Loading what="containers" cols={12} rows={8} />;
+  if (!d) return <Loading what="containers" cols={12} rows={8} kind="ship" />;
 
   const per = perPage(size, d.rows.length, autoRows);
   const pages = Math.max(1, Math.ceil(d.rows.length / per));

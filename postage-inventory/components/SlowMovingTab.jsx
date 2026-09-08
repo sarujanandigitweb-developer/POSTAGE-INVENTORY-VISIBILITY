@@ -60,7 +60,7 @@ export default function SlowMovingTab() {
   };
 
   if (err) return <div className="empty">{err}</div>;
-  if (!d) return <Loading what="slow-moving stock" cols={17} rows={9}
+  if (!d) return <Loading what="slow-moving stock" cols={17} rows={9} kind="clock"
                           note="16,000 rows are built from three movement sources; after this it is instant." />;
 
   return (
