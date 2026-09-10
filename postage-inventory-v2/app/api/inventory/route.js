@@ -463,7 +463,7 @@ function pagedFromSql({ key, q, st, sortKey, dir, page, size }) {
 
     const skus = picked.map(r => r.sku);
     const built = skus.length
-      ? await buildRows(run, searching ? null : key, skus)
+      ? await buildRows(run, searching ? null : key, skus, 0, cand.map(x => x.sku))
       : { rows: [], warehouses: {}, missingWarehouses: [] };
 
     // buildRows() returns its rows in SKU order, because that is the order PRODUCTS
@@ -568,7 +568,31 @@ export async function GET(request) {
     // memory, which is the proven path and produces the same rows either way. Every other
     // view — no sort, by SKU, by type, by stock, with any combination of filters and a
     // search — is filtered, ordered, counted and cut by PostgreSQL.
-    const sqlPath = sortKey !== 'price' && !wantsAll;
+    // WHICH ENGINE, AND WHY THERE IS A CHOICE.
+    //
+    // Both produce the same bytes — 64,535 field comparisons across four sections, zero
+    // differences, and 24 filter/sort/search combinations in identical order. They differ
+    // only in WHERE the narrowing happens, and the measurement is not close:
+    //
+    //   in-memory   Ceiling Rose 42ms, Lampshade 57ms
+    //   sql         Ceiling Rose 6,263ms, Lampshade 4,323ms, a search 13,958ms
+    //
+    // The database is 169ms away, and a page needs about eight sequential round trips —
+    // the page query, then products, stock, warehouses, containers, history and the
+    // five-tier pricing for the rows on it. SQL pagination pays that on EVERY request.
+    // The in-memory path pays it once per section per TTL and then answers from the
+    // cache, which is why it is two orders of magnitude faster despite doing more work
+    // the first time. Shipping the candidate SKUs to the database is not the problem
+    // (378 KB measured at 389ms); the round trips are.
+    //
+    // So the default is the fast one. LEDSONE_INVENTORY_ENGINE=sql selects the other, and
+    // ?engine=sql does it for a single request — enough to compare them on real data
+    // without a redeploy. If the database ever moves next to the app, flip the default.
+    const engine = params.get('engine') || process.env.LEDSONE_INVENTORY_ENGINE || 'memory';
+    // Sorting by Shopify price cannot use SQL at all: lib/shopify-price.js computes it
+    // live from a five-tier rule across four marketplaces, so there is no column to
+    // ORDER BY until the rows exist.
+    const sqlPath = engine === 'sql' && sortKey !== 'price' && !wantsAll;
     if (sqlPath) return pagedFromSql({ key, q, st, sortKey, dir, page, size });
 
     const found = q ? await searchAll(key, q) : null;
@@ -693,7 +717,7 @@ export function buildSnapshot(cat) {
 // the ONLY difference is how many SKUs go in. That is deliberate: it is what makes
 // "the paginated row equals the snapshot row" true by construction rather than by
 // inspection, so there is no second row-building path to keep in step.
-function buildRows(q, key, wanted, uncatalogued = 0) {
+function buildRows(q, key, wanted, uncatalogued = 0, incomingScope = null) {
   return (async () => {
       const products = await q(PRODUCTS, [wanted]);
       const pids = products.map(p => p.pid);
@@ -730,7 +754,26 @@ function buildRows(q, key, wanted, uncatalogued = 0) {
           arrived[sku][rg].sort((a, b) => a.od.localeCompare(b.od) || a.name.localeCompare(b.name));
 
       const incoming = {};
-      for (const r of await q(INCOMING, [wanted])) incoming[r.sku] = { name: r.cname, stage: r.stage };
+      // ASKED FOR THE WHOLE CANDIDATE SET, NOT JUST THE PAGE — and that is not laziness.
+      //
+      // INCOMING is SELECT DISTINCT with no ORDER BY, and the loop below keeps whichever
+      // row arrives LAST, so a SKU with two pending containers takes whichever the scan
+      // returned second. That order comes from the plan, and the plan changes with the
+      // size of the ANY($1) array: measured on CL2RAG, an array of 2 SKUs yields "DE
+      // Container 02 2026" and an array of 51 yields "01Sep2026".
+      //
+      // The value is therefore arbitrary in the original app too — the 2-hourly pipeline
+      // carries the identical query — but it is arbitrary CONSISTENTLY, because the array
+      // is always the whole section. Passing the page's 25 SKUs would have changed the
+      // cell for the 11 SKUs that have more than one pending container. So the query is
+      // left exactly as it was and asked the same question, and only the SKUs on the page
+      // are read out of the answer. Making it deterministic is a real fix, but it is a
+      // change of output and belongs in its own change, not smuggled in with pagination.
+      const incScope = incomingScope || wanted;
+      const onPage = new Set(wanted);
+      for (const r of await q(INCOMING, [incScope])) {
+        if (onPage.has(r.sku)) incoming[r.sku] = { name: r.cname, stage: r.stage };
+      }
 
       // ---- history: movement counts, and the latest genuine goods receipt ---
       const hist = {};
