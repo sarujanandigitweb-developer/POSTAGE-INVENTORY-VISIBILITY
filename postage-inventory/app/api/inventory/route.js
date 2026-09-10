@@ -1,5 +1,6 @@
 import { withClient, query } from '@/lib/db';
 import { getOrBuild, fromSnapshot, builtAt } from '@/lib/dataset';
+import { textMatches } from '@/lib/filter';
 import { classification, CATEGORY_ORDER, skusIn, sectionCounts, imgURL } from '@/lib/classification';
 import { sectionOf } from '@/lib/section-of';
 import { classifySKU } from '@/lib/classify-sku';
@@ -197,18 +198,85 @@ function derive(sku) {
   return { key: g.key, f: g.famCode ?? null, t: g.subCategory || 'Other' };
 }
 
+// EVERY SECTION'S OWN ROWS, FILTERED. Not a new query and not a new source of truth:
+// each section is read through the SAME getOrBuild key the category view uses, so a row
+// found by a search is byte-for-byte the row that section would have shown. That is why
+// this loops the twelve rather than running one wider query — a second query path would
+// be a second thing to keep in step with buildSnapshot().
+//
+// Cost is paid once. The sections are cached individually and a deployment ships all
+// twelve as snapshots (scripts/build-snapshots.mjs walks CATEGORY_ORDER), so there the
+// first search opens no connection at all. Locally, with no snapshots, the first search
+// builds whatever sections have not been visited yet; every search after that is a
+// filter over memory.
+async function searchAll(openCat, q) {
+  const { sections: secs } = classification();
+  const rows = [];
+  const perSection = {};
+  let warehouses = {}, missingWarehouses = [];
+  for (const k of CATEGORY_ORDER) {
+    const d = await getOrBuild('inventory-' + k, () => buildSnapshot(k));
+    // The section's own name, and its label for each family code — the two fields the
+    // published dashboard calls `mc` and `sc`. Read once per section, not per row.
+    const mc = secs[k]?.name || k;
+    const famLabel = new Map((secs[k]?.fams || []).map(f => [f.code, f.label || f.value || f.code]));
+    // Every row already carries `key` — its own section — because buildSnapshot writes it,
+    // so a mixed result set is self-describing. `mc`/`sc` are added to the COPY that is
+    // sent, never to the cached row: the snapshot is shared with the category view and
+    // must stay exactly what that view was built to return.
+    const hit = [];
+    for (const r of d.rows) {
+      const sc = r.f ? (famLabel.get(r.f) || r.f) : (r.t || '');
+      if (textMatches(r, q, mc + ' ' + sc)) hit.push({ ...r, mc, sc });
+    }
+    if (hit.length) { rows.push(...hit); perSection[k] = hit.length; }
+    // The warehouse list is the same query for every section; the first one that answers
+    // is the answer. Merged rather than taken from the open category so the dropdown is
+    // still populated when the open category happens to be empty.
+    if (!Object.keys(warehouses).length && d.warehouses) warehouses = d.warehouses;
+    if (d.missingWarehouses?.length) {
+      for (const w of d.missingWarehouses) if (!missingWarehouses.includes(w)) missingWarehouses.push(w);
+    }
+  }
+  return Response.json({
+    ok: true,
+    cat: openCat,          // the strip still shows where the reader was
+    search: q,             // what the rows were narrowed by — the client renders on this
+    perSection,            // { CR: 5, LS: 28, … } for the "across N categories" line
+    // The oldest section read, so the freshness chip cannot claim the whole result is as
+    // new as its newest part.
+    asOf: CATEGORY_ORDER.map(k => builtAt('inventory-' + k)).filter(Boolean).sort()[0]
+          || new Date().toISOString(),
+    count: rows.length,
+    unplaced: null,
+    order: CATEGORY_ORDER,
+    sections: secs, counts: sectionCounts(),
+    uncatalogued: 0,
+    warehouses, missingWarehouses,
+    rows,
+  });
+}
+
 export async function GET(request) {
   // One category per request. The whole catalogue is 6,181 SKUs and reading it
   // took ~6s before anything appeared; a section is 124–1,487, so the first paint
   // is a fraction of that. Which SKUs are in a section is known locally from the
   // curated classification, so no query is needed to work it out.
-  const key = new URL(request.url).searchParams.get('cat') || CATEGORY_ORDER[0];
+  const params = new URL(request.url).searchParams;
+  const key = params.get('cat') || CATEGORY_ORDER[0];
+  const q = (params.get('q') || '').trim();
   // the category must EXIST; whether it has any curated SKU is no longer the test,
   // since the rows now come from the catalogue
   if (!SECTION_KEYS.has(key)) {
     return Response.json({ ok: false, error: 'Unknown category: ' + key }, { status: 400 });
   }
   try {
+    // A SEARCH IS NOT SCOPED TO THE OPEN CATEGORY. Only the server holds all twelve
+    // sections, so this is where a search has to happen: the browser is sent one section
+    // at a time and could not have found a Lampshade SKU while Ceiling Rose was open.
+    // That was the bug — a search returned nothing unless you already knew the section.
+    if (q) return searchAll(key, q);
+
     // One snapshot PER CATEGORY, keyed the same way the request is. A single
     // whole-catalogue snapshot would be one 6,181-row object to load for a section of
     // 124, which is the cost this route was written to avoid in the first place.

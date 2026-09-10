@@ -1,0 +1,105 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { perPage, useAutoRows } from '@/lib/rows';
+
+// The live dashboard's pager, ported. It shows numbered pages, first and last
+// always, the current page and its neighbours, and an ellipsis where it skipped —
+// and it MEASURES THE WINDOW first, so a narrow screen gets fewer numbers rather
+// than a row that wraps or overflows.
+function pagerRoom(w) {
+  if (!w) return 7;
+  if (w < 560) return 0;            // arrows only; the note gives the page
+  if (w < 820) return 3;
+  if (w < 1180) return 5;
+  return 7;
+}
+
+export function pageList(cur, last, room) {
+  if (room === 0) return [];
+  if (last <= room) return Array.from({ length: last }, (_, i) => i + 1);
+  if (room <= 3) return [cur];                       // just where you are
+  if (room <= 5) {                                   // first, where you are, last
+    const out = [1];
+    if (cur > 2) out.push('…');
+    if (cur !== 1 && cur !== last) out.push(cur);
+    if (cur < last - 1) out.push('…');
+    if (last > 1) out.push(last);
+    return out;
+  }
+  const out = [1];
+  let a = Math.max(2, cur - 1), b = Math.min(last - 1, cur + 1);
+  if (cur <= 3) { a = 2; b = 4; }
+  if (cur >= last - 2) { a = last - 3; b = last - 1; }
+  if (a > 2) out.push('…');
+  for (let i = a; i <= b; i++) out.push(i);
+  if (b < last - 1) out.push('…');
+  out.push(last);
+  return out;
+}
+
+export default function Pager({ total, page, pages, size, per, onPage, onSize, label }) {
+  const [room, setRoom] = useState(7);
+  useEffect(() => {
+    const fit = () => setRoom(pagerRoom(window.innerWidth));
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+
+  // THE PAGER MUST NOT WORK OUT ITS OWN PAGE SIZE. It used to call useAutoRows() here —
+  // an ESTIMATE from the window height — while Container Details slices its rows with
+  // useFitRows(), a MEASUREMENT of the rendered row. The two disagreed, and the same page
+  // read "Showing 21 of 36 containers" at the top and "Showing 1-15 of 36" at the bottom
+  // with 21 rows actually on screen. The caller owns the number and passes it in; the
+  // estimate survives only as a fallback for a caller that passes nothing.
+  const auto = useAutoRows();
+  const eff = per > 0 ? per : perPage(size, total, auto);
+  const from = total === 0 ? 0 : (page - 1) * eff + 1;
+  const to = size === 'all' ? total : Math.min(page * eff, total);
+  const nums = size === 'all' ? [] : pageList(page, pages, room);
+
+  return (
+    <div className="pbar">
+      <div className="pinfo">
+        {size === 'all'
+          ? `All ${total.toLocaleString()} ${label || 'rows'}`
+          : `Showing ${from.toLocaleString()}–${to.toLocaleString()} of ${total.toLocaleString()} ${label || 'rows'}`}
+      </div>
+      <div className="fxpagebar">
+        <label className="fxrpp" htmlFor="psize">Rows per page</label>
+        <select id="psize" value={String(size)} onChange={e => { onSize(e.target.value); onPage(1); }}>
+          {/* Auto is what the published dashboard defaults to: as many rows as the
+              box can show without the page itself scrolling. */}
+          {/* 25 / 50 / 100 / 250, and no more. "All" and 500 are gone on purpose: the
+              server now sends one page, so those two would ask it to send the whole
+              matching set — 31,426 rows for Fixed Price — which is the thing this
+              version exists to stop. 250 is the ceiling, and the route clamps to it
+              whatever the query string says. */}
+          <option value="25">25</option><option value="50">50</option>
+          <option value="100">100</option><option value="250">250</option>
+        </select>
+
+        {size !== 'all' && (
+          <nav className="fxpager" aria-label="Table pages">
+            <button type="button" className="fxpg" onClick={() => onPage(1)}
+                    disabled={page <= 1} aria-label="First page">&laquo;</button>
+            <button type="button" className="fxpg" onClick={() => onPage(page - 1)}
+                    disabled={page <= 1} aria-label="Previous page">&lsaquo;</button>
+            {nums.map((n, i) =>
+              n === '…'
+                ? <span className="fxgap" key={'g' + i}>…</span>
+                : <button type="button" key={n} className="fxpg"
+                          aria-current={n === page ? 'page' : undefined}
+                          onClick={() => onPage(n)}>{n}</button>)}
+            <button type="button" className="fxpg" onClick={() => onPage(page + 1)}
+                    disabled={page >= pages} aria-label="Next page">&rsaquo;</button>
+            <button type="button" className="fxpg" onClick={() => onPage(pages)}
+                    disabled={page >= pages} aria-label="Last page">&raquo;</button>
+            {/* always spelled out, so "arrows only" still tells you where you are */}
+            <span className="fxpgnote">Page {page} of {pages}</span>
+          </nav>
+        )}
+      </div>
+    </div>
+  );
+}

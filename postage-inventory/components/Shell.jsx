@@ -75,29 +75,43 @@ export default function Shell() {
     // `booted` is in the test because `view` is 'inv' until the saved tab is restored;
     // without it the first frame fires the fetch this guard exists to prevent.
     if (!booted || view !== 'inv') return;
-    // A CACHED SECTION IS SHOWN, THEN RE-CHECKED. Keeping it for the whole session
-    // made going back instant and also meant a tab left open all morning never saw a
-    // new figure. The held copy paints immediately — no spinner, no flicker — and the
-    // request still goes out behind it, so the next render is current.
-    const held = cacheRef.current[st.cat];
+    // A SEARCH IS ITS OWN REQUEST, ACROSS EVERY SECTION. The browser is only ever sent
+    // one section, so it cannot answer "which SKUs anywhere match this" — searching what
+    // it happened to hold is why a Lampshade SKU returned nothing while Ceiling Rose was
+    // open. The route reads all twelve, through the same cache the category view uses.
+    const q = st.q.trim();
+    const url = '/api/inventory?cat=' + encodeURIComponent(st.cat) +
+                (q ? '&q=' + encodeURIComponent(q) : '');
+    // A CACHED RESULT IS SHOWN, THEN RE-CHECKED. Keeping it for the whole session made
+    // going back instant and also meant a tab left open all morning never saw a new
+    // figure. The held copy paints immediately — no spinner, no flicker — and the request
+    // still goes out behind it, so the next render is current. Searches are held under
+    // their term so retyping one is instant; sections stay keyed by section.
+    const held = cacheRef.current[q ? 'q:' + q : st.cat];
     if (held) { setData(held); setLoading(false); }
     let live = true;
     if (!held) setLoading(true);
     setErr(null);
-    load('/api/inventory?cat=' + encodeURIComponent(st.cat))
+    const go = () => load(url)
       .then(j => {
         if (!live) return;
         if (!j.ok) { setErr(j.error); setLoading(false); return; }
-        setCache(c => ({ ...c, [j.cat]: j }));
+        setCache(c => ({ ...c, [j.search ? 'q:' + j.search : j.cat]: j }));
         setData(j); setLoading(false);
       })
       .catch(e => { if (live) { setErr(String(e.message || e)); setLoading(false); } });
-    return () => { live = false; };
-    // DEPS ARE THE CATEGORY, THE TAB, AND THE BOOT GATE. `cache` must NOT be here: this
-    // effect always fetches and always setCache()s, so listing it would retrigger the
-    // effect on its own result — an endless fetch loop against the database. The held
-    // copy is read through a ref, which does not participate in the dependency check.
-  }, [st.cat, view, booted]);
+    // TYPING IS NOT A REQUEST PER KEYSTROKE. A search reads every section, so firing on
+    // each character would queue twelve-section reads behind each other for terms nobody
+    // finished typing. Browsing a category still goes immediately.
+    if (!q) { go(); return () => { live = false; }; }
+    const t = setTimeout(go, 300);
+    return () => { live = false; clearTimeout(t); };
+    // DEPS ARE THE CATEGORY, THE SEARCH, THE TAB AND THE BOOT GATE. `cache` must NOT be
+    // here: this effect always fetches and always setCache()s, so listing it would
+    // retrigger the effect on its own result — an endless fetch loop against the
+    // database. The held copy is read through a ref, which does not take part in the
+    // dependency check.
+  }, [st.cat, st.q, view, booted]);
 
   // WARM THE OTHER TABS, AFTER THE VISIBLE ONE HAS PAINTED — never before.
   //
@@ -168,15 +182,23 @@ export default function Shell() {
                   'Schmutter', 'Schmutter Loc', 'Canada', 'US'];
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
     // Export what is on screen, for the tab that is on screen — not the whole file.
-    const name = (data.sections[st.cat] || {}).name || st.cat;
+    // CATEGORY COMES FROM THE ROW, not from the open tab. It used to stamp the open
+    // category onto every line, which was right while browsing one section and wrong the
+    // moment a search returned rows from several — a Lampshade SKU filed under Ceiling
+    // Rose in the file. Every row carries its own `key`; the route sets it.
+    const nameOf = r => (data.sections[r.key] || data.sections[st.cat] || {}).name || r.key || st.cat;
     const body = data.rows
       .filter(r => matches(r, data.sections[st.cat], st))
-      .map(r => [r.s, name, r.t, r.a, r.al || '', r.b, r.bl || '',
+      .map(r => [r.s, nameOf(r), r.t, r.a, r.al || '', r.b, r.bl || '',
         r.c, r.u5, r.price ?? '', r.k, r.kl || '', r.m, r.ml || '', r.ca, r.us].map(esc).join(','));
     const blob = new Blob([[head.map(esc).join(','), ...body].join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${(data.sections[st.cat] || {}).file || 'inventory'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    // A search is not one section, so it must not be filed under one section's name.
+    const stem = data.search
+      ? 'inventory-search-' + data.search.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase()
+      : (data.sections[st.cat] || {}).file || 'inventory';
+    a.download = `${stem}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); URL.revokeObjectURL(a.href);
   };
 

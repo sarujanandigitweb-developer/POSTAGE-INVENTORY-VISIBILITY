@@ -1,0 +1,1727 @@
+{
+  "names": {
+    "CR": "Ceiling Rose",
+    "LS": "Lampshade",
+    "PH": "Pendant Lamp Holder",
+    "WA": "Wall Arm",
+    "LH": "Lamp Holder",
+    "LB": "Bulbs",
+    "SPR": "Lamp Spares",
+    "LGT": "Lighting",
+    "CSM": "Cosmetics",
+    "CLO": "Clothes",
+    "HAP": "Home Appliances",
+    "RFB": "Refurbished"
+  },
+  "classify": {
+    "CR": {
+      "key": "CR",
+      "name": "Ceiling Rose",
+      "sub": null,
+      "code": null
+    },
+    "PH": {
+      "key": "PH",
+      "name": "Pendant Lamp Holder",
+      "sub": null,
+      "code": null
+    },
+    "LS": {
+      "key": "LS",
+      "name": "Lampshade",
+      "sub": null,
+      "code": null
+    },
+    "WS": {
+      "key": "WA",
+      "name": "Wall Arm",
+      "sub": null,
+      "code": null
+    },
+    "LH": {
+      "key": "LH",
+      "name": "Lamp Holder",
+      "sub": null,
+      "code": null
+    },
+    "LD": {
+      "key": "LB",
+      "name": "Bulbs",
+      "sub": "LED Bulbs",
+      "code": "BLD"
+    },
+    "IC": {
+      "key": "LB",
+      "name": "Bulbs",
+      "sub": "Incandescent Bulbs",
+      "code": "BIC"
+    },
+    "LL": {
+      "key": "LB",
+      "name": "Bulbs",
+      "sub": "LED Panel Light",
+      "code": "BLL"
+    },
+    "LP": {
+      "key": "LB",
+      "name": "Bulbs",
+      "sub": "LED Spot Light",
+      "code": "BLP"
+    },
+    "LQ": {
+      "key": "LB",
+      "name": "Bulbs",
+      "sub": "Lamp Bulbs",
+      "code": "BLQ"
+    }
+  },
+  "sub4": {
+    "CRFF": {
+      "key": "CR",
+      "code": "CRFF",
+      "label": "CRFF · Front Fit"
+    },
+    "CRFL": {
+      "key": "CR",
+      "code": "CRFF",
+      "label": "CRFF · Front Fit"
+    },
+    "CRSF": {
+      "key": "CR",
+      "code": "CRSF",
+      "label": "CRSF · Side Fitting"
+    },
+    "CRSP": {
+      "key": "CR",
+      "code": "CRSF",
+      "label": "CRSF · Side Fitting"
+    },
+    "LSAC": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSAF": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSAH": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSBG": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSBL": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSBS": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSCG": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSCO": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSCP": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDF": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDG": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDJ": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDL": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDM": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDO": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDS": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDT": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSDW": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSEL": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSFC": {
+      "key": "LS",
+      "code": "FB",
+      "label": "Fabric"
+    },
+    "LSFG": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSFT": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSGC": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGD": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGF": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGG": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGK": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGL": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGM": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGO": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGP": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSGW": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSH3": {
+      "key": "LS",
+      "code": "NR",
+      "label": "Natural Rope"
+    },
+    "LSHB": {
+      "key": "LS",
+      "code": "NR",
+      "label": "Natural Rope"
+    },
+    "LSHG": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSHH": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSHI": {
+      "key": "LS",
+      "code": "NR",
+      "label": "Natural Rope"
+    },
+    "LSHL": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSHQ": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSLC": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSLG": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSLH": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSLR": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSLT": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSMC": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSMS": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSOL": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSPG": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "LSRD": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSRH": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSRP": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSRT": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSSC": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSSH": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSSS": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSST": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSTB": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSTF": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSTH": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSTL": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSTM": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSTP": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSUB": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSUL": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSWB": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSWD": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSWE": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSWG": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSWS": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSWT": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "LSYG": {
+      "key": "LS",
+      "code": "MT",
+      "label": "Metal"
+    },
+    "BL1C": {
+      "key": "LS",
+      "code": "XBL",
+      "label": "Baton Lighting"
+    },
+    "BL1S": {
+      "key": "LS",
+      "code": "XBL",
+      "label": "Baton Lighting"
+    },
+    "BLBB": {
+      "key": "LS",
+      "code": "XBL",
+      "label": "Baton Lighting"
+    },
+    "BLFS": {
+      "key": "LS",
+      "code": "XBL",
+      "label": "Baton Lighting"
+    },
+    "BLGR": {
+      "key": "LS",
+      "code": "XBL",
+      "label": "Baton Lighting"
+    },
+    "BLOB": {
+      "key": "LS",
+      "code": "XBL",
+      "label": "Baton Lighting"
+    },
+    "LS2C": {
+      "key": "LS",
+      "code": "XCH",
+      "label": "Chandeliers"
+    },
+    "LS2O": {
+      "key": "LS",
+      "code": "XCH",
+      "label": "Chandeliers"
+    },
+    "LSCA": {
+      "key": "LS",
+      "code": "XCH",
+      "label": "Chandeliers"
+    },
+    "WCB1": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCB2": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCB3": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCB4": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCB5": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCB6": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCB7": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCB8": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBE": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBK": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBL": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBN": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBT": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBV": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBW": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCBX": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCCE": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCCL": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCCY": {
+      "key": "LS",
+      "code": "CG",
+      "label": "Crystal Shades"
+    },
+    "WCDC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCDE": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCDF": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCDR": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCDS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCDT": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCDU": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCFC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCFL": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCFP": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCFR": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCFS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCFW": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCGS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCHE": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCHN": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCIR": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCJR": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLB": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLD": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLE": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLN": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLO": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLR": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCLT": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCMS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCMV": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCNB": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCNC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCND": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCNI": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCNR": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCNS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCNZ": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCOS": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCPC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCRN": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCRP": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCRT": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCRW": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSD": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSE": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSL": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSN": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSP": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSQ": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCSR": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCST": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCTB": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCTC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCVC": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCWB": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCWD": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCWO": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCWV": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCWY": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WCYG": {
+      "key": "LS",
+      "code": "XWC",
+      "label": "Wire Cages"
+    },
+    "WLCA": {
+      "key": "LS",
+      "code": "XCH",
+      "label": "Chandeliers"
+    },
+    "WLGL": {
+      "key": "LS",
+      "code": "GL",
+      "label": "Glass Shades"
+    },
+    "WSCW": {
+      "key": "LS",
+      "code": "XCH",
+      "label": "Chandeliers"
+    },
+    "PHAH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHBH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHBK": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHBL": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHBR": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHCD": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHCG": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHCI": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHCN": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHCW": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHDC": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHDH": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHDO": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHFM": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHFS": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHGP": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHHA": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHHF": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHHH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHHN": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHHS": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHIF": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHIH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHLH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHLS": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHMF": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHMH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHMU": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHNH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHNW": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHOP": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHPO": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHPV": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHQL": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHRB": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHRG": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHRH": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHRI": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHRN": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHRR": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHRY": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHSF": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHSG": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHSP": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHSQ": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHSW": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHTC": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHTD": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHUH": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHUM": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHUP": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "PHWC": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHWH": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHWL": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHWP": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHWR": {
+      "key": "PH",
+      "code": "CP",
+      "label": "CP"
+    },
+    "PHXS": {
+      "key": "PH",
+      "code": "PD",
+      "label": "PD"
+    },
+    "WS2H": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSAC": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSAD": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSAF": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSAH": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSAT": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSBA": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSCH": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSCN": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSCY": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSDM": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSFH": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSFS": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSFT": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSHC": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSHF": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSHL": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSHR": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSLH": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSLM": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSLR": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSLS": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSLU": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSML": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSOS": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSRH": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSRO": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSSC": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSSF": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSSM": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSSS": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSST": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSTA": {
+      "key": "WA",
+      "code": "WAAD",
+      "label": "Adjustable Wall Arm"
+    },
+    "WSTR": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSUH": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSUQ": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSUS": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSUT": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSWH": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSWM": {
+      "key": "WA",
+      "code": "WAAR",
+      "label": "Wall Arm / Lamp Holder Arm"
+    },
+    "WSWR": {
+      "key": "WA",
+      "code": "WAWB",
+      "label": "Wooden Wall Bracket"
+    },
+    "WSWS": {
+      "key": "WA",
+      "code": "WAWB",
+      "label": "Wooden Wall Bracket"
+    }
+  },
+  "sub4Ambiguous": {
+    "LSCY": {
+      "key": "LS",
+      "codes": [
+        "GL",
+        "MT",
+        "CG"
+      ]
+    },
+    "LSHM": {
+      "key": "LS",
+      "codes": [
+        "MT",
+        "NR"
+      ]
+    },
+    "PHBA": {
+      "key": "PH",
+      "codes": [
+        "PD",
+        "CP"
+      ]
+    },
+    "PHCH": {
+      "key": "PH",
+      "codes": [
+        "PD",
+        "CP"
+      ]
+    },
+    "PHFH": {
+      "key": "PH",
+      "codes": [
+        "PD",
+        "CP"
+      ]
+    },
+    "PHHC": {
+      "key": "PH",
+      "codes": [
+        "PD",
+        "CP"
+      ]
+    },
+    "PHHR": {
+      "key": "PH",
+      "codes": [
+        "CP",
+        "PD"
+      ]
+    },
+    "PHHT": {
+      "key": "PH",
+      "codes": [
+        "CP",
+        "PD"
+      ]
+    },
+    "PHSH": {
+      "key": "PH",
+      "codes": [
+        "CP",
+        "PD"
+      ]
+    },
+    "PHTT": {
+      "key": "PH",
+      "codes": [
+        "PD",
+        "CP"
+      ]
+    },
+    "WS2L": {
+      "key": "WA",
+      "codes": [
+        "WAAR",
+        "WADB"
+      ]
+    },
+    "WSBW": {
+      "key": "WA",
+      "codes": [
+        "WAAR",
+        "WAAD"
+      ]
+    },
+    "WSIW": {
+      "key": "WA",
+      "codes": [
+        "WAAD",
+        "WAAR",
+        "WAOT"
+      ]
+    },
+    "WSNW": {
+      "key": "WA",
+      "codes": [
+        "WAAR",
+        "WAOT"
+      ]
+    },
+    "WSWT": {
+      "key": "WA",
+      "codes": [
+        "WAAR",
+        "WAOT"
+      ]
+    }
+  },
+  "prefixRules": [
+    {
+      "p": "CTKMP",
+      "key": "CLO",
+      "code": "YKMP",
+      "label": "Pajamas (K.M)"
+    },
+    {
+      "p": "CTKFP",
+      "key": "CLO",
+      "code": "YKFP",
+      "label": "Pajamas (K.Fem)"
+    },
+    {
+      "p": "CTKMT",
+      "key": "CLO",
+      "code": "YKMT",
+      "label": "T-Shirts (K.M)"
+    },
+    {
+      "p": "CTKFT",
+      "key": "CLO",
+      "code": "YKFT",
+      "label": "T-Shirts (K.Fem)"
+    },
+    {
+      "p": "CSHO",
+      "key": "CSM",
+      "code": "XHO",
+      "label": "Hair Ornaments"
+    },
+    {
+      "p": "CSHC",
+      "key": "CSM",
+      "code": "XHC",
+      "label": "Hair Clips"
+    },
+    {
+      "p": "CSBE",
+      "key": "CSM",
+      "code": "XBE",
+      "label": "Belt"
+    },
+    {
+      "p": "CSWA",
+      "key": "CSM",
+      "code": "XWA",
+      "label": "Wallets"
+    },
+    {
+      "p": "CTBO",
+      "key": "CLO",
+      "code": "YBO",
+      "label": "Boxer"
+    },
+    {
+      "p": "CTMS",
+      "key": "CLO",
+      "code": "YMS",
+      "label": "Shorts (M)"
+    },
+    {
+      "p": "CTMP",
+      "key": "CLO",
+      "code": "YMP",
+      "label": "Pajamas (M)"
+    },
+    {
+      "p": "CTFP",
+      "key": "CLO",
+      "code": "YFP",
+      "label": "Pajamas (Fem)"
+    },
+    {
+      "p": "LBT",
+      "key": "HAP",
+      "code": "ZLBT",
+      "label": "Laundry bags"
+    },
+    {
+      "p": "FCB",
+      "key": "HAP",
+      "code": "ZFCB",
+      "label": "Clip Board"
+    },
+    {
+      "p": "AFW",
+      "key": "HAP",
+      "code": "ZAFW",
+      "label": "Artificial Flowers"
+    },
+    {
+      "p": "FWS",
+      "key": "HAP",
+      "code": "ZFWS",
+      "label": "Foot wear"
+    },
+    {
+      "p": "SUA",
+      "key": "HAP",
+      "code": "ZSUA",
+      "label": "Shower curtain"
+    },
+    {
+      "p": "BTR",
+      "key": "HAP",
+      "code": "ZBTR",
+      "label": "Back Scratchers"
+    },
+    {
+      "p": "PMS",
+      "key": "HAP",
+      "code": "ZPMS",
+      "label": "Mortar and Pestle"
+    },
+    {
+      "p": "AP",
+      "key": "CLO",
+      "code": "YAP",
+      "label": "Apron"
+    },
+    {
+      "p": "SB",
+      "key": "HAP",
+      "code": "ZSB",
+      "label": "Storage Box"
+    },
+    {
+      "p": "HB",
+      "key": "HAP",
+      "code": "ZHB",
+      "label": "Hanging layer bags"
+    },
+    {
+      "p": "MB",
+      "key": "HAP",
+      "code": "ZMB",
+      "label": "Mail bags"
+    },
+    {
+      "p": "SS",
+      "key": "HAP",
+      "code": "ZSS",
+      "label": "Sports"
+    },
+    {
+      "p": "BS",
+      "key": "HAP",
+      "code": "ZBS",
+      "label": "Bathroom sets"
+    },
+    {
+      "p": "CK",
+      "key": "HAP",
+      "code": "ZCK",
+      "label": "Clock"
+    },
+    {
+      "p": "WM",
+      "key": "HAP",
+      "code": "ZWM",
+      "label": "Weight Machine"
+    },
+    {
+      "p": "MA",
+      "key": "HAP",
+      "code": "ZMA",
+      "label": "Mat"
+    },
+    {
+      "p": "WB",
+      "key": "HAP",
+      "code": "ZWB",
+      "label": "White Board"
+    },
+    {
+      "p": "TC",
+      "key": "HAP",
+      "code": "ZTC",
+      "label": "Table cloth"
+    },
+    {
+      "p": "WK",
+      "key": "HAP",
+      "code": "ZWK",
+      "label": "Walking Stick"
+    },
+    {
+      "p": "RB",
+      "key": "RFB",
+      "code": "RRB",
+      "label": "Refurbished"
+    }
+  ],
+  "prefixDefined": {
+    "SPR": 1,
+    "LGT": 1,
+    "LB": 1,
+    "CSM": 1,
+    "CLO": 1,
+    "HAP": 1,
+    "RFB": 1
+  }
+}

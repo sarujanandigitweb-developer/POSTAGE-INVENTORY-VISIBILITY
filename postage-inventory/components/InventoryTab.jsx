@@ -23,8 +23,23 @@ export default function InventoryTab({ data, st, set, loading }) {
   const [cmt, setCmt] = useState(null);   // the Price Comment dialog
 
   const cfg = data.sections[st.cat] || null;
-  const catRows = data.rows;   // the API returns only the active category
+  // SEARCHING -> `data.rows` is every section's matches, not one category's. The route
+  // says so with `search`, rather than the component guessing from st.q: the two are
+  // briefly out of step while a debounced search is in flight, and the table must follow
+  // the rows it actually has.
+  const searching = !!data.search;
+  const catRows = data.rows;   // one category when browsing; the matches when searching
   const rows = useMemo(() => catRows.filter(r => matches(r, cfg, st)), [catRows, cfg, st]);
+
+  // Which sections the visible rows came from, in the strip's own order — the counts
+  // under the status line, and the reason the Category column appears at all.
+  const hitSections = useMemo(() => {
+    if (!searching) return [];
+    const n = new Map();
+    for (const r of rows) n.set(r.key, (n.get(r.key) || 0) + 1);
+    return (data.order || []).filter(k => n.has(k))
+      .map(k => ({ key: k, name: data.sections[k]?.name || k, n: n.get(k) }));
+  }, [searching, rows, data.order, data.sections]);
 
   const sub2Opts = useMemo(() => extraOptions(catRows, cfg?.sub2), [catRows, cfg]);
   const attrOpts = useMemo(() => extraOptions(catRows, cfg?.attr), [catRows, cfg]);
@@ -47,8 +62,15 @@ export default function InventoryTab({ data, st, set, loading }) {
         <div className="status">
           <span>Showing <b>{shown.length.toLocaleString()}</b> of <b>{rows.length.toLocaleString()}</b> SKUs</span>
           {loading && <span className="muted">refreshing…</span>}
-          {rows.length !== catRows.length &&
+          {!searching && rows.length !== catRows.length &&
             <span>filtered from {catRows.length.toLocaleString()}</span>}
+          {/* A search spans sections, so the useful breakdown is which ones answered —
+              not which families of a category the reader may not even be looking at. */}
+          {searching && hitSections.length > 0 &&
+            <span>across {hitSections.length} {hitSections.length === 1 ? 'category' : 'categories'}
+              {' · '}{hitSections.map(x => x.name + ' ' + x.n.toLocaleString()).join(' · ')}</span>}
+          {searching && rows.length === 0 &&
+            <span>no SKU in any category matches “{st.q}”</span>}
         </div>
         <div className="tools">
           <span className="tsearch">
@@ -57,14 +79,22 @@ export default function InventoryTab({ data, st, set, loading }) {
                    autoComplete="off" aria-label="Search SKU or description" />
             <span className="tsearch-ic"><IconSearch size={15} /></span>
           </span>
+          {/* DISABLED, NOT HIDDEN, WHILE SEARCHING. Both are declared by ONE category, so
+              they cannot judge a row from another section — see lib/filter.js. Leaving
+              them live would let a reader narrow a cross-section result by a dimension
+              most of its rows do not have; removing them would make the toolbar jump. */}
           {cfg?.sub2 && sub2Opts && (
-            <select value={st.sub2} onChange={e => set({ sub2: e.target.value })} aria-label={cfg.sub2.label}>
+            <select value={st.sub2} onChange={e => set({ sub2: e.target.value })} aria-label={cfg.sub2.label}
+                    disabled={searching}
+                    title={searching ? cfg.sub2.label + ' belongs to ' + (cfg.name || 'this category') + ' — clear the search to use it' : undefined}>
               <option value="">All {cfg.sub2.label.toLowerCase()}s</option>
               {sub2Opts.map(o => <option key={o.value} value={o.value}>{o.value} ({o.count})</option>)}
             </select>
           )}
           {cfg?.attr && attrOpts && (
-            <select value={st.attr} onChange={e => set({ attr: e.target.value })} aria-label={cfg.attr.label}>
+            <select value={st.attr} onChange={e => set({ attr: e.target.value })} aria-label={cfg.attr.label}
+                    disabled={searching}
+                    title={searching ? cfg.attr.label + ' belongs to ' + (cfg.name || 'this category') + ' — clear the search to use it' : undefined}>
               <option value="">All {cfg.attr.label.toLowerCase()}s</option>
               {attrOpts.map(o => <option key={o.value} value={o.value}>{o.value} ({o.count})</option>)}
             </select>
@@ -97,6 +127,11 @@ export default function InventoryTab({ data, st, set, loading }) {
           <thead>
             <tr>
               <th className="sku grp-pd" rowSpan={3}>SKU</th>
+              {/* Only while the rows can come from any section. It sits OUTSIDE the
+                  colspan groups, so no group width has to change, and AFTER SKU because
+                  SKU is `position:sticky; left:0` — a column in front of it would be slid
+                  underneath it the moment the table scrolled sideways. */}
+              {searching && <th className="catcol grp-pd" rowSpan={3}>Category</th>}
               <th className="grp-pd" colSpan={2}>Product</th>
               <th className="grp-uk" colSpan={12}>UK</th>
               <th className="grp-de" colSpan={8}>German</th>
@@ -126,6 +161,8 @@ export default function InventoryTab({ data, st, set, loading }) {
             {shown.map(r => (
               <tr key={r.s}>
                 <td className="sku">{r.s}</td>
+                {searching &&
+                  <td className="catcol">{data.sections[r.key]?.name || r.key}</td>}
                 {/* The published page renders this as a BADGE, not raw text, and the
                     difference is not only cosmetic: the column is nowrap in a
                     width:max-content table, so "Double Wall/Ceiling Arm / Multi-Lamp

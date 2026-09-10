@@ -1,0 +1,234 @@
+'use client';
+import ImageZoom from './ImageZoom';
+import { useEffect, useMemo, useState } from 'react';
+import { IconSearch, IconReset } from './Icons';
+import Pager from './Pager';
+import { typeClass } from '@/lib/type-class';
+import { commentLabel, commentTone } from '@/lib/comment-label';
+import CommentDialog from './CommentDialog';
+import HistoryDialog from './HistoryDialog';
+
+const n = v => (v === 0 ? <span style={{ opacity: .45 }}>0</span>
+                        : <b style={{ color: v < 0 ? '#a51111' : '#0a7d33' }}>{v}</b>);
+const dash = () => <span className="dash" title="Not recorded for this SKU at this unit.">-</span>;
+const loc = v => (v ? <span className="loc">{v}</span> : dash());
+
+export default function InventoryTab({ data, st, set, loading }) {
+  const [hist, setHist] = useState(null);   // { sku, region, data, other }
+  const [cmt, setCmt] = useState(null);     // the Price Comment dialog
+
+  const cfg = data.sections[st.cat] || null;
+  // SEARCHING -> the rows can come from any section. The route says so with `search`,
+  // rather than the component guessing from st.q: the two are briefly out of step while a
+  // debounced search is in flight, and the table must follow the rows it actually has.
+  const searching = !!data.search;
+
+  // NOTHING IS FILTERED, SORTED OR SLICED HERE ANY MORE. `data.rows` is the page the route
+  // cut, out of the set the route narrowed, using the same lib/filter.js predicates this
+  // component used to call. Re-running them would be a second copy of the rule; slicing
+  // again would slice a slice.
+  const rows = data.rows;
+  const total = data.total ?? rows.length;
+  const per = data.size || 25;
+  const pages = data.pages || 1;
+  const cur = data.page || 1;
+  const shown = rows;
+
+  // Which sections answered, and how many from each — counted by the route over the whole
+  // match set, because the page holds at most 250 of them.
+  const hitSections = useMemo(() => {
+    if (!searching || !data.perSection) return [];
+    return (data.order || []).filter(k => data.perSection[k])
+      .map(k => ({ key: k, name: data.sections[k]?.name || k, n: data.perSection[k] }));
+  }, [searching, data.perSection, data.order, data.sections]);
+
+  // Built by the route from the matching set. Building them here would offer the reader
+  // whichever three shade shapes happened to land on page 1.
+  const sub2Opts = data.sub2Options || null;
+  const attrOpts = data.attrOptions || null;
+
+  return (
+    <div className="wrap" id="invwrap">
+      <div className="tbar">
+        <div className="status">
+          {/* "of" is the MATCHING count now, from the route — 3,245 SKUs found, not
+              3,245 SKUs downloaded. `shown` is the page. */}
+          <span>Showing <b>{shown.length.toLocaleString()}</b> of <b>{total.toLocaleString()}</b> SKUs</span>
+          {loading && <span className="muted">refreshing…</span>}
+          {!searching && data.sectionTotal != null && total !== data.sectionTotal &&
+            <span>filtered from {data.sectionTotal.toLocaleString()}</span>}
+          {/* A search spans sections, so the useful breakdown is which ones answered —
+              not which families of a category the reader may not even be looking at. */}
+          {searching && hitSections.length > 0 &&
+            <span>across {hitSections.length} {hitSections.length === 1 ? 'category' : 'categories'}
+              {' · '}{hitSections.map(x => x.name + ' ' + x.n.toLocaleString()).join(' · ')}</span>}
+          {searching && total === 0 &&
+            <span>no SKU in any category matches “{st.q}”</span>}
+        </div>
+        <div className="tools">
+          <span className="tsearch">
+            <input type="search" value={st.q} onChange={e => set({ q: e.target.value })}
+                   placeholder={cfg?.placeholder || 'Search SKU or description…'}
+                   autoComplete="off" aria-label="Search SKU or description" />
+            <span className="tsearch-ic"><IconSearch size={15} /></span>
+          </span>
+          {/* DISABLED, NOT HIDDEN, WHILE SEARCHING. Both are declared by ONE category, so
+              they cannot judge a row from another section — see lib/filter.js. Leaving
+              them live would let a reader narrow a cross-section result by a dimension
+              most of its rows do not have; removing them would make the toolbar jump. */}
+          {cfg?.sub2 && sub2Opts && (
+            <select value={st.sub2} onChange={e => set({ sub2: e.target.value })} aria-label={cfg.sub2.label}
+                    disabled={searching}
+                    title={searching ? cfg.sub2.label + ' belongs to ' + (cfg.name || 'this category') + ' — clear the search to use it' : undefined}>
+              <option value="">All {cfg.sub2.label.toLowerCase()}s</option>
+              {sub2Opts.map(o => <option key={o.value} value={o.value}>{o.value} ({o.count})</option>)}
+            </select>
+          )}
+          {cfg?.attr && attrOpts && (
+            <select value={st.attr} onChange={e => set({ attr: e.target.value })} aria-label={cfg.attr.label}
+                    disabled={searching}
+                    title={searching ? cfg.attr.label + ' belongs to ' + (cfg.name || 'this category') + ' — clear the search to use it' : undefined}>
+              <option value="">All {cfg.attr.label.toLowerCase()}s</option>
+              {attrOpts.map(o => <option key={o.value} value={o.value}>{o.value} ({o.count})</option>)}
+            </select>
+          )}
+          <select value={st.wh} onChange={e => set({ wh: e.target.value })} aria-label="Warehouse / location">
+            <option value="">All warehouses</option>
+            <option value="a">UK — Unit 3</option><option value="b">UK — Unit 4</option>
+            <option value="c">UK — Unit 18</option><option value="u5">UK — Unit 5</option>
+            <option value="k">German — Kronen</option><option value="m">German — Schmutter</option>
+            <option value="ca">Canada</option><option value="us">US</option>
+          </select>
+          <select value={st.st} onChange={e => set({ st: e.target.value })} aria-label="Stock condition">
+            <option value="">Any stock level</option>
+            <option value="pos">In stock (&gt; 0)</option>
+            <option value="zero">Zero</option>
+            <option value="neg">Negative</option>
+            <option value="low">Low stock (1–10)</option>
+            <option value="out">Out of stock (0 or less)</option>
+          </select>
+          <button className="btn" type="button"
+                  onClick={() => set({ fam: '', sub2: '', attr: '', q: '', wh: '', st: '' })}>
+            <IconReset size={14} />Reset
+          </button>
+        </div>
+      </div>
+
+      <div className="scroll">
+        {/* All 27 leaf columns the HTML dashboard carries, in its own grouping. */}
+        <table className="invtab">
+          <thead>
+            <tr>
+              <th className="sku grp-pd" rowSpan={3}>SKU</th>
+              {/* Only while the rows can come from any section. It sits OUTSIDE the
+                  colspan groups, so no group width has to change, and AFTER SKU because
+                  SKU is `position:sticky; left:0` — a column in front of it would be slid
+                  underneath it the moment the table scrolled sideways. */}
+              {searching && <th className="catcol grp-pd" rowSpan={3}>Category</th>}
+              <th className="grp-pd" colSpan={2}>Product</th>
+              <th className="grp-uk" colSpan={12}>UK</th>
+              <th className="grp-de" colSpan={8}>German</th>
+              <th className="grp-om" colSpan={2}>Other markets</th>
+              <th className="grp-in" colSpan={2}>Incoming</th>
+            </tr>
+            <tr>
+              <th rowSpan={2}>Type</th><th rowSpan={2}>Image</th>
+              <th colSpan={2}>Unit 3</th><th colSpan={2}>Unit 4</th>
+              <th>Unit 18</th><th>Unit 5</th>
+              <th colSpan={3}>Last Container</th>
+              <th rowSpan={2}>Shopify Price</th><th rowSpan={2}>Price Comment</th><th rowSpan={2}>History</th>
+              <th colSpan={2}>Kronen</th><th colSpan={2}>Schmutter</th>
+              <th colSpan={3}>Last Container</th><th rowSpan={2}>History</th>
+              <th rowSpan={2}>CA</th><th rowSpan={2}>US</th>
+              <th rowSpan={2}>Container</th><th rowSpan={2}>Stage</th>
+            </tr>
+            <tr>
+              <th>Stock</th><th>Location</th><th>Stock</th><th>Location</th>
+              <th>Stock</th><th>Stock</th>
+              <th>Received Warehouse</th><th>Received Date</th><th>Container Number</th>
+              <th>Stock</th><th>Location</th><th>Stock</th><th>Location</th>
+              <th>Received Warehouse</th><th>Received Date</th><th>Container Number</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map(r => (
+              <tr key={r.s}>
+                <td className="sku">{r.s}</td>
+                {searching &&
+                  <td className="catcol">{data.sections[r.key]?.name || r.key}</td>}
+                {/* The published page renders this as a BADGE, not raw text, and the
+                    difference is not only cosmetic: the column is nowrap in a
+                    width:max-content table, so "Double Wall/Ceiling Arm / Multi-Lamp
+                    Holder" stretched the column past 270px and pushed every warehouse
+                    column off screen. The badge wraps inside a capped width instead. */}
+                <td className="ty">
+                  {r.t ? <span className={'type ' + typeClass(r.f)}>{r.t}</span> : dash()}
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  <ImageZoom src={r.i} caption={r.s} />
+                </td>
+                <td className="num">{n(r.a)}</td><td>{loc(r.al)}</td>
+                <td className="num">{n(r.b)}</td><td>{loc(r.bl)}</td>
+                <td className="num">{n(r.c)}</td><td className="num">{n(r.u5)}</td>
+                {/* Received warehouse and date are read out of the history text —
+                    no column holds them — so a blank here means "not recorded". */}
+                <td>{r.ukr?.wh || dash()}</td>
+                <td className="fxdate">{r.ukr?.dt || dash()}</td>
+                <td>{r.ukc ? r.ukc.name : <span className="na">Unavailable</span>}</td>
+                {/* A euro or dollar listing is a different number, not a cheaper
+                    one, so it is shown with its own currency rather than as £. */}
+                <td className="num">
+                  {r.price != null
+                    ? '£' + r.price.toFixed(2)
+                    : r.alt
+                      ? <>{r.alt.sym}{r.alt.v.toFixed(2)} <span className="cur" title={'From the ' + r.alt.ch + ' listing — no UK price exists for this SKU.'}>{r.alt.cur}</span></>
+                      : dash()}
+                </td>
+                {/* One WORD, and the sentence behind a click — the published page puts
+                    its comment behind a `.cmb` button for the same reason. The title
+                    still carries the full text for a hover. */}
+                <td className="pcom">
+                  {r.pc ? (
+                    <button type="button" title={r.pc}
+                            className={'cmb cmb-' + commentTone(commentLabel(r.pc))}
+                            onClick={() => setCmt({ sku: r.s, text: r.pc })}>
+                      {commentLabel(r.pc)}
+                    </button>
+                  ) : dash()}
+                </td>
+                <td className="num">{r.ukh
+                  ? <button type="button" className="hbadge"
+                            onClick={() => setHist({ sku: r.s, region: 'UK', data: r.ukh, other: r.deh?.n || 0 })}>
+                      History {r.ukh.n}
+                    </button>
+                  : dash()}</td>
+                <td className="num">{n(r.k)}</td><td>{loc(r.kl)}</td>
+                <td className="num">{n(r.m)}</td><td>{loc(r.ml)}</td>
+                <td>{r.der?.wh || dash()}</td>
+                <td className="fxdate">{r.der?.dt || dash()}</td>
+                <td>{r.dec ? r.dec.name : <span className="na">Unavailable</span>}</td>
+                <td className="num">{r.deh
+                  ? <button type="button" className="hbadge"
+                            onClick={() => setHist({ sku: r.s, region: 'DE', data: r.deh, other: r.ukh?.n || 0 })}>
+                      History {r.deh.n}
+                    </button>
+                  : dash()}</td>
+                <td className="num">{n(r.ca)}</td><td className="num">{n(r.us)}</td>
+                <td>{r.inc ? r.inc.name : dash()}</td>
+                <td>{r.inc ? <span className={'cpill st-' + r.inc.stage.replace(/\s+/g, '-').toLowerCase()}>{r.inc.stage}</span> : dash()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {total === 0 && <div className="empty">No SKUs match the current search and filters.</div>}
+
+      <Pager total={total} page={cur} pages={pages} size={st.size} per={per}
+             onPage={p => set({ page: p })} onSize={z => set({ size: z })} label="SKUs" />
+
+      {hist && <HistoryDialog {...hist} onClose={() => setHist(null)} />}
+      {cmt && <CommentDialog {...cmt} onClose={() => setCmt(null)} />}
+    </div>
+  );
+}

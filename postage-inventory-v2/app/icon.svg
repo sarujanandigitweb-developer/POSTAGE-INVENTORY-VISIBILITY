@@ -1,0 +1,14 @@
+<!-- The sidebar's IconBox mark, drawn as three FILLED faces rather than the stroked
+     outline the sidebar uses. Same cube, same geometry, same brand blue — but a 1.7px
+     stroke on a 24 grid becomes well under one device pixel once the browser scales it
+     to a 16x16 tab icon, and the outline collapsed into an unreadable blob. Solid faces
+     keep their edges all the way down. Verified by rendering 16/32/48 and looking at
+     them, not by assuming. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="12" fill="#2563eb"/>
+  <g transform="translate(8 8) scale(2)">
+    <path d="M12 2.6 21 7.4 12 12.2 3 7.4Z" fill="#fff"/>
+    <path d="M2.6 8.5 11.4 13.2v9.6L2.6 18.1Z" fill="#fff" fill-opacity=".82"/>
+    <path d="M21.4 8.5 12.6 13.2v9.6l8.8-4.7Z" fill="#fff" fill-opacity=".58"/>
+  </g>
+</svg>

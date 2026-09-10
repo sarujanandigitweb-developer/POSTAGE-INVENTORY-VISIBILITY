@@ -1,0 +1,23 @@
+{
+  "name": "postage-inventory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Postage Inventory Visibility \u2014 Next.js dashboard reading LEDSone PostgreSQL server-side.",
+  "scripts": {
+    "dev": "next dev -p 3021",
+    "build": "next build",
+    "start": "next start -p 3021",
+    "lint": "next lint",
+    "snapshots": "node --conditions=react-server scripts/with-alias.mjs",
+    "prebuild": "node scripts/sync-pipeline-files.mjs || true; node --conditions=react-server scripts/with-alias.mjs || echo \"snapshots not built \u2014 see the warning above\"",
+    "sync-data": "node scripts/sync-pipeline-files.mjs"
+  },
+  "dependencies": {
+    "next": "^15.5.4",
+    "pg": "^8.13.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
+  },
+  "type": "module"
+}

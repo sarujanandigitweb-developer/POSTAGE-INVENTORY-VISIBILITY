@@ -1,0 +1,657 @@
+{
+  "CR": {
+    "key": "CR",
+    "name": "Ceiling Rose",
+    "placeholder": "e.g. CRSF100BM, Multi-Outlet, 120mm…",
+    "file": "ceiling-rose-inventory",
+    "fams": [
+      {
+        "code": "CRSF",
+        "label": "CRSF · Side Fitting",
+        "value": "CRSF",
+        "prefix": null
+      },
+      {
+        "code": "CRFF",
+        "label": "CRFF · Front Fit",
+        "value": "CRFF",
+        "prefix": null
+      }
+    ],
+    "sub2": null,
+    "attr": null
+  },
+  "LS": {
+    "key": "LS",
+    "name": "Lampshade",
+    "placeholder": "e.g. LSCY290BM, Curvey, Brushed Copper…",
+    "file": "lampshade-inventory",
+    "fams": [
+      {
+        "code": "MT",
+        "label": "Metal",
+        "value": "Metal",
+        "prefix": null
+      },
+      {
+        "code": "GL",
+        "label": "Glass Shades",
+        "value": "Glass Shades",
+        "prefix": null
+      },
+      {
+        "code": "FB",
+        "label": "Fabric",
+        "value": "Fabric",
+        "prefix": null
+      },
+      {
+        "code": "CG",
+        "label": "Crystal Shades",
+        "value": "Crystal Shades",
+        "prefix": null
+      },
+      {
+        "code": "NR",
+        "label": "Natural Rope",
+        "value": "Natural Rope",
+        "prefix": null
+      },
+      {
+        "code": "XWC",
+        "label": "Wire Cages",
+        "value": "Wire Cages",
+        "prefix": null
+      },
+      {
+        "code": "XCH",
+        "label": "Chandeliers",
+        "value": "Chandeliers",
+        "prefix": null
+      },
+      {
+        "code": "XBL",
+        "label": "Baton Lighting",
+        "value": "Baton Lighting",
+        "prefix": null
+      }
+    ],
+    "sub2": {
+      "key": "sh",
+      "label": "Shade shape"
+    },
+    "attr": {
+      "key": "ft",
+      "label": "Fitting type"
+    }
+  },
+  "PH": {
+    "key": "PH",
+    "name": "Pendant Lamp Holder",
+    "placeholder": "e.g. PHTT1PBRBM, Ceiling Pendant, braided flex…",
+    "file": "pendant-lamp-holder-inventory",
+    "fams": [],
+    "sub2": null,
+    "attr": {
+      "key": "mt",
+      "label": "Mount Type"
+    }
+  },
+  "WA": {
+    "key": "WA",
+    "name": "Wall Arm",
+    "placeholder": "e.g. WSST70BM, swan neck, gooseneck…",
+    "file": "wall-arm-inventory",
+    "fams": [
+      {
+        "code": "WAAR",
+        "label": "Wall Arm / Lamp Holder Arm",
+        "value": "Wall Arm",
+        "prefix": null
+      },
+      {
+        "code": "WAAD",
+        "label": "Adjustable Wall Arm",
+        "value": "Adjustable",
+        "prefix": null
+      },
+      {
+        "code": "WADB",
+        "label": "Double Wall / Ceiling Arm",
+        "value": "Double Arm",
+        "prefix": null
+      },
+      {
+        "code": "WAWB",
+        "label": "Wooden Wall Bracket",
+        "value": "Wooden Bracket",
+        "prefix": null
+      }
+    ],
+    "sub2": null,
+    "attr": {
+      "key": "ws",
+      "label": "Subtype"
+    }
+  },
+  "LH": {
+    "key": "LH",
+    "name": "Lamp Holder",
+    "placeholder": "e.g. LHSHE27YB, ceramic, batten, bakelite…",
+    "file": "lamp-holder-inventory",
+    "fams": [],
+    "sub2": null,
+    "attr": {
+      "key": "mt",
+      "label": "Mount Type"
+    }
+  },
+  "LB": {
+    "key": "LB",
+    "name": "Bulbs",
+    "placeholder": "e.g. LDMST64E274, ICST64E2760, LLRO18W, spot light…",
+    "file": "bulbs-inventory",
+    "fams": [
+      {
+        "code": "BLD",
+        "label": "LED Bulbs",
+        "value": "LED Bulbs",
+        "prefix": null
+      },
+      {
+        "code": "BIC",
+        "label": "Incandescent Bulbs",
+        "value": "Incandescent Bulbs",
+        "prefix": null
+      },
+      {
+        "code": "BLL",
+        "label": "LED Panel Light",
+        "value": "LED Panel Light",
+        "prefix": null
+      },
+      {
+        "code": "BLP",
+        "label": "LED Spot Light",
+        "value": "LED Spot Light",
+        "prefix": null
+      },
+      {
+        "code": "BLQ",
+        "label": "Lamp Bulbs",
+        "value": "Lamp Bulbs",
+        "prefix": null
+      }
+    ],
+    "sub2": null,
+    "attr": {
+      "key": "sr",
+      "label": "Series"
+    }
+  },
+  "SPR": {
+    "key": "SPR",
+    "name": "Lamp Spares",
+    "placeholder": "e.g. CGMLBM, cord grip, transformer, cable tie\\u2026",
+    "file": "lamp-spares-inventory",
+    "fams": [
+      {
+        "code": "PC",
+        "label": "Pipe Light accessories",
+        "value": "Pipe accessories",
+        "prefix": null
+      },
+      {
+        "code": "TR",
+        "label": "Transformers",
+        "value": "Transformers",
+        "prefix": null
+      },
+      {
+        "code": "CL",
+        "label": "Cables",
+        "value": "Cables",
+        "prefix": null
+      },
+      {
+        "code": "SP",
+        "label": "Spare parts",
+        "value": "Spare parts",
+        "prefix": null
+      },
+      {
+        "code": "SW",
+        "label": "Switch",
+        "value": "Switch",
+        "prefix": null
+      },
+      {
+        "code": "CB",
+        "label": "Plate With accessories",
+        "value": "Plate w/ accessories",
+        "prefix": null
+      },
+      {
+        "code": "RW",
+        "label": "Screw",
+        "value": "Screw",
+        "prefix": null
+      },
+      {
+        "code": "CO",
+        "label": "Connector",
+        "value": "Connector",
+        "prefix": null
+      },
+      {
+        "code": "SO",
+        "label": "Socket",
+        "value": "Socket",
+        "prefix": null
+      },
+      {
+        "code": "CG",
+        "label": "Cord Grip",
+        "value": "Cord Grip",
+        "prefix": null
+      },
+      {
+        "code": "NF",
+        "label": "Neon flex",
+        "value": "Neon flex",
+        "prefix": null
+      },
+      {
+        "code": "ST",
+        "label": "Tapes",
+        "value": "Tapes",
+        "prefix": null
+      },
+      {
+        "code": "WJ",
+        "label": "Waterproof Junction Box",
+        "value": "Junction Box",
+        "prefix": null
+      },
+      {
+        "code": "TS",
+        "label": "Tile spare parts",
+        "value": "Tile spares",
+        "prefix": null
+      },
+      {
+        "code": "HK",
+        "label": "Hook",
+        "value": "Hook",
+        "prefix": null
+      },
+      {
+        "code": "CN",
+        "label": "Chain",
+        "value": "Chain",
+        "prefix": null
+      },
+      {
+        "code": "IM",
+        "label": "Injection Module",
+        "value": "Injection Module",
+        "prefix": null
+      },
+      {
+        "code": "SCRN",
+        "label": "Shade Ring",
+        "value": "Shade Ring",
+        "prefix": null
+      },
+      {
+        "code": "CEN",
+        "label": "Cable Tie",
+        "value": "Cable Tie",
+        "prefix": null
+      },
+      {
+        "code": "LC",
+        "label": "LED Stripe Light Accessories",
+        "value": "LED Stripe acc.",
+        "prefix": null
+      },
+      {
+        "code": "SDP",
+        "label": "Sand Paper",
+        "value": "Sand Paper",
+        "prefix": null
+      },
+      {
+        "code": "RD",
+        "label": "Threaded Rod",
+        "value": "Threaded Rod",
+        "prefix": null
+      },
+      {
+        "code": "BC",
+        "label": "Spring Clip",
+        "value": "Spring Clip",
+        "prefix": null
+      },
+      {
+        "code": "SLW",
+        "label": "Splitter Cables",
+        "value": "Splitter Cables",
+        "prefix": null
+      },
+      {
+        "code": "HR",
+        "label": "Holder Ring",
+        "value": "Holder Ring",
+        "prefix": null
+      },
+      {
+        "code": "RPM",
+        "label": "Reducer Plate",
+        "value": "Reducer Plate",
+        "prefix": null
+      },
+      {
+        "code": "CM",
+        "label": "COB Module",
+        "value": "COB Module",
+        "prefix": null
+      },
+      {
+        "code": "NT",
+        "label": "Lock Nuts",
+        "value": "Lock Nuts",
+        "prefix": null
+      },
+      {
+        "code": "WR",
+        "label": "Washer",
+        "value": "Washer",
+        "prefix": null
+      },
+      {
+        "code": "HL",
+        "label": "Handles",
+        "value": "Handles",
+        "prefix": null
+      }
+    ],
+    "sub2": null,
+    "attr": null
+  },
+  "LGT": {
+    "key": "LGT",
+    "name": "Lighting",
+    "placeholder": "e.g. PSOS2RBM, table lamp, pipe lighting\\u2026",
+    "file": "lighting-inventory",
+    "fams": [
+      {
+        "code": "GPS",
+        "label": "Plugin Pendant",
+        "value": "Plugin Pendant",
+        "prefix": null
+      },
+      {
+        "code": "GPL",
+        "label": "Pipe Lighting",
+        "value": "Pipe Lighting",
+        "prefix": null
+      },
+      {
+        "code": "GWL",
+        "label": "Wall Lamp",
+        "value": "Wall Lamp",
+        "prefix": null
+      },
+      {
+        "code": "GWS",
+        "label": "Wall Scones",
+        "value": "Wall Scones",
+        "prefix": null
+      },
+      {
+        "code": "GTP",
+        "label": "Table Lamp",
+        "value": "Table Lamp",
+        "prefix": null
+      }
+    ],
+    "sub2": null,
+    "attr": null
+  },
+  "CSM": {
+    "key": "CSM",
+    "name": "Cosmetics",
+    "placeholder": "e.g. CSBE\\u2026, belt, hair clip, wallet\\u2026",
+    "file": "cosmetics-inventory",
+    "fams": [
+      {
+        "code": "XHO",
+        "label": "Hair Ornaments",
+        "value": "Hair Ornaments",
+        "prefix": "CSHO"
+      },
+      {
+        "code": "XHC",
+        "label": "Hair Clips",
+        "value": "Hair Clips",
+        "prefix": "CSHC"
+      },
+      {
+        "code": "XBE",
+        "label": "Belt",
+        "value": "Belt",
+        "prefix": "CSBE"
+      },
+      {
+        "code": "XWA",
+        "label": "Wallets",
+        "value": "Wallets",
+        "prefix": "CSWA"
+      }
+    ],
+    "sub2": null,
+    "attr": null
+  },
+  "CLO": {
+    "key": "CLO",
+    "name": "Clothes",
+    "placeholder": "e.g. CTBO\\u2026, boxer, pajamas, apron\\u2026",
+    "file": "clothes-inventory",
+    "fams": [
+      {
+        "code": "YBO",
+        "label": "Boxer",
+        "value": "Boxer",
+        "prefix": "CTBO"
+      },
+      {
+        "code": "YMS",
+        "label": "Shorts (M)",
+        "value": "Shorts (M)",
+        "prefix": "CTMS"
+      },
+      {
+        "code": "YMP",
+        "label": "Pajamas (M)",
+        "value": "Pajamas (M)",
+        "prefix": "CTMP"
+      },
+      {
+        "code": "YFP",
+        "label": "Pajamas (Fem)",
+        "value": "Pajamas (Fem)",
+        "prefix": "CTFP"
+      },
+      {
+        "code": "YKMP",
+        "label": "Pajamas (K.M)",
+        "value": "Pajamas (K.M)",
+        "prefix": "CTKMP"
+      },
+      {
+        "code": "YKFP",
+        "label": "Pajamas (K.Fem)",
+        "value": "Pajamas (K.Fem)",
+        "prefix": "CTKFP"
+      },
+      {
+        "code": "YKMT",
+        "label": "T-Shirts (K.M)",
+        "value": "T-Shirts (K.M)",
+        "prefix": "CTKMT"
+      },
+      {
+        "code": "YKFT",
+        "label": "T-Shirts (K.Fem)",
+        "value": "T-Shirts (K.Fem)",
+        "prefix": "CTKFT"
+      },
+      {
+        "code": "YAP",
+        "label": "Apron",
+        "value": "Apron",
+        "prefix": "AP"
+      }
+    ],
+    "sub2": null,
+    "attr": null
+  },
+  "HAP": {
+    "key": "HAP",
+    "name": "Home Appliances",
+    "placeholder": "e.g. CK\\u2026, clock, mail bag, table cloth\\u2026",
+    "file": "home-appliances-inventory",
+    "fams": [
+      {
+        "code": "ZLBT",
+        "label": "Laundry bags",
+        "value": "Laundry bags",
+        "prefix": "LBT"
+      },
+      {
+        "code": "ZSB",
+        "label": "Storage Box",
+        "value": "Storage Box",
+        "prefix": "SB"
+      },
+      {
+        "code": "ZHB",
+        "label": "Hanging layer bags",
+        "value": "Hanging layer bags",
+        "prefix": "HB"
+      },
+      {
+        "code": "ZMB",
+        "label": "Mail bags",
+        "value": "Mail bags",
+        "prefix": "MB"
+      },
+      {
+        "code": "ZSS",
+        "label": "Sports",
+        "value": "Sports",
+        "prefix": "SS"
+      },
+      {
+        "code": "ZBS",
+        "label": "Bathroom sets",
+        "value": "Bathroom sets",
+        "prefix": "BS"
+      },
+      {
+        "code": "ZCK",
+        "label": "Clock",
+        "value": "Clock",
+        "prefix": "CK"
+      },
+      {
+        "code": "ZWM",
+        "label": "Weight Machine",
+        "value": "Weight Machine",
+        "prefix": "WM"
+      },
+      {
+        "code": "ZMA",
+        "label": "Mat",
+        "value": "Mat",
+        "prefix": "MA"
+      },
+      {
+        "code": "ZWB",
+        "label": "White Board",
+        "value": "White Board",
+        "prefix": "WB"
+      },
+      {
+        "code": "ZFCB",
+        "label": "Clip Board",
+        "value": "Clip Board",
+        "prefix": "FCB"
+      },
+      {
+        "code": "ZAFW",
+        "label": "Artificial Flowers",
+        "value": "Artificial Flowers",
+        "prefix": "AFW"
+      },
+      {
+        "code": "ZFWS",
+        "label": "Foot wear",
+        "value": "Foot wear",
+        "prefix": "FWS"
+      },
+      {
+        "code": "ZTC",
+        "label": "Table cloth",
+        "value": "Table cloth",
+        "prefix": "TC"
+      },
+      {
+        "code": "ZSUA",
+        "label": "Shower curtain",
+        "value": "Shower curtain",
+        "prefix": "SUA"
+      },
+      {
+        "code": "ZWK",
+        "label": "Walking Stick",
+        "value": "Walking Stick",
+        "prefix": "WK"
+      },
+      {
+        "code": "ZBTR",
+        "label": "Back Scratchers",
+        "value": "Back Scratchers",
+        "prefix": "BTR"
+      },
+      {
+        "code": "ZPMS",
+        "label": "Mortar and Pestle",
+        "value": "Mortar and Pestle",
+        "prefix": "PMS"
+      }
+    ],
+    "sub2": null,
+    "attr": {
+      "key": "gp",
+      "label": "Group"
+    }
+  },
+  "RFB": {
+    "key": "RFB",
+    "name": "Refurbished",
+    "placeholder": "e.g. RB\\u2026, refurbished\\u2026",
+    "file": "refurbished-inventory",
+    "fams": [
+      {
+        "code": "RRB",
+        "label": "Refurbished",
+        "value": "Refurbished",
+        "prefix": "RB"
+      }
+    ],
+    "sub2": null,
+    "attr": null
+  }
+}
