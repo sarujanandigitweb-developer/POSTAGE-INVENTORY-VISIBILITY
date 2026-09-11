@@ -24,7 +24,7 @@ export default function ContainerDetailsTab() {
   const [page, setPage] = useState(1);
   // Auto, so the page fills the window. A fixed 15 left a 230px empty band under the
   // last row on a tall screen and hid rows that would have fitted.
-  const [size, setSize] = useState('auto');
+  const [size, setSize] = useState('25');   // the Pager offers 25/50/100/250
   const [open, setOpen] = useState(null);
   // measured off this table's own scroll box, not guessed from the window
   const scrollRef = useRef(null);
@@ -36,7 +36,8 @@ export default function ContainerDetailsTab() {
 
   useEffect(() => {
     let live = true;
-    const p = new URLSearchParams({ q, status, region, stage, sort });
+    const p = new URLSearchParams({ q, status, region, stage, sort,
+                                   page: String(page), size: String(size) });
     const url = '/api/container-details?' + p;
     const h = held(url);
     if (h) { setD(h); setErr(null); }
@@ -44,26 +45,45 @@ export default function ContainerDetailsTab() {
       .then(j => { if (!live) return; j.ok ? (setD(j), setErr(null)) : setErr(j.error); })
       .catch(e => live && setErr(String(e.message || e)));
     return () => { live = false; };
-  }, [q, status, region, stage, sort]);
+  }, [q, status, region, stage, sort, page, size]);
 
   useEffect(() => { setPage(1); }, [q, status, region, stage, sort]);
   useEffect(() => { setMq(''); setMpage(1); }, [open]);
 
+  // THE MANIFEST IS FETCHED WHEN A CONTAINER IS OPENED, not shipped with the list. Every
+  // row used to carry its full item list — 777 KB across 37 containers — and the reader
+  // opens one at a time. `held()` means opening the same container twice is instant.
+  const [man, setMan] = useState(null);
+  useEffect(() => {
+    if (!open) { setMan(null); return; }
+    let live = true;
+    const url = '/api/container-details?manifest=' + encodeURIComponent(open.n);
+    const h = held(url);
+    if (h?.ok) setMan(h.it); else setMan(null);
+    load(url).then(j => { if (live && j.ok) setMan(j.it); }).catch(() => {});
+    return () => { live = false; };
+  }, [open]);
+
   const items = useMemo(() => {
     if (!open) return [];
-    if (!mq) return open.it;
+    if (!man) return [];
+    if (!mq) return man;
     const t = mq.toLowerCase().split(/\s+/).filter(Boolean);
-    return open.it.filter(i =>
+    return man.filter(i =>
       t.every(x => (i.s + ' ' + (i.d || '') + ' ' + (i.sp || '')).toLowerCase().includes(x)));
-  }, [open, mq]);
+    // `man` MUST be here. The manifest is fetched when the dialog opens, so it arrives
+    // AFTER this memo first runs; without it in the deps the memo kept its first answer —
+    // the empty array — and the dialog read "0 items match" under a tab saying 116.
+  }, [open, mq, man]);
 
   if (err) return <div className="empty">{err}</div>;
   if (!d) return <Loading what="containers" cols={12} rows={8} kind="ship" />;
 
-  const per = perPage(size, d.rows.length, autoRows);
-  const pages = Math.max(1, Math.ceil(d.rows.length / per));
-  const cur = Math.min(page, pages);
-  const shown = size === 'all' ? d.rows : d.rows.slice((cur - 1) * per, cur * per);
+  // The route cut the page; these are its numbers.
+  const per = d.size || 25;
+  const pages = d.pages || 1;
+  const cur = d.page || 1;
+  const shown = d.rows;          // already the page — nothing is sliced here
 
   const mpages = Math.max(1, Math.ceil(items.length / msize));
   const mcur = Math.min(mpage, mpages);
@@ -73,7 +93,7 @@ export default function ContainerDetailsTab() {
     <>
       <div className="tbar">
         <div className="status">
-          <span>Showing <b>{shown.length}</b> of <b>{d.rows.length}</b> containers</span>
+          <span>Showing <b>{shown.length}</b> of <b>{(d.matching ?? d.rows.length).toLocaleString()}</b> containers</span>
           <span>{n(d.pieces)} pieces · {d.cbm} CBM</span>
         </div>
         <div className="tools">
@@ -146,8 +166,8 @@ export default function ContainerDetailsTab() {
         </table>
       </div>
 
-      {d.rows.length === 0 && <div className="empty">No containers match the current search and filters.</div>}
-      <Pager total={d.rows.length} page={cur} pages={pages} size={size} per={per}
+      {(d.matching ?? d.rows.length) === 0 && <div className="empty">No containers match the current search and filters.</div>}
+      <Pager total={d.matching ?? d.rows.length} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="containers" />
 
       {open && (
@@ -185,7 +205,7 @@ export default function ContainerDetailsTab() {
                       onClick={() => setMtab('summary')}>Container Summary</button>
               <button type="button" role="tab" aria-selected={mtab === 'items'}
                       className={'cdswitch' + (mtab === 'items' ? ' on' : '')}
-                      onClick={() => setMtab('items')}>Items / Products ({n(open.it.length)})</button>
+                      onClick={() => setMtab('items')}>Items / Products ({n(open.itN ?? 0)})</button>
             </div>
 
             {mtab === 'summary' && <ManifestSummary r={open} n={n} />}
@@ -201,7 +221,7 @@ export default function ContainerDetailsTab() {
                 {items.length
                   ? `Showing ${(mcur - 1) * msize + 1} to ${Math.min(mcur * msize, items.length)} of ${items.length} items`
                   : '0 items match'}
-                {mq && items.length !== open.it.length && ` (filtered from ${open.it.length})`}
+                {mq && man && items.length !== man.length && ` (filtered from ${man.length})`}
               </span>
             </div>
 

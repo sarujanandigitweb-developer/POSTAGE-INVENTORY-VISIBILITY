@@ -40,6 +40,10 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | REQ-10-D01 | Two new tabs, dispatch views grouped, six postage sections from two workbooks, seven date call sites fixed, five Next.js tabs ported | 2026-09-03 |
 | REQ-11 | The Next.js app deployed to Vercel, and a cross-check of its data against the published dashboard | 2026-09-04 |
 | REQ-11-D01 | Deployment made to work, Slow-Moving names and images corrected, four empty category filters restored, dispatch dialogs rebuilt, Postage made scrollable | 2026-09-04 |
+| REQ-12 | Live data instead of shipped copies, and the cold load measured end to end | 2026-09-07 |
+| REQ-12-D01 | Snapshots made a cache, live Shopify price, self-placing new SKUs, shared catalogue, narrowed fallbacks, six performance documents, Box Purchase History moved to its own workbook | 2026-09-07 |
+| REQ-13 | A loading mark per tab | 2026-09-08 |
+| REQ-13-D01 | Six marks drawn and verified in a browser, animated from one CSS block, no data or query touched | 2026-09-08 |
 
 ## Index
 
@@ -56,3 +60,5 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | 2026-09-02 | Wednesday | REQ-09-D01 | [2026-09-02__sarujanan__inv-piv__REQ-09-D01.md](2026-09-02/2026-09-02__sarujanan__inv-piv__REQ-09-D01.md) |
 | 2026-09-03 | Thursday | REQ-10-D01 | [2026-09-03__sarujanan__inv-piv__REQ-10-D01.md](2026-09-03/2026-09-03__sarujanan__inv-piv__REQ-10-D01.md) |
 | 2026-09-04 | Friday | REQ-11-D01 | [2026-09-04__sarujanan__inv-piv__REQ-11-D01.md](2026-09-04/2026-09-04__sarujanan__inv-piv__REQ-11-D01.md) |
+| 2026-09-07 | Monday | REQ-12-D01 | [2026-09-07__sarujanan__inv-piv__REQ-12-D01.md](2026-09-07/2026-09-07__sarujanan__inv-piv__REQ-12-D01.md) |
+| 2026-09-08 | Tuesday | REQ-13-D01 | [2026-09-08__sarujanan__inv-piv__REQ-13-D01.md](2026-09-08/2026-09-08__sarujanan__inv-piv__REQ-13-D01.md) |

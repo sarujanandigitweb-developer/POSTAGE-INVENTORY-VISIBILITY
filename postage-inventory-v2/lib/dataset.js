@@ -28,8 +28,13 @@ const TTL = Math.max(0, Number(process.env.LEDSONE_DATA_TTL ?? 300)) * 1000;
 // build shared by the warm-up and the page's own prefetch. Three builds is also
 // three times the connection pressure on a role that allows ten.
 const STORE = Symbol.for('postage-inventory.dataset');
-if (!globalThis[STORE]) globalThis[STORE] = { cache: new Map(), inflight: new Map() };
-const { cache, inflight } = globalThis[STORE];
+if (!globalThis[STORE]) globalThis[STORE] = {
+  cache: new Map(), inflight: new Map(),
+  // when each key was last ASKED FOR. The keep-warm ticker refreshes only keys a reader
+  // has actually opened, so an idle server does no database work at all.
+  seen: new Map(), ticker: null,
+};
+const { cache, inflight, seen } = globalThis[STORE];
 
 // Survive a restart. Rebuilding Fixed Price costs ~3s and Slow-Moving ~11s against a
 // role that only allows 10 connections, so paying that again every `npm run dev` —
@@ -38,13 +43,31 @@ const { cache, inflight } = globalThis[STORE];
 const DIR = path.join(process.cwd(), '.cache');
 const file = key => path.join(DIR, key + '.json');
 
-function readDisk(key) {
+function readDiskAny(key) {
   try {
     const raw = fs.readFileSync(file(key), 'utf8');
     const { at, data } = JSON.parse(raw);
-    if (Date.now() - at < TTL) return { at, data };
-  } catch { /* no snapshot, or an unreadable one: just rebuild */ }
+    return { at, data };
+  } catch { /* no file, or an unreadable one */ }
   return null;
+}
+
+function readDisk(key) {
+  const d = readDiskAny(key);
+  return d && Date.now() - d.at < TTL ? d : null;
+}
+
+// HOW LONG A STALE COPY MAY STAND IN FOR A FRESH ONE while the rebuild runs behind it.
+// Not unbounded: if every rebuild is failing, a reader must eventually be made to wait
+// rather than be shown last week's figures indefinitely. An hour is far past the 300 s
+// TTL and far short of a working day.
+const MAX_STALE = Math.max(0, Number(process.env.LEDSONE_MAX_STALE ?? 3600)) * 1000;
+
+/** The newest copy of a key REGARDLESS of age — memory, shipped snapshot, or disk. */
+function newestAny(key) {
+  const all = [cache.get(key), readShipped(key), readDiskAny(key)].filter(Boolean);
+  if (!all.length) return null;
+  return all.reduce((a, b) => (b.at > a.at ? b : a));
 }
 
 function writeDisk(key, at, data) {
@@ -89,7 +112,76 @@ export function fromSnapshot(key) {
   return !!s && Date.now() - s.at < TTL;
 }
 
+// The build, started once and shared. Split out of getOrBuild() so the same promise can be
+// awaited by a reader who has nothing to look at, or left running behind a reader who has.
+function startBuild(key, build) {
+  if (inflight.has(key)) return inflight.get(key);
+  const p = (async () => {
+    const t0 = Date.now();
+    const data = await build();
+    const at = Date.now();
+    cache.set(key, { at, data });
+    writeDisk(key, at, data);
+    console.log('[dataset] built ' + key + ' in ' + (at - t0) + 'ms');
+    return data;
+  })().finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
+}
+
+// ---- KEEP WARM, BUT ONLY WHAT IS BEING READ ---------------------------------------
+//
+// Stale-while-revalidate already means nobody waits, but the first reader after a lapse
+// still sees data one refresh-cycle old. This closes that: a key a reader has opened
+// recently is rebuilt just BEFORE its TTL runs out, so the copy is normally fresh.
+//
+// It refreshes only keys someone has actually asked for, within the last IDLE_AFTER. An
+// idle server does no database work at all, which matters because tech_user allows TEN
+// connections in total and shares them with pgAdmin and the 2-hourly refresh.
+//
+// Strictly one at a time. Rebuilding Slow-Moving takes ~20 s and the pool is max 3; a
+// parallel sweep would starve the reader it is meant to be helping.
+const REFRESH_AT = 0.8;                 // refresh once a copy is 80% of the way to stale
+const IDLE_AFTER = 30 * 60 * 1000;      // a key untouched for half an hour stops refreshing
+let sweeping = false;
+
+function keepWarm() {
+  const st = globalThis[STORE];
+  // LEDSONE_KEEP_WARM=0 turns the sweep off. It exists so the stale-while-revalidate path
+  // can be measured on its own — with the sweep running a key in use never goes stale,
+  // which is the point of it, and also means the fallback cannot be timed.
+  if (st.ticker || !TTL || process.env.LEDSONE_KEEP_WARM === '0') return;
+  // A quarter of the TTL, so a key cannot pass 80% unnoticed.
+  st.ticker = setInterval(sweep, Math.max(15000, TTL / 4));
+  st.ticker.unref?.();                  // never hold the process open
+}
+
+async function sweep() {
+  if (sweeping) return;                 // a slow rebuild must not stack up behind itself
+  sweeping = true;
+  try {
+    const now = Date.now();
+    for (const [key, lastSeen] of seen) {
+      if (now - lastSeen > IDLE_AFTER) { seen.delete(key); continue; }
+      const held = cache.get(key);
+      if (!held || inflight.has(key)) continue;
+      if (now - held.at < TTL * REFRESH_AT) continue;
+      const build = builders.get(key);
+      if (!build) continue;             // nothing registered a way to rebuild this key
+      try { await startBuild(key, build); }
+      catch (e) { console.error('[dataset] keep-warm ' + key + ' failed:', e.message); }
+    }
+  } finally { sweeping = false; }
+}
+
+// How to rebuild each key, remembered from the caller that first asked for it. The ticker
+// has no other way to know: getOrBuild() receives the build function, the ticker does not.
+const builders = globalThis[STORE].builders ||= new Map();
+
 export async function getOrBuild(key, build) {
+  seen.set(key, Date.now());
+  builders.set(key, build);
+  keepWarm();
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) return hit.data;
   if (inflight.has(key)) return inflight.get(key);
@@ -111,17 +203,32 @@ export async function getOrBuild(key, build) {
   const onDisk = readDisk(key);
   if (onDisk) { cache.set(key, onDisk); return onDisk.data; }
 
-  const p = (async () => {
-    const t0 = Date.now();
-    const data = await build();
-    const at = Date.now();
-    cache.set(key, { at, data });
-    writeDisk(key, at, data);
-    console.log('[dataset] built ' + key + ' in ' + (at - t0) + 'ms');
-    return data;
-  })().finally(() => inflight.delete(key));
-
-  inflight.set(key, p);
+  // ---- STALE-WHILE-REVALIDATE ------------------------------------------------------
+  //
+  // Everything above is a copy INSIDE the TTL. Past it, this used to fall through to an
+  // awaited build() — so a reader who opened Slow-Moving five minutes after the last one
+  // waited 20.8 s for 16,380 rows to be reassembled, and Inventory 7.7 s, every time the
+  // TTL lapsed. The dataset was not missing; it was merely a few seconds too old.
+  //
+  // A copy that exists is now SERVED AT ONCE and the rebuild runs behind it. Nothing about
+  // what gets built changes — the same build(), the same rows, the same order. Only the
+  // waiting changes: the reader gets the previous answer now instead of the next answer in
+  // twenty seconds, and the one after that is current.
+  //
+  // The staleness is not hidden. builtAt() reads this entry's own timestamp, so the "read
+  // …" chip in the header reports when the data was actually read and goes on ageing until
+  // the rebuild lands. Past MAX_STALE the copy is no longer good enough to stand in, and
+  // the reader waits — which is what should happen if every rebuild is failing.
+  // LEDSONE_STALE=0 restores the old behaviour — wait for the rebuild — so the two can be
+  // measured against each other in one session rather than compared across runs.
+  const stale = process.env.LEDSONE_STALE === '0' ? null : newestAny(key);
+  const p = startBuild(key, build);
+  if (stale && Date.now() - stale.at < MAX_STALE) {
+    cache.set(key, stale);          // so builtAt() reports the age the reader is seeing
+    console.log('[dataset] ' + key + ' served stale (' +
+                Math.round((Date.now() - stale.at) / 1000) + 's old), refreshing behind');
+    return stale.data;
+  }
   return p;
 }
 

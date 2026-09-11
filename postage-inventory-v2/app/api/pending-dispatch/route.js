@@ -1,6 +1,8 @@
 import { withClient } from '@/lib/db';
 import { getOrBuild, builtAt } from '@/lib/dataset';
 import { ymd } from '@/lib/dates';
+import { pageParams, paginate } from '@/lib/query';
+import { applyDispatchFilters, pendingHay, PENDING_SPEC } from '@/lib/dispatch-filter';
 
 // MISSING SHIPMENTS — PENDING DISPATCH.
 // SQL ported from ../sql/refresh/extract/pending-dispatch.js, which carries the
@@ -67,19 +69,44 @@ const STOCK = `
   WHERE upper(p.sku) = ANY($1)
   GROUP BY 1`;
 
-export async function GET() {
+export async function GET(request) {
   try {
     // Served from the snapshot shipped with the deployment when there is one, so a
     // hosted instance opens no database connection. Falls through to a live query in
     // development, where there is no snapshot and the database is next door.
     const out = await getOrBuild('pending-dispatch', buildSnapshot);
+    const sp = new URL(request.url).searchParams;
+
+    // FILTERED HERE, NOT IN THE BROWSER. The clauses are the tab's own, imported from
+    // lib/dispatch-filter.js rather than restated. Note the queue searches FEWER fields
+    // than Recently Dispatched — no tracking, no courier — because an order still in the
+    // queue has neither yet. That difference is the rule, not an omission.
+    const params = {
+      q: sp.get('q') || '', band: sp.get('band') || '',
+      wh: sp.get('wh') || '', dis: sp.get('dis') || '',
+    };
+    const matched = applyDispatchFilters(out, params, PENDING_SPEC, pendingHay);
+
+    const wantsAll = sp.get('all') === '1';
+    const { page, size } = pageParams(sp);
+    const cut = wantsAll
+      ? { rows: matched, total: matched.length, page: 1, pages: 1, size: matched.length }
+      : paginate(matched, { page, size });
+
     return Response.json({
       // when the data was read, not when the request arrived
       ok: true, asOf: builtAt('pending-dispatch') || new Date().toISOString(), sla: SLA_DAYS,
-      count: out.length,
-      breached: out.filter(r => r.b).length,
+      // the matching set, not the queue and not the page
+      count: cut.total,
+      queueCount: out.length,
+      breached: matched.filter(r => r.b).length,
+      // Option lists and band counts stay queue-wide, so the dropdowns offer every value
+      // that exists rather than the handful on page 1.
       bands: out.reduce((a, r) => ((a[r.band] = (a[r.band] || 0) + 1), a), {}),
-      rows: out,
+      states: [...new Set(out.map(r => r.s).filter(Boolean))].sort(),
+      warehouses: [...new Set(out.map(r => r.w).filter(Boolean))].sort(),
+      total: cut.total, page: cut.page, pages: cut.pages, size: cut.size,
+      rows: cut.rows,          // ONE PAGE
     });
   } catch (e) {
     console.error('[api/pending-dispatch]', e.message);

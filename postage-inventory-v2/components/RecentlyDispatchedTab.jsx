@@ -39,50 +39,56 @@ export default function RecentlyDispatchedTab() {
   const [open, setOpen] = useState(null);
   const autoRows = useAutoRows();
 
+  // EVERY NARROWING TRAVELS WITH THE REQUEST. The browser no longer holds 4,563 orders to
+  // narrow, so search, filters, page and page size are part of what is being asked for. A
+  // parameter the reader has not set is left off, which keeps the URL — and therefore the
+  // cache key — identical for the same view of the data.
+  //
+  // The clauses themselves moved to lib/dispatch-filter.js and are run by the route. They
+  // were not rewritten on the way; the tracking-and-courier fields this tab searches, and
+  // the queue does not, are still the ones it searches.
   useEffect(() => {
     let live = true;
-    const h = held('/api/recent-dispatch');
+    const p = new URLSearchParams({ page: String(page), size: String(size) });
+    const term = q.trim();
+    if (term) p.set('q', term);
+    if (band) p.set('band', band);
+    if (wh) p.set('wh', wh);
+    if (mkt) p.set('mkt', mkt);
+    if (dis) p.set('dis', dis);
+    const url = '/api/recent-dispatch?' + p;
+    const h = held(url);
     if (h) setD(h);
-    load('/api/recent-dispatch')
+    // Typing is debounced; turning a page or choosing a filter is deliberate and goes now.
+    const go = () => load(url)
       .then(j => { if (!live) return; j.ok ? setD(j) : setErr(j.error); })
       .catch(e => live && setErr(String(e.message || e)));
-    return () => { live = false; };
-  }, []);
+    if (!term) { go(); return () => { live = false; }; }
+    const t = setTimeout(go, 300);
+    return () => { live = false; clearTimeout(t); };
+  }, [q, band, wh, mkt, dis, page, size]);
 
-  const rows = useMemo(() => {
-    if (!d) return [];
-    let r = d.rows;
-    if (band) r = r.filter(x => x.band === band);
-    if (wh) r = r.filter(x => x.w === wh);
-    if (mkt) r = r.filter(x => x.m === mkt);
-    if (dis) r = r.filter(x => x.s === dis);
-    if (q) {
-      const t = q.toLowerCase().split(/\s+/).filter(Boolean);
-      // tracking is searchable here in a way it never was on the queue: on this tab most
-      // orders HAVE a tracking number, and "where did LED62991 go" is asked by number
-      r = r.filter(x => t.every(k =>
-        (x.o + ' ' + x.k + ' ' + x.t + ' ' + x.cr + ' ' + x.m + ' ' + x.c + ' ' +
-         x.li.map(l => l.n).join(' ')).toLowerCase().includes(k)));
-    }
-    return r;
-  }, [d, band, wh, mkt, dis, q]);
-
+  // Any change of WHAT is being looked for returns to page 1; changing the page or its
+  // size must not.
   useEffect(() => { setPage(1); }, [q, band, wh, mkt, dis]);
 
   if (err) return <div className="empty">{err}</div>;
   if (!d) return <Loading what="dispatched orders" cols={12} rows={9} kind="truck" />;
 
-  const per = perPage(size, rows.length, autoRows);
-  const pages = Math.max(1, Math.ceil(rows.length / per));
-  const cur = Math.min(page, pages);
-  const shown = size === 'all' ? rows : rows.slice((cur - 1) * per, cur * per);
+  // Nothing is filtered or sliced here any more — `d.rows` IS the page the route cut.
+  const rows = d.rows;
+  const total = d.total ?? rows.length;
+  const per = d.size || 25;
+  const pages = d.pages || 1;
+  const cur = d.page || 1;
+  const shown = rows;
   const reset = () => { setQ(''); setBand(''); setWh(''); setMkt(''); setDis(''); };
 
   return (
     <>
       <div className="tbar">
         <div className="status">
-          <span>Showing <b>{shown.length.toLocaleString()}</b> of <b>{rows.length.toLocaleString()}</b> dispatched orders</span>
+          <span>Showing <b>{shown.length.toLocaleString()}</b> of <b>{total.toLocaleString()}</b> dispatched orders</span>
           <span>{d.sameDay.toLocaleString()} of {d.count.toLocaleString()} went out within 24 hours</span>
         </div>
         <div className="tools">
@@ -157,8 +163,8 @@ export default function RecentlyDispatchedTab() {
         </table>
       </div>
 
-      {rows.length === 0 && <div className="empty">No dispatched order matches the current search and filters.</div>}
-      <Pager total={rows.length} page={cur} pages={pages} size={size} per={per}
+      {total === 0 && <div className="empty">No dispatched order matches the current search and filters.</div>}
+      <Pager total={total} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="orders" />
 
       {open && (() => {

@@ -30,48 +30,50 @@ export default function PendingDispatchTab() {
   const [open, setOpen] = useState(null);
   const autoRows = useAutoRows();
 
+  // EVERY NARROWING TRAVELS WITH THE REQUEST — the clauses moved to
+  // lib/dispatch-filter.js and are run by the route, unchanged.
   useEffect(() => {
     let live = true;
-    const h = held('/api/pending-dispatch');
+    const p = new URLSearchParams({ page: String(page), size: String(size) });
+    const term = q.trim();
+    if (term) p.set('q', term);
+    if (band) p.set('band', band);
+    if (wh) p.set('wh', wh);
+    if (dis) p.set('dis', dis);
+    const url = '/api/pending-dispatch?' + p;
+    const h = held(url);
     if (h) setD(h);
-    load('/api/pending-dispatch')
+    const go = () => load(url)
       .then(j => { if (!live) return; j.ok ? setD(j) : setErr(j.error); })
       .catch(e => live && setErr(String(e.message || e)));
-    return () => { live = false; };
-  }, []);
-
-  const rows = useMemo(() => {
-    if (!d) return [];
-    let r = d.rows;
-    if (band) r = r.filter(x => x.band === band);
-    if (wh) r = r.filter(x => x.w === wh);
-    if (dis) r = r.filter(x => x.s === dis);
-    if (q) {
-      const t = q.toLowerCase().split(/\s+/).filter(Boolean);
-      r = r.filter(x => t.every(k =>
-        (x.o + ' ' + x.k + ' ' + x.m + ' ' + x.c + ' ' + x.li.map(l => l.n).join(' ')).toLowerCase().includes(k)));
-    }
-    return r;
-  }, [d, band, wh, dis, q]);
+    if (!term) { go(); return () => { live = false; }; }
+    const t = setTimeout(go, 300);
+    return () => { live = false; clearTimeout(t); };
+  }, [q, band, wh, dis, page, size]);
 
   useEffect(() => { setPage(1); }, [q, band, wh, dis]);
 
   if (err) return <div className="empty">{err}</div>;
   if (!d) return <Loading what="open orders" cols={13} rows={9} kind="truck" />;
 
-  const per = perPage(size, rows.length, autoRows);
-  const pages = Math.max(1, Math.ceil(rows.length / per));
-  const cur = Math.min(page, pages);
-  const shown = size === 'all' ? rows : rows.slice((cur - 1) * per, cur * per);
-  const states = [...new Set(d.rows.map(r => r.s))].sort();
+  // `d.rows` IS the page the route cut; nothing is filtered or sliced here.
+  const rows = d.rows;
+  const total = d.total ?? rows.length;
+  const per = d.size || 25;
+  const pages = d.pages || 1;
+  const cur = d.page || 1;
+  const shown = rows;
+  // Built by the route from the whole queue, not the page — a dropdown built from 25 rows
+  // would offer whichever three states happened to land on page 1.
+  const states = d.states || [];
   // warehouse decides who packs the order, and it is recorded on every row
-  const whs = [...new Set(d.rows.map(r => r.w).filter(Boolean))].sort();
+  const whs = d.warehouses || [];
 
   return (
     <>
       <div className="tbar">
         <div className="status">
-          <span>Showing <b>{shown.length.toLocaleString()}</b> of <b>{rows.length.toLocaleString()}</b> open orders</span>
+          <span>Showing <b>{shown.length.toLocaleString()}</b> of <b>{total.toLocaleString()}</b> open orders</span>
           <span>{d.breached.toLocaleString()} past the {d.sla}-day SLA</span>
         </div>
         <div className="tools">
@@ -151,8 +153,8 @@ export default function PendingDispatchTab() {
         </table>
       </div>
 
-      {rows.length === 0 && <div className="empty">No orders match the current search and filters.</div>}
-      <Pager total={rows.length} page={cur} pages={pages} size={size} per={per}
+      {total === 0 && <div className="empty">No orders match the current search and filters.</div>}
+      <Pager total={total} page={cur} pages={pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="orders" />
 
       {open && (() => {

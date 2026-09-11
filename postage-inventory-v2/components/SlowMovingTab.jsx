@@ -207,7 +207,14 @@ export default function SlowMovingTab() {
       </div>
 
       {d.rows.length === 0 && <div className="empty">No SKUs match the current search and filters.</div>}
-      <Pager total={d.total} page={d.page} pages={d.pages} size={size} per={per}
+      {/* THE FILTERED COUNT, NOT THE DATASET. The Pager derives its range from `total`
+          — `to` is min(page * size, total) and the "of N" is total — while `pages` comes
+          from the filtered set. Passing the dataset size made the two disagree: with a
+          priority filter the last page read "Showing 1,326–1,350 of 16,380" when there
+          were 1,326 matching rows and the page held one. `filtered` is what the status
+          line above already reports, and falling back to `total` keeps the unfiltered
+          view exactly as it was. */}
+      <Pager total={d.filtered ?? d.total} page={d.page} pages={d.pages} size={size} per={per}
              onPage={setPage} onSize={setSize} label="SKUs" />
     </>
   );

@@ -1,5 +1,6 @@
 import { withClient } from '@/lib/db';
 import { getOrBuild, builtAt } from '@/lib/dataset';
+import { pageParams, paginate } from '@/lib/query';
 import { catalogue } from '@/lib/catalogue';
 
 // CONTAINER DETAILS — upcoming and received containers, and what came on each.
@@ -130,6 +131,17 @@ export async function GET(request) {
     const sp = new URL(request.url).searchParams;
     const all = await getOrBuild('container-details', build);
 
+    // ONE CONTAINER'S MANIFEST, ON DEMAND. The list carries 37 rows but 777 KB, because
+    // every row carried its full manifest — 22,031 characters on the first one alone —
+    // and the reader opens at most one at a time. The manifest is fetched when a container
+    // is opened instead of being shipped with the list.
+    const manifest = sp.get('manifest');
+    if (manifest) {
+      const one = all.find(r => r.n === manifest);
+      if (!one) return Response.json({ ok: false, error: 'No such container' }, { status: 404 });
+      return Response.json({ ok: true, n: one.n, it: one.it });
+    }
+
     const q = (sp.get('q') || '').trim().toLowerCase();
     const st = sp.get('status') || '';
     const rg = sp.get('region') || '';
@@ -152,17 +164,32 @@ export async function GET(request) {
     else if (sort === 'cbm') rows = [...rows].sort((a, b) => b.v - a.v);
     else if (sort === 'name') rows = [...rows].sort((a, b) => a.n.localeCompare(b.n));
 
+    // Paginated like every other tab. The filter and sort above still run over the whole
+    // set — and still read `it`, which is why the manifest stays on the server even though
+    // it no longer travels with the list.
+    const wantsAll = sp.get('all') === '1';
+    const { page, size } = pageParams(sp);
+    const cut = wantsAll
+      ? { rows, total: rows.length, page: 1, pages: 1, size: rows.length }
+      : paginate(rows, { page, size });
+
+    // `it` is replaced by its length. The dialog's "Items / Products (N)" tab needs the
+    // count on the list; the items themselves arrive when the container is opened.
+    const slim = cut.rows.map(({ it, ...r }) => ({ ...r, itN: it ? it.length : 0 }));
+
     const count = s => all.filter(r => r.st === s).length;
     return Response.json({
       ok: true, builtAt: builtAt('container-details'),
       total: all.length,
+      matching: cut.total,
+      page: cut.page, pages: cut.pages, size: cut.size,
       counts: { Upcoming: count('Upcoming'), 'Part received': count('Part received'),
                 Received: count('Received') },
       regions: [...new Set(all.map(r => r.rg).filter(Boolean))].sort(),
       stages: [...new Set(all.map(r => r.sg).filter(Boolean))].sort(),
       pieces: all.reduce((n, r) => n + r.q, 0),
       cbm: Math.round(all.reduce((n, r) => n + r.v, 0) * 10) / 10,
-      rows,
+      rows: slim,
     });
   } catch (e) {
     console.error('[api/container-details]', e.message);

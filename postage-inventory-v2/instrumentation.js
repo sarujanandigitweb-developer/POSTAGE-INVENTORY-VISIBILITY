@@ -12,12 +12,36 @@
 // spellings are here so this holds whether the build runs webpack or turbopack.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
+  // LEDSONE_SKIP_WARM=1 skips the boot warm. Without it the warm competes for the pool
+  // (max 3) with whatever is being measured, and the figure is contention, not the path.
+  if (process.env.LEDSONE_SKIP_WARM === '1') {
+    console.log('[warm] skipped — LEDSONE_SKIP_WARM=1');
+    return;
+  }
 
   const fs   = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ 'node:fs');
   const path = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ 'node:path');
 
+  // KEYS is the snapshot test below — which datasets a deployment ships.
   const KEYS = ['container-details', 'fixed-price', 'slow-moving'];
   const TIMEOUT_MS = 10 * 60 * 1000;
+
+  // WHAT ACTUALLY GETS WARMED, and in which order. Inventory is here now: it was the only
+  // tab left out, and it is the one the app opens on — so the first reader paid its build
+  // in full (7.7 s measured cold) while three datasets nobody had asked for were warmed
+  // around it. Only the DEFAULT section is warmed; the strip has twelve, warming all of
+  // them would be about a minute of database work per boot against a role that allows ten
+  // connections. The other eleven are covered by the keep-warm sweep in lib/dataset.js
+  // once a reader opens one.
+  //
+  // `size=1` builds and caches the whole dataset and ships one row: the cost is the build,
+  // not the transfer.
+  const WARM = [
+    { key: 'inventory-CR',      route: '/api/inventory?cat=CR&size=1' },
+    { key: 'container-details', route: '/api/container-details?size=1' },
+    { key: 'fixed-price',       route: '/api/fixed-price?size=1' },
+    { key: 'slow-moving',       route: '/api/slow-moving?size=1' },
+  ];
 
   // A DEPLOYMENT SERVING SNAPSHOTS HAS NOTHING TO WARM. The read is a file read of a few
   // milliseconds, and on a serverless host there is no local server to fetch from — each
@@ -39,13 +63,13 @@ export async function register() {
   // and whatever the reader is doing. Measured: slow-moving builds in ~15s idle and 512s
   // when the reader was browsing at the same time. The contention is the cost.
   setTimeout(async () => {
-    for (const key of KEYS) {
+    for (const { key, route } of WARM) {
       const t0 = Date.now();
       try {
         // An explicit timeout, generous enough for a cold build on a busy database.
         // Without one the platform's own ~5-minute limit fired first and logged
         // "fetch failed" for a build that then finished perfectly well.
-        const r = await fetch(`http://127.0.0.1:${port}/api/${key}?size=1`,
+        const r = await fetch(`http://127.0.0.1:${port}${route}`,
                               { signal: AbortSignal.timeout(TIMEOUT_MS) });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         console.log(`[warm] ${key} ready in ${Date.now() - t0}ms`);
