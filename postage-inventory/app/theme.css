@@ -645,6 +645,8 @@ table.htab td.hgap { text-align: center; color: var(--ink-2); padding: 22px 10px
 .bdg.warn{background:#fdedd3;color:#9a5b12}
 .bdg.bad {background:#fde2e2;color:#a51111}
 .bdg.dash{background:transparent;color:var(--muted);border:1px dashed var(--line);font-weight:700}
+.bdg.nodata{background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db;font-weight:700}
+:root[data-theme=dark] .bdg.nodata{background:#1a1d21;color:#9ca3af;border:1px solid #374151}
 :root[data-theme=dark] .bdg{background:#22262c;color:#d5dae1}
 :root[data-theme=dark] .bdg.ok  {background:#12331f;color:#86efac}
 :root[data-theme=dark] .bdg.go  {background:#16233f;color:#93c5fd}

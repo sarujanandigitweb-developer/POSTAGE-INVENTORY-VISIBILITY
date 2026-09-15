@@ -10,13 +10,14 @@ import { perPage, useAutoRows } from '@/lib/rows';
 import { turnaround } from '@/lib/dates';
 
 // A tone means the same thing wherever it appears. "Label Created" deliberately takes
-// none: it is ~80% of these rows and the ordinary outcome, and colouring the ordinary
-// case leaves nothing for the exceptions to say.
+// none: it is the ordinary outcome, and colouring the ordinary case leaves nothing for
+// the exceptions to say. "No Carrier Data" is grey — unknown, not a fault.
 const stCls = s =>
   /deliver/i.test(s) ? 'ok'
   : /transit|out for/i.test(s) ? 'go'
   : /problem|return|delet|fail|cancel/i.test(s) ? 'bad'
   : /no tracking/i.test(s) ? 'dash'
+  : /no carrier data/i.test(s) ? 'nodata'
   : '';
 // Turnaround is the number the team is measured on, so it carries a tone.
 const turnCls = h => (h <= 24 ? 'ok' : h <= 72 ? 'warn' : 'bad');
@@ -165,7 +166,8 @@ export default function RecentlyDispatchedTab() {
         const stCls = /deliver/i.test(open.s) ? 'ok'
           : /transit|out for/i.test(open.s) ? 'go'
           : /problem|return|delet|fail|cancel/i.test(open.s) ? 'bad'
-          : /no tracking/i.test(open.s) ? 'dash' : '';       // nothing to follow up, not a fault
+          : /no tracking/i.test(open.s) ? 'dash'             // nothing to follow up, not a fault
+          : /no carrier data/i.test(open.s) ? 'nodata' : '';
         const turnCls = open.th <= 24 ? 'ok' : open.th <= 72 ? 'warn' : 'bad';
         const CH = { Amazon: 'a', eBay: 'e', Website: 'w', 'B&Q': 'b', Wayfair: 'y' };
         return (

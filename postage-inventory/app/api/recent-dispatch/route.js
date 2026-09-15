@@ -20,8 +20,9 @@ import { ymd, hoursBetween } from '@/lib/dates';
 //   * MARKETPLACE IS NOT `orders.market_place`. That column is a COUNTRY id (its lookup
 //     lists Australia, Germany, UK...). The sales CHANNEL is sub_source -> source.
 //
-//   * DISPATCH STATUS is the carrier's own word from shipment_tracking_log, falling back
-//     to what the shipment itself proves. Nothing is inferred from the order status.
+//   * DISPATCH STATUS is the carrier's own word from shipment_tracking_log. With no log
+//     row it says "No Carrier Data" rather than guessing. Nothing is inferred from the
+//     order status.
 export const dynamic = 'force-dynamic';
 
 const WINDOW_DAYS = 7;
@@ -149,11 +150,13 @@ export const buildSnapshot = () => withClient(async q => {
         const hours = hoursBetween(r.order_date, r.done_at);
         if (hours === null) continue;
 
-        // The carrier's own status wins. Where the carrier has not reported, the
-        // shipment still proves what happened: a tracking number means a label exists;
-        // no tracking on a completed order means a marketplace shipped it themselves.
+        // The carrier's own status, exactly as shipment_tracking_log holds it. Where the
+        // log has no row for the tracking number, nothing is invented: the tracking sync
+        // only ingests Royal Mail numbers, so an Evri/DHL/DPD/UPS parcel has no row at all
+        // and "Label Created" would be a guess. No tracking number on a completed order
+        // means a marketplace shipped it themselves.
         const status = (r.track_status || '').trim() ||
-                       (r.trk ? 'Label Created' : 'Dispatched - No Tracking');
+                       (r.trk ? 'No Carrier Data' : 'Dispatched - No Tracking');
         const li = lines[r.id] || [];
         const done = ymd(r.done_at);
         const ago = Math.round(
