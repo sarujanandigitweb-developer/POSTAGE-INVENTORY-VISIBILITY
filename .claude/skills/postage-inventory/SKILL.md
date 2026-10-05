@@ -25,8 +25,8 @@ If a change cannot be proven this way, say so before writing it, not after.
 | | |
 |---|---|
 | `dashboard/inventory-dashboard.html` | ~13 MB single file, all data embedded, rebuilt by a 2-hourly cron (`sql/refresh/refresh.sh`) and published to the Varman AIOS hub. Tab data is `const` in the file; only Postage is fetched live. |
-| `postage-inventory/` | Next.js app. Reads the database through `app/api/*/route.js`. Port 3020. |
-| `postage-inventory-v2/` | A copy carrying server-side pagination work. Port 3021. The original must stay untouched. |
+| `postage-inventory/` | Next.js app, **the deployed one**. Reads the database through `app/api/*/route.js`. Port 3020. Inventory, Recently Dispatched, Dispatch Queue and Container Details return the whole set and page in the browser; Fixed Price and Slow-Moving page on the server. |
+| `postage-inventory-v2/` | A copy carrying server-side pagination (`lib/query.js`, `lib/dispatch-filter.js`), stale-while-revalidate and a keep-warm sweep. Port 3021. Not deployed. The original must stay untouched. |
 
 When the user reports a behaviour, **check both** before concluding. They have diverged
 before: the dashboard searched main-category and family (`mc`/`sc`) while the app did not,
@@ -49,6 +49,15 @@ Verified, not assumed. Re-measure rather than trusting these if something looks 
   2-hourly cron.
 - **Pool `max: 3`** locally (`1` on Vercel), `connectionTimeoutMillis: 15000`. A fourth
   concurrent build queues then throws.
+- **An open pgAdmin Dashboard tab takes the whole role down.** It opens a new connection
+  every 1–2 minutes and pins `tech_user` at 10/10; every database-backed route on Vercel
+  then returns **500 `too many connections for role "tech_user"`**, while `/api/postage`
+  (a Google Sheet) keeps returning 200. Diagnosed once already — check this before
+  blaming the deployment. `pg_signal_backend` is false, so the connections cannot be
+  killed from this side; the tab has to be closed.
+- **The cron refresh only runs while this machine is on.** `CRON_TZ=Asia/Colombo`,
+  `0 */2`, so runs appear between 04:30 and 12:30 UTC and the 12:30 one is routinely cut
+  off at shutdown. A missing run is not a fault, but the published page can be a day old.
 - `withClient()` hands **one client**. `Promise.all` over it **serialises** — batching was
   implemented, measured at 22,647 ms → 23,277 ms, and reverted.
 
@@ -110,6 +119,31 @@ listing a file is not proof the bundle can load it.
 
 **Filters are category-scoped.** `fam`, `sub2` and `attr` are declared by one section. A
 cross-section search must skip them or it silently drops every foreign match.
+
+## Dispatch status, and the three places it disagrees
+
+The status is the carrier's word from `order_management.shipment_tracking_log`, joined on
+the tracking number. The **external sync that fills that table is not in this repo** and
+only ingests 13-character Royal Mail numbers — so DHL, Evri, DPD and UPS have **zero**
+rows, roughly 3,000 completed orders in any 14-day window. Where a row does exist it
+agrees with its own last event 97% of the time; the rest are mostly delivered parcels
+still reading `Intransit`. Neither deliverable can fix either problem.
+
+What each deliverable does when the log has no row — **they do not match**, and that is
+known, not an accident:
+
+| | fallback |
+|---|---|
+| `postage-inventory/app/api/recent-dispatch/route.js:159` | `No Carrier Data` (fixed 2026-09-15, `4e346f3`) |
+| `postage-inventory-v2/app/api/recent-dispatch/route.js:185` | `Label Created` — an invented status |
+| `sql/refresh/extract/recent-dispatch.js:158` → the published HTML | `Label Created`, 2,621 of them |
+
+Do not "restore consistency" by putting the guess back into v1. Carrying the fix the other
+way means the extract **and** the dashboard's own legend, CSS and `rdStCls`, then
+`validation/check-recent-dispatch.js`.
+
+`'Dispatched - No Tracking'` is different and correct: no tracking number exists at all,
+mostly Amazon Shipping and Wayfair Shipping where the marketplace buys the label.
 
 ## Verifying
 

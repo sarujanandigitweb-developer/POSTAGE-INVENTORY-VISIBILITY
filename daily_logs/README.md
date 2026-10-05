@@ -62,3 +62,22 @@ Example: `2026-08-24__sarujanan__inv-piv__REQ-02-D01.md`
 | 2026-09-04 | Friday | REQ-11-D01 | [2026-09-04__sarujanan__inv-piv__REQ-11-D01.md](2026-09-04/2026-09-04__sarujanan__inv-piv__REQ-11-D01.md) |
 | 2026-09-07 | Monday | REQ-12-D01 | [2026-09-07__sarujanan__inv-piv__REQ-12-D01.md](2026-09-07/2026-09-07__sarujanan__inv-piv__REQ-12-D01.md) |
 | 2026-09-08 | Tuesday | REQ-13-D01 | [2026-09-08__sarujanan__inv-piv__REQ-13-D01.md](2026-09-08/2026-09-08__sarujanan__inv-piv__REQ-13-D01.md) |
+
+## Gap: 2026-09-09 → 2026-09-15 — work done, no skill file written
+
+The log stops at REQ-13. Work continued for another week and was committed, but no
+daily folder was created for it. Anyone reconstructing that week should read the
+commits and the code, not assume nothing happened. What landed, from `git log`:
+
+| Date | Commit | What it was |
+|---|---|---|
+| 2026-09-10 | `1310654`, `43290e1` | Disk cache (`.cache/`) committed for both apps, including `recent-dispatch.json`; 175 lines of the published dashboard changed |
+| 2026-09-11 | `936ca40` | **`postage-inventory-v2/` server-side pagination** — `lib/query.js`, `lib/dispatch-filter.js`, four routes paginating on the server, page sizes fixed at 25/50/100/250, stale-while-revalidate and the keep-warm sweep in `lib/dataset.js` |
+| 2026-09-11 | `8f03feb` | cache files only — two `.cache/*.json` in v2, no code |
+| 2026-09-15 | `4e346f3` | **Dispatch status stopped inventing "Label Created"** in the v1 app — see `postage-inventory/app/api/recent-dispatch/route.js` |
+
+Two investigations from that week were never written up as daily logs either, and
+their findings are recorded in the root `README.md` instead: the carrier-coverage
+audit (DHL, Evri, DPD and UPS have **no** rows in `shipment_tracking_log`) and the
+`tech_user` connection-exhaustion incident that made every Vercel API route return
+500 while pgAdmin held all ten connections.

@@ -1,5 +1,18 @@
 # LEDSone PostgreSQL — Data Structure Map
 
+> **How this document has aged (note added 2026-09-16).** The *table and field map below
+> is still accurate and still useful* — it is the fastest way to find which schema holds
+> which business entity. Two things about it are out of date:
+> 1. **Access.** This project no longer reads the database through the LEDSone MCP
+>    connector, and it does not use the `dbhub_readonly` role named in the header block.
+>    It connects directly with `pg` as **`tech_user`**, from the credentials in the
+>    gitignored `.env` — see `example.env`. That role has a **connection limit of 10**
+>    shared with pgAdmin and the 2-hourly refresh, and no CREATE privilege.
+> 2. **Row counts and table totals** were exact at export time on 2026-08-20. They move
+>    constantly; the sheet says so itself.
+>
+> Everything else here stands. For how the project works today, read the root `README.md`.
+
 Source document: Google Sheet **`ledsone_postgresql_data_structure`**
 `https://docs.google.com/spreadsheets/d/1KbyvKhLr0fGc6N0IV-OhSaVl9YLAXdbw4zA4cUdhI-k`
 Owner: sarujanandigitweb@gmail.com · Created 2026-08-20 05:28 · Modified 2026-08-20 05:29
